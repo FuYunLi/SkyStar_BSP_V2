@@ -1,0 +1,102 @@
+[
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Src/main.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Src/main.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Src/gpio.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Src/gpio.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Src/stm32f4xx_it.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Src/stm32f4xx_it.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Src/stm32f4xx_hal_msp.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Src/stm32f4xx_hal_msp.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c"
+  },
+  {
+    "directory": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL",
+    "command": "armclang -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include\" -I\"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include\" -DUSE_HAL_DRIVER -DSTM32F407xx -c \"D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Src/system_stm32f4xx.c\"",
+    "file": "D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Src/system_stm32f4xx.c"
+  }
+]

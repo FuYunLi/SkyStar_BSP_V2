@@ -1,0 +1,19 @@
+CompileFlags:
+  Add:
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include"
+    - "-DUSE_HAL_DRIVER"
+    - "-DSTM32F407xx"
+    - "--target=arm-none-eabi"
+    - "-mcpu=cortex-m4"
+  Remove:
+    - "-mcpu=*"
+    - "-mfpu=*"
+    - "-mfloat-abi=*"
+
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None

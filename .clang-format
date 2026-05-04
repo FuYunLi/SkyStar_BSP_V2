@@ -1,0 +1,91 @@
+# ============================================================
+# SkyStar BSP & Personal Custom (高兼容安全版)
+# 修复：向下兼容旧版本 clangd，防止解析崩溃导致回退默认风格
+# ============================================================
+
+BasedOnStyle: LLVM
+Language: C
+
+# ========== 缩进与格式 ==========
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 120
+
+# ========== 大括号风格 ==========
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterControlStatement: true    # 降级：用 true 替代 Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: false        # 解决 extern "C" 异常缩进
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# ========== 短块/短函数 ==========
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: false   # 降级：用 false 替代 Never
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# ========== extern "C" 块缩进 ==========
+IndentExternBlock: NoIndent
+
+# ========== 函数定义 ==========
+AllowAllParametersOfDeclarationOnNextLine: false
+AlignAfterOpenBracket: Align
+BinPackParameters: true
+
+# ========== 指针对齐 ==========
+DerivePointerAlignment: false
+PointerAlignment: Right
+
+# ========== switch/case ==========
+IndentCaseLabels: false
+IndentCaseBlocks: false
+IndentGotoLabels: true
+
+# ========== 预处理指令 ==========
+IndentPPDirectives: None
+
+# ========== 垂直对齐设置（兼容旧版：去掉嵌套，直接布尔值） ==========
+AlignConsecutiveMacros: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignTrailingComments: true
+
+# ========== 数组与结构体 ==========
+Cpp11BracedListStyle: false
+AlignArrayOfStructures: Left
+
+# ========== 空格设置 ==========
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCpp11BracedList: false
+SpaceInEmptyParentheses: false
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# ========== 换行设置 ==========
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+BreakStringLiterals: true
+
+# ========== 注释 ==========
+FixNamespaceComments: true
+ReflowComments: false
+
+# ========== include ==========
+SortIncludes: false              # 降级：用 false 替代 Never
+IncludeBlocks: Preserve
