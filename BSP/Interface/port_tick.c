@@ -17,6 +17,11 @@ uint32_t port_tick_get_ms(void)
     return HAL_GetTick();
 }
 
+uint64_t port_tick_get_ms64(void)
+{
+    return (uint64_t)HAL_GetTick();
+}
+
 void port_tick_delay_ms(uint32_t ms)
 {
     HAL_Delay(ms);

@@ -203,3 +203,78 @@ feat(arch): V2 项目框架、规范基础与 MultiTimer 中间件
 
 验收：空编译通过，无业务代码
 ```
+
+---
+
+## 阶段一：通信基础
+
+### 2025-05-09
+
+#### CubeMX 配置
+
+| 配置项 | 内容 |
+|--------|------|
+| USART1 | 使能异步模式，波特率 115200 |
+| USART1_RX | DMA2_Stream2，循环模式，低优先级 |
+| USART1_TX | DMA2_Stream7，正常模式，低优先级 |
+| DMA | 使能 DMA2 时钟，配置 Stream2/Stream7 |
+
+#### 创建文件
+
+| 文件 | 说明 |
+|------|------|
+| `Core/Inc/usart.h` | USART1 初始化函数声明 |
+| `Core/Src/usart.c` | USART1 初始化实现（HAL 库生成） |
+| `Core/Inc/dma.h` | DMA 初始化函数声明 |
+| `Core/Src/dma.c` | DMA 初始化实现（HAL 库生成） |
+
+#### 修改文件
+
+| 文件 | 修改内容 |
+|------|----------|
+| `SkyStar_BSP_HAL.ioc` | 配置 USART1 DMA 收发通道 |
+| `Core/Src/main.c` | 添加 `dma.h`、`usart.h` 包含，调用 `MX_DMA_Init()`、`MX_USART1_UART_Init()` |
+| `Core/Src/stm32f4xx_it.c` | 添加 `DMA2_Stream2_IRQHandler`、`DMA2_Stream7_IRQHandler` 中断处理函数 |
+| `Core/Inc/stm32f4xx_it.h` | 添加 DMA 中断函数声明 |
+| `Core/Inc/stm32f4xx_hal_conf.h` | 使能 HAL UART 模块 |
+| `MDK-ARM/SkyStar_BSP_HAL.uvprojx` | 工程配置自动更新 |
+| `README.md` | 更新项目描述，明确架构定位与适用场景 |
+
+#### 配置工作
+
+| 配置项 | 内容 |
+|--------|------|
+| USART1 | PA9(TX) / PA10(RX)，无硬件流控，8N1 |
+| DMA RX | 循环模式，自动接收数据到缓冲区 |
+| DMA TX | 正常模式，发送完成后自动停止 |
+| 中断优先级 | DMA 中断默认优先级 |
+
+#### 技术要点
+
+**DMA 循环接收模式**：
+- USART1_RX 采用 DMA 循环模式，无需 CPU 干预即可持续接收数据
+- 适用于实现环形缓冲区，配合空闲中断实现不定长数据接收
+
+**DMA 发送模式**：
+- USART1_TX 采用 DMA 正常模式，发送完成后产生传输完成中断
+- 发送期间 CPU 可执行其他任务，提高系统效率
+
+#### 编译验证
+
+```
+✅ 编译成功
+  Flash ≈ 3.5 KB
+  RAM   ≈ 8.2 KB
+```
+
+#### 提交信息
+
+```
+feat(cubemx): 配置 USART1 DMA 收发功能
+
+- USART1：异步模式 115200 8N1
+- DMA RX：DMA2_Stream2 循环模式
+- DMA TX：DMA2_Stream7 正常模式
+- 新增 usart.c/h、dma.c/h 初始化文件
+- 更新 README.md 项目描述
+```
