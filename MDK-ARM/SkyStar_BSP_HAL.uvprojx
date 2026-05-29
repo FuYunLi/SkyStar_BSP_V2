@@ -712,6 +712,16 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Interface/bsp_interface.h</FilePath>
             </File>
+            <File>
+              <FileName>port_critical.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Interface/port_critical.c</FilePath>
+            </File>
+            <File>
+              <FileName>port_critical.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Interface/port_critical.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

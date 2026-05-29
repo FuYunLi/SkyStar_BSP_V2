@@ -482,6 +482,7 @@ while(1)
 | 库名               | 用途         | 开源地址                                           | 引入阶段    |
 | ---------------- | ---------- | ---------------------------------------------- | ------- |
 | **MultiTimer**   | 软件定时器调度    | <https://github.com/0x1abin/MultiTimer>        | 阶段零     |
+| **lwrb**         | 轻量级环形缓冲区   | <https://github.com/MaJerle/lwrb>              | 阶段一 M1  |
 | **Letter Shell** | 串口交互终端     | <https://github.com/NevermindZZT/letter-shell> | 阶段一 M2  |
 | **EasyLogger**   | 异步日志系统     | <https://github.com/armink/EasyLogger>         | 阶段一 M3  |
 | **LittleFS**     | Flash 文件系统 | <https://github.com/littlefs-project/littlefs> | 阶段四 M16 |
@@ -522,6 +523,8 @@ Middleware/
 │   └── elog_cfg.h
 ├── MultiTimer/             # 软件定时器
 │   └── multi_timer.c/h
+├── lwrb/                   # 环形缓冲区
+│   └── lwrb.h              # 单头文件库
 ├── MultiButton/            # 按键管理
 │   └── multi_button.c/h
 ├── LittleFS/               # 文件系统
@@ -565,10 +568,15 @@ Middleware/
 ### M1 — UART 接口 + printf 重定向
 
 ```
-feat(interface): port_uart - DMA + 环形队列双缓冲接收
+feat(interface): port_critical - 临界区保护接口
+feat(interface): port_uart - DMA + lwrb 环形缓冲区接收
+feat(middleware): lwrb - 轻量级环形缓冲区移植
 ```
 
+- `port_critical.h/c`：临界区进入/退出接口，裸机用中断开关实现，便于后续切换 RTOS
+- `Middleware/lwrb/lwrb.h`：单头文件库，直接引入
 - `port_uart.h/c`：全部 API（发送/接收/回调/统计），含 `extern "C"`，数值宏加括号
+- 接收缓冲：使用 lwrb 实现 DMA 循环接收 + 环形缓冲区读取，临界区保护多线程访问
 - `fputc` 重定向到 `port_uart_write_async`
 - 移植 `printf` 支持（用于无 Shell 时的调试输出）
 
