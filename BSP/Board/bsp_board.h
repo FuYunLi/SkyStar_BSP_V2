@@ -41,6 +41,22 @@ typedef enum
     BSP_STATUS_MAX
 } bsp_status_t;
 
+/* ==================== 统一异步完成回调类型 ==================== */
+
+/**
+ * @brief 统一异步完成回调
+ *
+ * @param bus_id   发起操作的总线逻辑 ID（枚举强转为 uint8_t）
+ * @param result   操作结果，BSP_OK 表示成功
+ * @param user_ctx 调用方在注册时传入的透明指针，驱动原样回传
+ *
+ * 使用示例：
+ *   void my_cb(uint8_t id, bsp_status_t r, void *ctx) {
+ *       if (r == BSP_OK) { ... }
+ *   }
+ */
+typedef void (*port_async_cb_t)(uint8_t bus_id, bsp_status_t result, void *user_ctx);
+
 /* ==================== 状态码字符串 ==================== */
 
 const char *bsp_status_str(bsp_status_t status);

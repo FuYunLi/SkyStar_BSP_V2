@@ -17,20 +17,17 @@ extern "C" {
 
 /**
  * @brief 进入临界区
+ * @return 中断状态掩码，需传给 port_exit_critical 恢复
  * @note 裸机：关闭全局中断；RTOS：获取互斥锁或自旋锁
  */
-void port_enter_critical(void);
+uint32_t port_enter_critical(void);
 
 /**
  * @brief 退出临界区
+ * @param primask 进入临界区时返回的状态掩码
  * @note 裸机：恢复中断状态；RTOS：释放锁
  */
-void port_exit_critical(void);
-
-/* ==================== 便捷宏 ==================== */
-
-#define PORT_ENTER_CRITICAL() port_enter_critical()
-#define PORT_EXIT_CRITICAL()  port_exit_critical()
+void port_exit_critical(uint32_t primask);
 
 #ifdef __cplusplus
 }
