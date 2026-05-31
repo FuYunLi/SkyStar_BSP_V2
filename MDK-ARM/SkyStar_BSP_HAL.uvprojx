@@ -751,6 +751,16 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Interface/port_critical.h</FilePath>
             </File>
+            <File>
+              <FileName>port_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Interface/port_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>port_uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Interface/port_uart.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
