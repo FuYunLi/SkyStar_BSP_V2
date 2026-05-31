@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" noNamespaceSchemaLocation="project_projx.xsd">
+<Project noNamespaceSchemaLocation="project_projx.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <SchemaVersion>2.1</SchemaVersion>
   <Header>### uVision Project, (C) Keil Software</Header>
   <Targets>
@@ -335,9 +335,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls />
-              <Define>USE_HAL_DRIVER,STM32F407xx</Define>
+              <Define>USE_HAL_DRIVER,STM32F407xx,LWRB_DISABLE_ATOMIC</Define>
               <Undefine />
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -353,9 +353,9 @@
             <ClangAsOpt>1</ClangAsOpt>
             <VariousControls>
               <MiscControls />
-              <Define />
+              <Define>LWRB_DISABLE_ATOMIC</Define>
               <Undefine />
-              <IncludePath />
+              <IncludePath>../Middleware/LwRB/include</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -781,6 +781,26 @@
         <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
+        <Group>
+          <GroupName>Middleware/LwRB</GroupName>
+          <Files>
+            <File>
+              <FileName>lwrb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/LwRB/lwrb/lwrb.c</FilePath>
+            </File>
+            <File>
+              <FileName>lwrb_ex.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/LwRB/lwrb/lwrb_ex.c</FilePath>
+            </File>
+            <File>
+              <FileName>lwrb.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Middleware/LwRB/include/lwrb/lwrb.h</FilePath>
+            </File>
+          </Files>
+        </Group>
       </Groups>
     </Target>
   </Targets>
@@ -805,4 +825,3 @@
     </Layers>
   </LayerInfo>
 </Project>
-
