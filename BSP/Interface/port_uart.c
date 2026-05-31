@@ -71,6 +71,18 @@ static uart_context_t s_ctx[PORT_UART_MAX];
  * 内部工具函数
  * ================================================================ */
 
+static bsp_status_t hal_to_bsp_status(HAL_StatusTypeDef hal_status)
+{
+    switch (hal_status)
+    {
+        case HAL_OK:       return BSP_OK;
+        case HAL_ERROR:    return BSP_ERROR;
+        case HAL_BUSY:     return BSP_BUSY;
+        case HAL_TIMEOUT:  return BSP_ETIMEOUT;
+        default:           return BSP_ERROR;
+    }
+}
+
 static uart_context_t *get_ctx(port_uart_id_t uart)
 {
     if (uart >= PORT_UART_MAX)
@@ -115,7 +127,8 @@ static void tx_start_dma(uart_context_t *ctx)
 
     lwrb_sz_t len;
     /* 取线性可读段首地址，避免跨绕回点被迫拆分两次 DMA */
-    const void *ptr = lwrb_get_linear_block_read_address(ctx->tx_rb, &len);
+    const void *ptr = lwrb_get_linear_block_read_address(ctx->tx_rb);
+    len = lwrb_get_linear_block_read_length(ctx->tx_rb);
     if (len == 0)
         return;
 
@@ -312,7 +325,7 @@ bsp_status_t port_uart_tx_wait(port_uart_id_t uart, uint32_t timeout_ms)
     while (ctx->tx_busy)
     {
         if (timeout_ms != 0 && (HAL_GetTick() - start) >= timeout_ms)
-            return BSP_TIMEOUT;
+            return BSP_ETIMEOUT;
     }
 
     return BSP_OK;
