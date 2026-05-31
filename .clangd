@@ -1,0 +1,22 @@
+CompileFlags:
+  Add:
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Core/Inc"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Device/ST/STM32F4xx/Include"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Drivers/CMSIS/Include"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/BSP/Board"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/BSP/Interface"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/APP"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middleware/MultiTimer"
+    - "-DUSE_HAL_DRIVER"
+    - "-DSTM32F407xx"
+  Remove:
+    - "-mcpu=*"
+    - "-mfpu=*"
+    - "-mfloat-abi=*"
+    - "--target=*"
+
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None
