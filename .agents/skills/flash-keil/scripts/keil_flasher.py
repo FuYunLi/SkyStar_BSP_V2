@@ -161,7 +161,7 @@ def run_keil_flash(
     target_name: str,
     log_path: Path,
 ) -> FlashResult:
-    cmd = [uv4_path, "-f", str(project_path), "-t", target_name, "-o", str(log_path)]
+    cmd = [str(uv4_path), "-f", str(project_path), "-t", target_name, "-o", str(log_path)]
     cmd_str = " ".join(cmd)
     print(f"🔥 烧录命令: {cmd_str}")
 
@@ -211,7 +211,7 @@ def print_detect_report(env: dict[str, Any], debugger: str | None = None) -> Non
     print(f"  {status} UV4.exe{path}")
     if debugger:
         print(f"  🔌 工程调试器: {debugger}")
-    if not env["is_windows"]:
+    if not is_windows():
         print("\n  ⚠️ Keil MDK 烧录仅在 Windows 上支持")
 
 

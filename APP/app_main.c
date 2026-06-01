@@ -6,6 +6,7 @@
 
 #include "app_main.h"
 #include "MultiTimer.h"
+#include "demos/app_uart_demo.h"
 
 /* ================================================================
  * 私有变量
@@ -34,7 +35,8 @@ void app_main_init(void)
     /* 启动 LED 闪烁定时器（500ms 周期） */
     multiTimerStart(&s_timer_led, 500, led_blink_callback, NULL);
     
-    /* 后续在此注册其他常驻任务 */
+    /* 启动串口测试验证模块 */
+    app_uart_demo_init();
     
-    /* Demo 通过 Shell 命令触发，不自动运行 */
+    /* 后续在此注册其他常驻任务 */
 }
