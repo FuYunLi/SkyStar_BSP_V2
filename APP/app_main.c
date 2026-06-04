@@ -7,6 +7,7 @@
 #include "app_main.h"
 #include "MultiTimer.h"
 #include "bsp_uart.h"
+#include "port_dwt.h"
 #include "bsp_shell.h"
 
 #define LOG_TAG "APP_MAIN"
@@ -34,6 +35,9 @@ void app_main_init(void)
     /* 初始化板级串口 */
     bsp_uart_init();
 
+    /* 初始化 DWT 精确周期计数器 */
+    port_dwt_init();
+
     /* 初始化日志服务并打印测试日志 */
     bsp_logger_init();
     log_i("Hello world");
@@ -49,7 +53,7 @@ void app_main_init(void)
     /* 最后初始化板级 Shell */
     bsp_shell_init();
 
-    multiTimerStart(&s_timer_log, 500, log_test_callback, NULL);
+    //multiTimerStart(&s_timer_log, 500, log_test_callback, NULL);
 
     /* 启动串口测试验证模块 */
     //app_uart_demo_init();

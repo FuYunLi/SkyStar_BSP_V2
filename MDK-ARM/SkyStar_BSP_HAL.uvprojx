@@ -782,6 +782,16 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Interface/port_uart.h</FilePath>
             </File>
+            <File>
+              <FileName>port_dwt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Interface/port_dwt.c</FilePath>
+            </File>
+            <File>
+              <FileName>port_dwt.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Interface/port_dwt.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
