@@ -56,7 +56,7 @@ int fputc(int ch, FILE *f)
 {
     (void)f;
     uint8_t data = (uint8_t)ch;
-    port_uart_write(PORT_UART_DEBUG, &data, 1U);
+    bsp_uart_write(&data, 1U);
     return ch;
 }
 

@@ -1,7 +1,14 @@
+/**
+ * @file bsp_shell.c
+ * @brief 板级 Shell 服务层源文件
+ * @note 将 Letter Shell 终端数据流重定向并挂载至 bsp_uart 服务层。
+ */
+
 #include "shell.h"
 #include "bsp_uart.h"
 
-Shell shell; // 对外暴露以便其他模块调用重绘 API
+/* Shell 实例，允许其他模块调用重绘 API */
+Shell shell;
 static char shell_buffer[512];
 
 /**
