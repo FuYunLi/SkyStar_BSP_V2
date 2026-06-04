@@ -57,6 +57,18 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define KEY3_Pin GPIO_PIN_13
+#define KEY3_GPIO_Port GPIOC
+#define KEY1_Pin GPIO_PIN_0
+#define KEY1_GPIO_Port GPIOA
+#define WS2812_Pin GPIO_PIN_3
+#define WS2812_GPIO_Port GPIOA
+#define BUZZER_Pin GPIO_PIN_6
+#define BUZZER_GPIO_Port GPIOA
+#define KEY2_Pin GPIO_PIN_8
+#define KEY2_GPIO_Port GPIOE
+#define LED_CORE_Pin GPIO_PIN_8
+#define LED_CORE_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
