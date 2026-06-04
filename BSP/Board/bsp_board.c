@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stddef.h>
 
-#include "port_uart.h"
+#include "bsp_uart.h"
 
 /* 调试串口ID宏定义 */
 #define PORT_UART_DEBUG PORT_UART_1

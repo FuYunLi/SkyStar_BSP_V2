@@ -11,10 +11,10 @@
 /* ================================================================
  * 私有宏定义
  * ================================================================ */
-#define UART_BAUD_RATE 115200U
-#define RX_DMA_BUF_SIZE  64U
-#define RX_RB_BUF_SIZE   128U
-#define TX_RB_BUF_SIZE   512U
+#define UART_BAUD_RATE  115200U
+#define RX_DMA_BUF_SIZE 64U
+#define RX_RB_BUF_SIZE  128U
+#define TX_RB_BUF_SIZE  2048U
 
 /* ================================================================
  * 私有变量
@@ -74,18 +74,15 @@ void bsp_uart_init(void)
     lwrb_init(&s_tx_rb, s_tx_rb_buf, sizeof(s_tx_rb_buf));
 
     /* 填充串口配置 */
-    port_uart_config_t cfg = 
-    {
-        .baudrate = UART_BAUD_RATE,
-        .rx_dma_buf = s_rx_dma_buf,
-        .rx_dma_buf_size = sizeof(s_rx_dma_buf),
-        .rx_rb = &s_rx_rb,
-        .tx_rb = &s_tx_rb,
-        .on_tx_complete = NULL,
-        .on_error = uart_error_cb,
-        .on_rx_data = uart_rx_data_cb,
-        .user_ctx = NULL
-    };
+    port_uart_config_t cfg = { .baudrate        = UART_BAUD_RATE,
+                               .rx_dma_buf      = s_rx_dma_buf,
+                               .rx_dma_buf_size = sizeof(s_rx_dma_buf),
+                               .rx_rb           = &s_rx_rb,
+                               .tx_rb           = &s_tx_rb,
+                               .on_tx_complete  = NULL,
+                               .on_error        = uart_error_cb,
+                               .on_rx_data      = uart_rx_data_cb,
+                               .user_ctx        = NULL };
 
     /* 注册并开启串口隔离层 */
     port_uart_init(PORT_UART_1, &cfg);
@@ -118,7 +115,15 @@ bsp_status_t bsp_uart_write(const uint8_t *data, uint16_t len)
     {
         return BSP_EINVAL;
     }
-    
+
     // 依托底层接口内部的 port_enter_critical，实现多任务并发写 LwRB 的绝对安全
     return port_uart_write_async(PORT_UART_1, data, len, NULL, NULL);
+}
+
+/**
+ * @brief 获取当前串口发送队列的空闲空间大小
+ */
+uint16_t bsp_uart_get_tx_free_space(void)
+{
+    return (uint16_t)lwrb_get_free(&s_tx_rb);
 }

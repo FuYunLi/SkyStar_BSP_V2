@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,LWRB_DISABLE_ATOMIC</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -358,7 +358,7 @@
               <MiscControls></MiscControls>
               <Define>LWRB_DISABLE_ATOMIC</Define>
               <Undefine></Undefine>
-              <IncludePath>../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src</IncludePath>
+              <IncludePath>../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -474,7 +474,7 @@
                       <MiscControls></MiscControls>
                       <Define></Define>
                       <Undefine></Undefine>
-                      <IncludePath>../Middleware/letter-shell-shell3.1/src</IncludePath>
+                      <IncludePath>../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc</IncludePath>
                     </VariousControls>
                   </Cads>
                 </FileArmAds>
@@ -530,7 +530,7 @@
                       <MiscControls></MiscControls>
                       <Define></Define>
                       <Undefine></Undefine>
-                      <IncludePath>../Middleware/letter-shell-shell3.1/src</IncludePath>
+                      <IncludePath>../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc</IncludePath>
                     </VariousControls>
                   </Cads>
                 </FileArmAds>
@@ -611,7 +611,7 @@
                       <MiscControls></MiscControls>
                       <Define></Define>
                       <Undefine></Undefine>
-                      <IncludePath>../Middleware/letter-shell-shell3.1/src</IncludePath>
+                      <IncludePath>../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc</IncludePath>
                     </VariousControls>
                   </Cads>
                 </FileArmAds>
@@ -731,6 +731,16 @@
               <FileName>bsp_shell.h</FileName>
               <FileType>5</FileType>
               <FilePath>../BSP/Board/bsp_shell.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_logger.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Board/bsp_logger.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_logger.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Board/bsp_logger.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -886,6 +896,46 @@
               <FileName>shell_ext.h</FileName>
               <FileType>5</FileType>
               <FilePath>../Middleware/letter-shell-shell3.1/src/shell_ext.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Middleware/Easylogger</GroupName>
+          <Files>
+            <File>
+              <FileName>elog.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/Easylogger/src/elog.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog_utils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/Easylogger/src/elog_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/Easylogger/port/elog_port.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog_async.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/Easylogger/src/elog_async.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog_buf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/Easylogger/src/elog_buf.c</FilePath>
+            </File>
+            <File>
+              <FileName>elog.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Middleware/Easylogger/inc/elog.h</FilePath>
+            </File>
+            <File>
+              <FileName>elog_cfg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Middleware/Easylogger/inc/elog_cfg.h</FilePath>
             </File>
           </Files>
         </Group>
