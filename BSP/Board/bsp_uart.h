@@ -30,4 +30,10 @@ uint16_t bsp_uart_read(uint8_t *buf, uint16_t len);
  */
 bsp_status_t bsp_uart_write(const uint8_t *data, uint16_t len);
 
+/**
+ * @brief 获取当前串口发送队列的空闲空间大小
+ * @return uint16_t 空闲字节数
+ */
+uint16_t bsp_uart_get_tx_free_space(void);
+
 #endif /* BSP_UART_H */
