@@ -641,6 +641,16 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Interface/port_dwt.h</FilePath>
             </File>
+            <File>
+              <FileName>port_gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Interface/port_gpio.c</FilePath>
+            </File>
+            <File>
+              <FileName>port_gpio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Interface/port_gpio.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
