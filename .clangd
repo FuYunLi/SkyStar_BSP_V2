@@ -11,6 +11,7 @@ CompileFlags:
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middleware/MultiTimer"
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middleware/LwRB/include"
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middleware/letter-shell-shell3.1/src"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middleware/Easylogger/inc"
     - "-DUSE_HAL_DRIVER"
     - "-DSTM32F407xx"
     - "-DLWRB_DISABLE_ATOMIC"
