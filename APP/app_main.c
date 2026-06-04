@@ -42,3 +42,13 @@ void app_main_init(void)
     
     /* 后续在此注册其他常驻任务 */
 }
+
+/**
+ * @brief 应用层主轮询任务处理
+ */
+void app_main_process(void)
+{
+    multiTimerYield();
+    bsp_shell_process();
+}
+
