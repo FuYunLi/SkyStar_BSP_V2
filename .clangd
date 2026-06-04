@@ -9,13 +9,17 @@ CompileFlags:
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/BSP/Interface"
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/APP"
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middleware/MultiTimer"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middleware/LwRB/include"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middleware/letter-shell-shell3.1/src"
     - "-DUSE_HAL_DRIVER"
     - "-DSTM32F407xx"
+    - "-DLWRB_DISABLE_ATOMIC"
+    - "--target=arm-none-eabi"
+    - "-mcpu=cortex-m4"
   Remove:
     - "-mcpu=*"
     - "-mfpu=*"
     - "-mfloat-abi=*"
-    - "--target=*"
 
 Diagnostics:
   UnusedIncludes: None

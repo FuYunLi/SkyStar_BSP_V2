@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,LWRB_DISABLE_ATOMIC</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -358,7 +358,7 @@
               <MiscControls></MiscControls>
               <Define>LWRB_DISABLE_ATOMIC</Define>
               <Undefine></Undefine>
-              <IncludePath>../Middleware/LwRB/include</IncludePath>
+              <IncludePath>../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -374,7 +374,7 @@
             <ScatterFile></ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
-            <Misc></Misc>
+            <Misc>--keep=*.o(shellCommand)</Misc>
             <LinkerInputFile></LinkerInputFile>
             <DisabledWarnings></DisabledWarnings>
           </LDads>
@@ -474,7 +474,7 @@
                       <MiscControls></MiscControls>
                       <Define></Define>
                       <Undefine></Undefine>
-                      <IncludePath></IncludePath>
+                      <IncludePath>../Middleware/letter-shell-shell3.1/src</IncludePath>
                     </VariousControls>
                   </Cads>
                 </FileArmAds>
@@ -530,7 +530,7 @@
                       <MiscControls></MiscControls>
                       <Define></Define>
                       <Undefine></Undefine>
-                      <IncludePath></IncludePath>
+                      <IncludePath>../Middleware/letter-shell-shell3.1/src</IncludePath>
                     </VariousControls>
                   </Cads>
                 </FileArmAds>
@@ -611,7 +611,7 @@
                       <MiscControls></MiscControls>
                       <Define></Define>
                       <Undefine></Undefine>
-                      <IncludePath></IncludePath>
+                      <IncludePath>../Middleware/letter-shell-shell3.1/src</IncludePath>
                     </VariousControls>
                   </Cads>
                 </FileArmAds>
@@ -712,6 +712,26 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Board/bsp_config.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Board/bsp_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Board/bsp_uart.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_shell.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Board/bsp_shell.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_shell.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Board/bsp_shell.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -777,6 +797,16 @@
               <FileType>5</FileType>
               <FilePath>../APP/demos/app_uart_demo.h</FilePath>
             </File>
+            <File>
+              <FileName>app_shell_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../APP/demos/app_shell_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_shell_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../APP/demos/app_shell_demo.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -800,9 +830,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>::CMSIS</GroupName>
-        </Group>
-        <Group>
           <GroupName>Middleware/LwRB</GroupName>
           <Files>
             <File>
@@ -821,6 +848,49 @@
               <FilePath>../Middleware/LwRB/include/lwrb/lwrb.h</FilePath>
             </File>
           </Files>
+        </Group>
+        <Group>
+          <GroupName>Middleware/LetterShell</GroupName>
+          <Files>
+            <File>
+              <FileName>shell.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/letter-shell-shell3.1/src/shell.c</FilePath>
+            </File>
+            <File>
+              <FileName>shell_cmd_list.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/letter-shell-shell3.1/src/shell_cmd_list.c</FilePath>
+            </File>
+            <File>
+              <FileName>shell_companion.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/letter-shell-shell3.1/src/shell_companion.c</FilePath>
+            </File>
+            <File>
+              <FileName>shell_ext.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/letter-shell-shell3.1/src/shell_ext.c</FilePath>
+            </File>
+            <File>
+              <FileName>shell.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Middleware/letter-shell-shell3.1/src/shell.h</FilePath>
+            </File>
+            <File>
+              <FileName>shell_cfg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Middleware/letter-shell-shell3.1/src/shell_cfg.h</FilePath>
+            </File>
+            <File>
+              <FileName>shell_ext.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Middleware/letter-shell-shell3.1/src/shell_ext.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>
     </Target>

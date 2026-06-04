@@ -17,6 +17,11 @@ extern "C" {
  */
 void app_main_init(void);
 
+/**
+ * @brief 应用层主轮询任务处理
+ */
+void app_main_process(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -8,4 +8,4 @@
  */
 void app_uart_demo_init(void);
 
-#endif /* APP_DEMOS_APP_UART_DEMO_H */
+#endif /* APP_DEMOS_APP_UART_DEMO_H */
