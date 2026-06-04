@@ -8,6 +8,7 @@
 #include "MultiTimer.h"
 #include "bsp_uart.h"
 #include "port_dwt.h"
+#include "port_gpio.h"
 #include "bsp_shell.h"
 
 #define LOG_TAG "APP_MAIN"
@@ -15,7 +16,7 @@
 #include "demos/app_uart_demo.h"
 #include "demos/app_shell_demo.h"
 
-#if 1
+#if 0
 static MultiTimer s_timer_log;
 static uint8_t    s_log_test_count = 0U;
 static void       log_test_callback(MultiTimer *timer, void *userData)
@@ -37,6 +38,9 @@ void app_main_init(void)
 
     /* 初始化 DWT 精确周期计数器 */
     port_dwt_init();
+
+    /* 初始化逻辑 GPIO 引脚映射与安全时钟 */
+    port_gpio_init();
 
     /* 初始化日志服务并打印测试日志 */
     bsp_logger_init();
