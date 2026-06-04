@@ -61,9 +61,18 @@ void elog_port_output(const char *log, size_t size)
         if (free_space > 0)
         {
             uint16_t write_len = (remaining < (size_t)free_space) ? (uint16_t)remaining : free_space;
-            bsp_uart_write((const uint8_t *)log, write_len);
-            log += write_len;
-            remaining -= write_len;
+            if (bsp_uart_write((const uint8_t *)log, write_len) == BSP_OK)
+            {
+                log += write_len;
+                remaining -= write_len;
+            }
+            else
+            {
+                if (__get_PRIMASK() != 0U || __get_IPSR() != 0U)
+                {
+                    break;
+                }
+            }
         }
         else
         {

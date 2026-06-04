@@ -8,18 +8,20 @@
 #include "MultiTimer.h"
 #include "bsp_uart.h"
 #include "bsp_shell.h"
+
+#define LOG_TAG "APP_MAIN"
+#include "bsp_logger.h"
 #include "demos/app_uart_demo.h"
 #include "demos/app_shell_demo.h"
 
-#if 0
-static MultiTimer s_timer_led;
-
-static void led_blink_callback(MultiTimer* timer, void* userData)
+#if 1
+static MultiTimer s_timer_log;
+static uint8_t    s_log_test_count = 0U;
+static void       log_test_callback(MultiTimer *timer, void *userData)
 {
-    /* TODO: 添加 LED 翻转逻辑 */
-    
+    log_w("log test count=%d", s_log_test_count++);
     /* 重新启动，实现周期定时 */
-    multiTimerStart(timer, 500, led_blink_callback, userData);
+    multiTimerStart(timer, 500, log_test_callback, userData);
 }
 #endif
 
@@ -29,17 +31,30 @@ static void led_blink_callback(MultiTimer* timer, void* userData)
 
 void app_main_init(void)
 {
-    /* 初始化板级串口和 Shell */
+    /* 初始化板级串口 */
     bsp_uart_init();
+
+    /* 初始化日志服务并打印测试日志 */
+    bsp_logger_init();
+    log_i("Hello world");
+    log_d("Hello world");
+    log_w("Hello world");
+    log_e("Hello world");
+    log_a("Hello world");
+
+    __disable_irq();
+    log_i("This log will trigger drop-logic because IRQ is disabled.");
+    __enable_irq();
+
+    /* 最后初始化板级 Shell */
     bsp_shell_init();
 
-    /* 启动 LED 闪烁定时器（500ms 周期） */
-    //multiTimerStart(&s_timer_led, 500, led_blink_callback, NULL);
-    
+    multiTimerStart(&s_timer_log, 500, log_test_callback, NULL);
+
     /* 启动串口测试验证模块 */
     //app_uart_demo_init();
     app_shell_demo_init();
-    
+
     /* 后续在此注册其他常驻任务 */
 }
 
@@ -51,4 +66,3 @@ void app_main_process(void)
     multiTimerYield();
     bsp_shell_process();
 }
-

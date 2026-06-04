@@ -13,7 +13,7 @@
  * ================================================================ */
 #define UART_BAUD_RATE  115200U
 #define RX_DMA_BUF_SIZE 64U
-#define RX_RB_BUF_SIZE  128U
+#define RX_RB_BUF_SIZE  1024U
 #define TX_RB_BUF_SIZE  2048U
 
 /* ================================================================
