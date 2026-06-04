@@ -6,17 +6,13 @@
 
 #include "app_main.h"
 #include "MultiTimer.h"
+#include "bsp_uart.h"
+#include "bsp_shell.h"
 #include "demos/app_uart_demo.h"
+#include "demos/app_shell_demo.h"
 
-/* ================================================================
- * 私有变量
- * ================================================================ */
-
+#if 0
 static MultiTimer s_timer_led;
-
-/* ================================================================
- * 定时器回调
- * ================================================================ */
 
 static void led_blink_callback(MultiTimer* timer, void* userData)
 {
@@ -25,6 +21,7 @@ static void led_blink_callback(MultiTimer* timer, void* userData)
     /* 重新启动，实现周期定时 */
     multiTimerStart(timer, 500, led_blink_callback, userData);
 }
+#endif
 
 /* ================================================================
  * 应用初始化
@@ -32,11 +29,16 @@ static void led_blink_callback(MultiTimer* timer, void* userData)
 
 void app_main_init(void)
 {
+    /* 初始化板级串口和 Shell */
+    bsp_uart_init();
+    bsp_shell_init();
+
     /* 启动 LED 闪烁定时器（500ms 周期） */
-    multiTimerStart(&s_timer_led, 500, led_blink_callback, NULL);
+    //multiTimerStart(&s_timer_led, 500, led_blink_callback, NULL);
     
     /* 启动串口测试验证模块 */
-    app_uart_demo_init();
+    //app_uart_demo_init();
+    app_shell_demo_init();
     
     /* 后续在此注册其他常驻任务 */
 }

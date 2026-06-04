@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "bsp_board.h"
 #include "MultiTimer.h"
+#include "bsp_shell.h"
 #include "app_main.h"
 /* USER CODE END Includes */
 
@@ -104,7 +105,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-        multiTimerYield();
+    multiTimerYield();
+    bsp_shell_process();
     }
   /* USER CODE END 3 */
 }

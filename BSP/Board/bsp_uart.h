@@ -1,3 +1,9 @@
+/**
+ * @file bsp_uart.h
+ * @brief 板级串口服务层头文件
+ * @note 提供基于环形缓冲区封装的串口收发黑盒接口，屏蔽底层逻辑 ID 和硬件细节。
+ */
+
 #ifndef BSP_UART_H
 #define BSP_UART_H
 

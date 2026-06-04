@@ -1,3 +1,9 @@
+/**
+ * @file bsp_uart.c
+ * @brief 板级串口服务层源文件
+ * @note 内部统一分配 LwRB 和 DMA 缓冲区，屏蔽底层物理串口细节，对外提供标准流式读写接口。
+ */
+
 #include "bsp_uart.h"
 #include "port_uart.h"
 #include <stdio.h>
@@ -8,7 +14,7 @@
 #define UART_BAUD_RATE 115200U
 #define RX_DMA_BUF_SIZE  64U
 #define RX_RB_BUF_SIZE   128U
-#define TX_RB_BUF_SIZE   256U
+#define TX_RB_BUF_SIZE   512U
 
 /* ================================================================
  * 私有变量
@@ -53,7 +59,7 @@ static void uart_error_cb(uint8_t bus_id, bsp_status_t result, void *user_ctx)
 {
     (void)bus_id;
     (void)user_ctx;
-    /* 发生硬件错误时使用基础 printf 输出以保持可靠性 */
+    // 发生硬件错误时使用基础 printf 输出以保持可靠性
     printf("[UART ERROR] Bus: %u, Result: %d\r\n", (unsigned int)bus_id, (int)result);
 }
 
@@ -113,6 +119,6 @@ bsp_status_t bsp_uart_write(const uint8_t *data, uint16_t len)
         return BSP_EINVAL;
     }
     
-    /* 依托底层接口内部的 port_enter_critical，实现多任务并发写 LwRB 的绝对安全 */
+    // 依托底层接口内部的 port_enter_critical，实现多任务并发写 LwRB 的绝对安全
     return port_uart_write_async(PORT_UART_1, data, len, NULL, NULL);
 }

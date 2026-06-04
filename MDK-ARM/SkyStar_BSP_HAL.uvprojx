@@ -374,7 +374,7 @@
             <ScatterFile></ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
-            <Misc></Misc>
+            <Misc>--keep=*.o(shellCommand)</Misc>
             <LinkerInputFile></LinkerInputFile>
             <DisabledWarnings></DisabledWarnings>
           </LDads>
@@ -796,6 +796,16 @@
               <FileName>app_uart_demo.h</FileName>
               <FileType>5</FileType>
               <FilePath>../APP/demos/app_uart_demo.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_shell_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../APP/demos/app_shell_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_shell_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../APP/demos/app_shell_demo.h</FilePath>
             </File>
           </Files>
         </Group>
