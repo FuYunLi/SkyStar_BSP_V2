@@ -75,6 +75,7 @@ static uart_context_t s_ctx[PORT_UART_MAX];
  * 内部工具函数
  * ================================================================ */
 
+/* 获取对应串口上下文 */
 static uart_context_t *get_ctx(port_uart_id_t uart)
 {
     if (uart >= PORT_UART_MAX)
@@ -86,6 +87,7 @@ static uart_context_t *get_ctx(port_uart_id_t uart)
     return &s_ctx[uart];
 }
 
+/* 根据波特率和数据长度计算发送超时时间,公式: 2 * 数据长度 * 每字节传输时间 */
 static uint32_t calc_tx_timeout_ms(uint16_t len, uint32_t baudrate)
 {
     uint32_t total_us = (uint32_t)len * UART_BYTE_TIME_US(baudrate) * 2UL;
