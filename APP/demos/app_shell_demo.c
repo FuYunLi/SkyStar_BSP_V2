@@ -9,16 +9,20 @@
 #include "port_tick.h"
 #include "port_dwt.h"
 #include "port_gpio.h"
+#include "dev_led.h"
+#include "dev_buzzer.h"
+#define LOG_TAG "SHELL_DEMO"
+#include "elog.h"
 #include <stdio.h>
 #include <string.h>
 
 void shell_print_test(void)
 {
-    printf("=================================\r\n");
-    printf("SkyStar System running...\r\n");
-    printf("Build Time: %s %s\r\n", __DATE__, __TIME__);
-    printf("MCU: STM32F407VET6\r\n");
-    printf("=================================\r\n");
+    log_i("=================================");
+    log_i("SkyStar System running...");
+    log_i("Build Time: %s %s", __DATE__, __TIME__);
+    log_i("MCU: STM32F407VET6");
+    log_i("=================================");
 }
 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC) | SHELL_CMD_DISABLE_RETURN, print_test, shell_print_test, "print test");
@@ -27,7 +31,7 @@ void shell_delay_test(void)
 {
     uint32_t cycles_per_us = SystemCoreClock / 1000000U;
 
-    printf("--- Delay Precision Test via DWT (CYCCNT) ---\r\n");
+    log_i("--- Delay Precision Test via DWT (CYCCNT) ---");
 
     /* 1. 测试 100us DWT 精确阻塞延时 */
     uint32_t start_cycles = port_dwt_get_cycles();
@@ -37,7 +41,7 @@ void shell_delay_test(void)
     uint32_t actual_us_x100 = (diff_cycles * 100U) / cycles_per_us;
     int32_t error_us_x100 = (int32_t)actual_us_x100 - 10000;
 
-    printf("100us DWT Delay: target=100.00us, actual=%lu.%02luus, diff=%s%ld.%02ldus (elapsed %lu cycles)\r\n",
+    log_i("100us DWT Delay: target=100.00us, actual=%lu.%02luus, diff=%s%ld.%02ldus (elapsed %lu cycles)",
            (unsigned long)(actual_us_x100 / 100), (unsigned long)(actual_us_x100 % 100),
            (error_us_x100 >= 0) ? "+" : "-",
            (long)(error_us_x100 >= 0 ? error_us_x100 / 100 : -error_us_x100 / 100),
@@ -52,7 +56,7 @@ void shell_delay_test(void)
     actual_us_x100 = (diff_cycles * 100U) / cycles_per_us;
     error_us_x100 = (int32_t)actual_us_x100 - 100000;
 
-    printf("1ms Tick Delay: target=1000.00us, actual=%lu.%02luus, diff=%s%ld.%02ldus (elapsed %lu cycles)\r\n",
+    log_i("1ms Tick Delay: target=1000.00us, actual=%lu.%02luus, diff=%s%ld.%02ldus (elapsed %lu cycles)",
            (unsigned long)(actual_us_x100 / 100), (unsigned long)(actual_us_x100 % 100),
            (error_us_x100 >= 0) ? "+" : "-",
            (long)(error_us_x100 >= 0 ? error_us_x100 / 100 : -error_us_x100 / 100),
@@ -66,8 +70,8 @@ int shell_gpio_test(int argc, char *argv[])
 {
     if (argc < 3)
     {
-        printf("Usage: gpio_test <PIN_NAME> <HIGH|LOW|READ>\r\n");
-        printf("Example: gpio_test LED_CORE HIGH\r\n");
+        log_e("Usage: gpio_test <PIN_NAME> <HIGH|LOW|READ>");
+        log_i("Example: gpio_test LED_CORE HIGH");
         return -1;
     }
 
@@ -90,7 +94,7 @@ int shell_gpio_test(int argc, char *argv[])
     }
     else
     {
-        printf("Unknown pin name: %s\r\n", argv[1]);
+        log_e("Unknown pin name: %s", argv[1]);
         return -2;
     }
 
@@ -99,22 +103,22 @@ int shell_gpio_test(int argc, char *argv[])
     {
         state = PORT_GPIO_HIGH;
         port_gpio_write(pin_id, state);
-        printf("Set pin %s to HIGH\r\n", argv[1]);
+        log_i("Set pin %s to HIGH", argv[1]);
     }
     else if (strcmp(argv[2], "LOW") == 0)
     {
         state = PORT_GPIO_LOW;
         port_gpio_write(pin_id, state);
-        printf("Set pin %s to LOW\r\n", argv[1]);
+        log_i("Set pin %s to LOW", argv[1]);
     }
     else if (strcmp(argv[2], "READ") == 0)
     {
         port_gpio_read(pin_id, &state);
-        printf("Pin %s state: %s\r\n", argv[1], (state == PORT_GPIO_HIGH) ? "HIGH" : "LOW");
+        log_i("Pin %s state: %s", argv[1], (state == PORT_GPIO_HIGH) ? "HIGH" : "LOW");
     }
     else
     {
-        printf("Unknown action: %s. Use HIGH, LOW or READ.\r\n", argv[2]);
+        log_e("Unknown action: %s. Use HIGH, LOW or READ.", argv[2]);
         return -3;
     }
 
@@ -123,6 +127,119 @@ int shell_gpio_test(int argc, char *argv[])
 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, gpio_test, shell_gpio_test, "gpio test command");
 
+int shell_led_test(int argc, char *argv[])
+{
+    if (argc < 2)
+    {
+        log_e("Usage: led_test <on|off|toggle>");
+        return -1;
+    }
+
+    if (strcmp(argv[1], "on") == 0)
+    {
+        dev_led_set(DEV_LED_ON);
+        log_i("LED turned ON");
+    }
+    else if (strcmp(argv[1], "off") == 0)
+    {
+        dev_led_set(DEV_LED_OFF);
+        log_i("LED turned OFF");
+    }
+    else if (strcmp(argv[1], "toggle") == 0)
+    {
+        dev_led_toggle();
+        log_i("LED toggled");
+    }
+    else
+    {
+        log_e("Unknown action: %s. Use on, off or toggle.", argv[1]);
+        return -2;
+    }
+
+    return 0;
+}
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, led_test, shell_led_test, "LED test command");
+
+int shell_buzzer_test(int argc, char *argv[])
+{
+    if (argc < 2)
+    {
+        printf("Usage: buzzer_test <on|off|freq|tone> [param1] [param2]\r\n");
+        printf("Examples:\r\n");
+        printf("  buzzer_test on\r\n");
+        printf("  buzzer_test off\r\n");
+#if BUZZER_TYPE == BUZZER_PASSIVE
+        printf("  buzzer_test freq 2000\r\n");
+        printf("  buzzer_test tone 2500 50\r\n");
+#endif
+        return -1;
+    }
+
+    if (strcmp(argv[1], "on") == 0)
+    {
+        dev_buzzer_on();
+        log_i("Buzzer turned ON");
+    }
+    else if (strcmp(argv[1], "off") == 0)
+    {
+        dev_buzzer_off();
+        log_i("Buzzer turned OFF");
+    }
+#if BUZZER_TYPE == BUZZER_PASSIVE
+    else if (strcmp(argv[1], "freq") == 0)
+    {
+        if (argc < 3)
+        {
+            log_e("Usage: buzzer_test freq <hz>");
+            return -2;
+        }
+        int freq = 0;
+        sscanf(argv[2], "%d", &freq);
+        if (freq <= 0 || freq > 65535)
+        {
+            log_e("Invalid frequency: %d Hz", freq);
+            return -3;
+        }
+        dev_buzzer_set_freq((uint16_t)freq);
+        log_i("Buzzer frequency set to %d Hz", freq);
+    }
+    else if (strcmp(argv[1], "tone") == 0)
+    {
+        if (argc < 4)
+        {
+            log_e("Usage: buzzer_test tone <hz> <volume 0-100>");
+            return -4;
+        }
+        int freq = 0;
+        int vol = 0;
+        sscanf(argv[2], "%d", &freq);
+        sscanf(argv[3], "%d", &vol);
+        if (freq <= 0 || freq > 65535)
+        {
+            log_e("Invalid frequency: %d Hz", freq);
+            return -5;
+        }
+        if (vol < 0 || vol > 100)
+        {
+            log_e("Invalid volume: %d (0-100)", vol);
+            return -6;
+        }
+        dev_buzzer_tone((uint16_t)freq, (uint8_t)vol);
+        log_i("Buzzer playing tone: %d Hz, volume %d%%", freq, vol);
+    }
+#endif
+    else
+    {
+        log_e("Unknown action: %s", argv[1]);
+        return -7;
+    }
+
+    return 0;
+}
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, buzzer_test, shell_buzzer_test, "buzzer test command");
+
 /**
  * @brief 初始化 Letter Shell 演示模块
  * @return bsp_status_t 初始化状态，成功返回 BSP_OK
@@ -130,6 +247,6 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) |
 bsp_status_t app_shell_demo_init(void)
 {
     /* 静态注册时，这里只需打印一条模块启动日志 */
-    printf("[APP] Shell demo module initialized successfully\r\n");
+    log_i("[APP] Shell demo module initialized successfully");
     return BSP_OK;
 }

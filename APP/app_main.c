@@ -9,6 +9,8 @@
 #include "bsp_uart.h"
 #include "port_dwt.h"
 #include "port_gpio.h"
+#include "dev_led.h"
+#include "dev_buzzer.h"
 #include "bsp_shell.h"
 
 #define LOG_TAG "APP_MAIN"
@@ -41,6 +43,10 @@ void app_main_init(void)
 
     /* 初始化逻辑 GPIO 引脚映射与安全时钟 */
     port_gpio_init();
+
+    /* 初始化 LED 与无源蜂鸣器驱动 */
+    dev_led_init();
+    dev_buzzer_init();
 
     /* 初始化日志服务并打印测试日志 */
     bsp_logger_init();
