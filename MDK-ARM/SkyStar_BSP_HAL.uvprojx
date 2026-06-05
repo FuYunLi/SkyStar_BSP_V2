@@ -1,5 +1,5 @@
-<?xml version='1.0' encoding='utf-8'?>
-<Project noNamespaceSchemaLocation="project_projx.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<Project noNamespaceSchemaLocation="project_projx.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <SchemaVersion>2.1</SchemaVersion>
   <Header>### uVision Project, (C) Keil Software</Header>
   <Targets>
@@ -337,7 +337,7 @@
               <MiscControls />
               <Define>USE_HAL_DRIVER,STM32F407xx,LWRB_DISABLE_ATOMIC</Define>
               <Undefine />
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc;../BSP/Driver</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -355,7 +355,7 @@
               <MiscControls />
               <Define />
               <Undefine />
-              <IncludePath />
+              <IncludePath>../BSP/Driver</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -425,17 +425,17 @@
               <FileName>dma.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/dma.c</FilePath>
-              </File>
+            </File>
             <File>
               <FileName>tim.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/tim.c</FilePath>
-              </File>
+            </File>
             <File>
               <FileName>usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/usart.c</FilePath>
-              </File>
+            </File>
             <File>
               <FileName>stm32f4xx_it.c</FileName>
               <FileType>1</FileType>
@@ -530,7 +530,7 @@
               <FileName>stm32f4xx_hal_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c</FilePath>
-              </File>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -650,6 +650,16 @@
               <FileName>port_gpio.h</FileName>
               <FileType>5</FileType>
               <FilePath>../BSP/Interface/port_gpio.h</FilePath>
+            </File>
+            <File>
+              <FileName>port_pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Interface/port_pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>port_pwm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Interface/port_pwm.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -810,6 +820,31 @@
         </Group>
         <Group>
           <GroupName>::CMSIS</GroupName>
+        </Group>
+        <Group>
+          <GroupName>BSP/Driver</GroupName>
+          <Files>
+            <File>
+              <FileName>dev_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/dev_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_led.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/dev_led.h</FilePath>
+            </File>
+            <File>
+              <FileName>dev_buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/dev_buzzer.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_buzzer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/dev_buzzer.h</FilePath>
+            </File>
+          </Files>
         </Group>
       </Groups>
     </Target>
