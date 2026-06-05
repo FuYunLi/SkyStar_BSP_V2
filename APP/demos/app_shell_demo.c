@@ -8,7 +8,9 @@
 #include "shell.h"
 #include "port_tick.h"
 #include "port_dwt.h"
+#include "port_gpio.h"
 #include <stdio.h>
+#include <string.h>
 
 void shell_print_test(void)
 {
@@ -59,6 +61,67 @@ void shell_delay_test(void)
 }
 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC) | SHELL_CMD_DISABLE_RETURN, delay_test, shell_delay_test, "delay precision test");
+
+int shell_gpio_test(int argc, char *argv[])
+{
+    if (argc < 3)
+    {
+        printf("Usage: gpio_test <PIN_NAME> <HIGH|LOW|READ>\r\n");
+        printf("Example: gpio_test LED_CORE HIGH\r\n");
+        return -1;
+    }
+
+    port_gpio_id_t pin_id = PORT_GPIO_MAX;
+    if (strcmp(argv[1], "LED_CORE") == 0)
+    {
+        pin_id = PORT_GPIO_LED_CORE;
+    }
+    else if (strcmp(argv[1], "KEY1") == 0)
+    {
+        pin_id = PORT_GPIO_KEY1;
+    }
+    else if (strcmp(argv[1], "KEY2") == 0)
+    {
+        pin_id = PORT_GPIO_KEY2;
+    }
+    else if (strcmp(argv[1], "KEY3") == 0)
+    {
+        pin_id = PORT_GPIO_KEY3;
+    }
+    else
+    {
+        printf("Unknown pin name: %s\r\n", argv[1]);
+        return -2;
+    }
+
+    port_gpio_state_t state = PORT_GPIO_LOW;
+    if (strcmp(argv[2], "HIGH") == 0)
+    {
+        state = PORT_GPIO_HIGH;
+        port_gpio_write(pin_id, state);
+        printf("Set pin %s to HIGH\r\n", argv[1]);
+    }
+    else if (strcmp(argv[2], "LOW") == 0)
+    {
+        state = PORT_GPIO_LOW;
+        port_gpio_write(pin_id, state);
+        printf("Set pin %s to LOW\r\n", argv[1]);
+    }
+    else if (strcmp(argv[2], "READ") == 0)
+    {
+        port_gpio_read(pin_id, &state);
+        printf("Pin %s state: %s\r\n", argv[1], (state == PORT_GPIO_HIGH) ? "HIGH" : "LOW");
+    }
+    else
+    {
+        printf("Unknown action: %s. Use HIGH, LOW or READ.\r\n", argv[2]);
+        return -3;
+    }
+
+    return 0;
+}
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, gpio_test, shell_gpio_test, "gpio test command");
 
 /**
  * @brief 初始化 Letter Shell 演示模块
