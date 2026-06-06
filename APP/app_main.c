@@ -11,12 +11,14 @@
 #include "port_gpio.h"
 #include "dev_led.h"
 #include "dev_buzzer.h"
+#include "dev_ws2812.h"
 #include "bsp_shell.h"
 
 #define LOG_TAG "APP_MAIN"
 #include "bsp_logger.h"
 #include "demos/app_uart_demo.h"
 #include "demos/app_shell_demo.h"
+#include "demos/app_rgb_demo.h"
 
 #if 0
 static MultiTimer s_timer_log;
@@ -44,9 +46,10 @@ void app_main_init(void)
     /* 初始化逻辑 GPIO 引脚映射与安全时钟 */
     port_gpio_init();
 
-    /* 初始化 LED 与无源蜂鸣器驱动 */
+    /* 初始化 LED、无源蜂鸣器与 WS2812 驱动 */
     dev_led_init();
     dev_buzzer_init();
+    dev_ws2812_init();
 
     /* 初始化日志服务并打印测试日志 */
     bsp_logger_init();
@@ -68,6 +71,7 @@ void app_main_init(void)
     /* 启动串口测试验证模块 */
     //app_uart_demo_init();
     app_shell_demo_init();
+    app_rgb_demo_init();
 
     /* 后续在此注册其他常驻任务 */
 }

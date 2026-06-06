@@ -25,7 +25,7 @@ void shell_print_test(void)
     log_i("=================================");
 }
 
-SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC) | SHELL_CMD_DISABLE_RETURN, print_test, shell_print_test, "print test");
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC) | SHELL_CMD_DISABLE_RETURN, print, shell_print_test, "print test");
 
 void shell_delay_test(void)
 {
@@ -64,14 +64,14 @@ void shell_delay_test(void)
            (unsigned long)diff_cycles);
 }
 
-SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC) | SHELL_CMD_DISABLE_RETURN, delay_test, shell_delay_test, "delay precision test");
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC) | SHELL_CMD_DISABLE_RETURN, delay, shell_delay_test, "delay precision test");
 
 int shell_gpio_test(int argc, char *argv[])
 {
     if (argc < 3)
     {
-        log_e("Usage: gpio_test <PIN_NAME> <HIGH|LOW|READ>");
-        log_i("Example: gpio_test LED_CORE HIGH");
+        log_e("Usage: gpio <PIN_NAME> <HIGH|LOW|READ>");
+        log_i("Example: gpio LED_CORE HIGH");
         return -1;
     }
 
@@ -125,13 +125,13 @@ int shell_gpio_test(int argc, char *argv[])
     return 0;
 }
 
-SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, gpio_test, shell_gpio_test, "gpio test command");
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, gpio, shell_gpio_test, "gpio test command");
 
 int shell_led_test(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        log_e("Usage: led_test <on|off|toggle>");
+        log_e("Usage: led <on|off|toggle>");
         return -1;
     }
 
@@ -159,19 +159,19 @@ int shell_led_test(int argc, char *argv[])
     return 0;
 }
 
-SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, led_test, shell_led_test, "LED test command");
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, led, shell_led_test, "LED test command");
 
 int shell_buzzer_test(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("Usage: buzzer_test <on|off|freq|tone> [param1] [param2]\r\n");
+        printf("Usage: buzzer <on|off|freq|tone> [param1] [param2]\r\n");
         printf("Examples:\r\n");
-        printf("  buzzer_test on\r\n");
-        printf("  buzzer_test off\r\n");
+        printf("  buzzer on\r\n");
+        printf("  buzzer off\r\n");
 #if BUZZER_TYPE == BUZZER_PASSIVE
-        printf("  buzzer_test freq 2000\r\n");
-        printf("  buzzer_test tone 2500 50\r\n");
+        printf("  buzzer freq 2000\r\n");
+        printf("  buzzer tone 2500 50\r\n");
 #endif
         return -1;
     }
@@ -191,7 +191,7 @@ int shell_buzzer_test(int argc, char *argv[])
     {
         if (argc < 3)
         {
-            log_e("Usage: buzzer_test freq <hz>");
+            log_e("Usage: buzzer freq <hz>");
             return -2;
         }
         int freq = 0;
@@ -208,7 +208,7 @@ int shell_buzzer_test(int argc, char *argv[])
     {
         if (argc < 4)
         {
-            log_e("Usage: buzzer_test tone <hz> <volume 0-100>");
+            log_e("Usage: buzzer tone <hz> <volume 0-100>");
             return -4;
         }
         int freq = 0;
@@ -238,7 +238,7 @@ int shell_buzzer_test(int argc, char *argv[])
     return 0;
 }
 
-SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, buzzer_test, shell_buzzer_test, "buzzer test command");
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, buzzer, shell_buzzer_test, "buzzer test command");
 
 /**
  * @brief 初始化 Letter Shell 演示模块
