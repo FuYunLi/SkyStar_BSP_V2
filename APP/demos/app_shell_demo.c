@@ -137,17 +137,17 @@ int shell_led_test(int argc, char *argv[])
 
     if (strcmp(argv[1], "on") == 0)
     {
-        dev_led_set(DEV_LED_ON);
+        dev_led_set(LED_CORE,DEV_LED_ON);
         log_i("LED turned ON");
     }
     else if (strcmp(argv[1], "off") == 0)
     {
-        dev_led_set(DEV_LED_OFF);
+        dev_led_set(LED_CORE,DEV_LED_OFF);
         log_i("LED turned OFF");
     }
     else if (strcmp(argv[1], "toggle") == 0)
     {
-        dev_led_toggle();
+        dev_led_toggle(LED_CORE);
         log_i("LED toggled");
     }
     else
