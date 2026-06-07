@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,LWRB_DISABLE_ATOMIC</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc;../BSP/Driver</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc;../BSP/Driver;../APP/demos;../Middleware/MultiButton</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -849,6 +849,16 @@
               <FileType>1</FileType>
               <FilePath>../BSP/Driver/dev_ws2812.c</FilePath>
             </File>
+            <File>
+              <FileName>dev_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/dev_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/dev_key.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -858,6 +868,31 @@
               <FileName>app_rgb_demo.c</FileName>
               <FileType>1</FileType>
               <FilePath>../APP/demos/app_rgb_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_multibutton_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../APP/demos/app_multibutton_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_multibutton_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../APP/demos/app_multibutton_demo.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Middleware/MultiButton</GroupName>
+          <Files>
+            <File>
+              <FileName>multi_button.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/MultiButton/multi_button.c</FilePath>
+            </File>
+            <File>
+              <FileName>multi_button.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Middleware/MultiButton/multi_button.h</FilePath>
             </File>
           </Files>
         </Group>

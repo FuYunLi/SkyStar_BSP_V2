@@ -9,10 +9,17 @@
 
 #include "bsp_board.h"
 #include "port_gpio.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum
+{
+    LED_CORE = 0,
+    DEV_LED_MAX
+} dev_led_id_t;
 
 typedef enum
 {
@@ -21,8 +28,8 @@ typedef enum
 } dev_led_state_t;
 
 bsp_status_t dev_led_init(void);
-bsp_status_t dev_led_set(dev_led_state_t state);
-bsp_status_t dev_led_toggle(void);
+bsp_status_t dev_led_set(dev_led_id_t led_id, dev_led_state_t state);
+bsp_status_t dev_led_toggle(dev_led_id_t led_id);
 
 #ifdef __cplusplus
 }
