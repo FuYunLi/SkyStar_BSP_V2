@@ -34,4 +34,4 @@ void dev_key_attach(dev_key_id_t key_id, ButtonEvent event, BtnCallback cb);
 }
 #endif
 
-#endif /* __DEV_KEY_H */
+#endif /* __DEV_KEY_H */

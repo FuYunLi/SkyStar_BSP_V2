@@ -27,19 +27,19 @@ static void led_timer_cb(MultiTimer *timer, void *userdata)
 
 /* 不再需要在这里定义 Button 变量，因为 dev_key.c 已经在底层封装了 */
 
-static void key1_short_cb(Button *btn, void *userdata)
+static void key1_short_cb(Button *btn)
 {
     log_d("Key1 short press");
     dev_led_toggle(LED_CORE);
 }
 
-static void key1_long_cb(Button *btn, void *userdata)
+static void key1_long_cb(Button *btn)
 {
     log_d("Key1 long press");
     multiTimerStart(&timer_led_core, 500, led_timer_cb, NULL);
 }
 
-static void key1_double_cb(Button *btn, void *userdata)
+static void key1_double_cb(Button *btn)
 {
     log_d("Key1 double press");
     multiTimerStop(&timer_led_core);

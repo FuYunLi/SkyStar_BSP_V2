@@ -9,6 +9,7 @@
 #include "bsp_uart.h"
 #include "port_dwt.h"
 #include "port_gpio.h"
+#include "dev_key.h"
 #include "dev_led.h"
 #include "dev_buzzer.h"
 #include "dev_ws2812.h"
@@ -19,6 +20,7 @@
 #include "demos/app_uart_demo.h"
 #include "demos/app_shell_demo.h"
 #include "demos/app_rgb_demo.h"
+#include "tasks/app_sys_monitor.h"
 
 #if 0
 static MultiTimer s_timer_log;
@@ -72,6 +74,7 @@ void app_main_init(void)
     //app_uart_demo_init();
     app_shell_demo_init();
     app_rgb_demo_init();
+    app_sys_monitor_init();
 
     /* 后续在此注册其他常驻任务 */
 }
