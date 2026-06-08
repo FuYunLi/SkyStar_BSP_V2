@@ -67,6 +67,10 @@ void Error_Handler(void);
 #define BUZZER_GPIO_Port GPIOA
 #define KEY2_Pin GPIO_PIN_8
 #define KEY2_GPIO_Port GPIOE
+#define TOUCH_I2C_SDA_Pin GPIO_PIN_13
+#define TOUCH_I2C_SDA_GPIO_Port GPIOE
+#define TOUCH_I2C_SCL_Pin GPIO_PIN_10
+#define TOUCH_I2C_SCL_GPIO_Port GPIOD
 #define LED_CORE_Pin GPIO_PIN_8
 #define LED_CORE_GPIO_Port GPIOB
 
