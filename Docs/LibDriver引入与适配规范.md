@@ -59,10 +59,10 @@
 
 ## 2. 目录结构规范
 
-所有 LibDriver 驱动源文件统一存放至项目根目录下的 **Drivers/LibDriver/** 文件夹中，并按外设芯片型号建立二级子目录，包含 `src`、`interface` 与 `example` 目录：
+所有 LibDriver 驱动源文件统一存放至 **BSP/Driver/LibDriver/** 文件夹中（因根目录下的 **Drivers** 是 CubeMX 自动生成与维护的目录，不应存放自定义第三方驱动），并按外设芯片型号建立二级子目录，包含 `src`、`interface` 与 `example` 目录：
 
 ```
-Drivers/LibDriver/
+BSP/Driver/LibDriver/
 └── <chip_name>/                    # 例如 at24c02 (库名称一般为 at24cxx)
     ├── src/                        # 【完全冻结】LibDriver 官方核心驱动
     │   ├── driver_<chip_name>.c
@@ -182,9 +182,9 @@ bsp_status_t bsp_storage_write(uint32_t address, const uint8_t *buf, uint32_t le
 
 当在新的里程碑中引入新的 LibDriver 外设时，按以下步骤进行集成：
 
-1. **获取官方驱动**：将 LibDriver 仓库的 `src`、`interface` 与 `example` 目录拷贝至项目根目录下的 **Drivers/LibDriver/<chip_name>/**。
+1. **获取官方驱动**：将 LibDriver 仓库的 `src`、`interface` 与 `example` 目录拷贝至项目中的 **BSP/Driver/LibDriver/<chip_name>/** 目录下。
 2. **实现接口映射**：修改 `interface/driver_<chip_name>_interface.c`，引入 `port_i2c.h` 或 `port_spi.h` 等 Port 层头文件，完成底层读写和延时回调的对接。
-3. **导入 Keil 工程**：将 `src/`、`interface/` 与 `example/` 中的源文件导入 Keil MDK 虚拟目录 `Drivers/LibDriver` 中，并在工程配置的 `Include Paths` 中添加它们的头文件搜索路径。
+3. **导入 Keil 工程**：将 `src/`、`interface/` 与 `example/` 中的源文件导入 Keil MDK 虚拟目录 `BSP/Driver/LibDriver/<chip_name>` 中。**注意：在该虚拟目录下直接挂载上述所有源文件即可，无需按子文件夹（src、interface、example）建立多级虚拟文件夹**。同时在工程配置的 `Include Paths` 中添加它们的物理头文件搜索路径。
 4. **编写板级服务**：在 **BSP/Board/** 目录下创建类服务头文件与源文件（如 `bsp_storage.h/c`），在 `.c` 文件内部包含 `driver_<chip>_basic.h`，实现桥接。
 5. **编译验证**：使用 Keil 构建工具编译工程，确保无任何编译错误或警告。
 6. **在 APP 层调用验证**：在 `app_main.c` 中只包含板级服务头文件（如 `bsp_storage.h`），在初始化中调用板级初始化，并编写对应的 Shell 调试命令在物理板上进行读写验证。
