@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" noNamespaceSchemaLocation="project_projx.xsd">
+<?xml version='1.0' encoding='utf-8'?>
+<Project noNamespaceSchemaLocation="project_projx.xsd">
   <SchemaVersion>2.1</SchemaVersion>
   <Header>### uVision Project, (C) Keil Software</Header>
   <Targets>
@@ -735,6 +735,16 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Board/bsp_logger.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Board/bsp_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_led.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Board/bsp_led.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1020,6 +1030,16 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Driver/dev_key.h</FilePath>
             </File>
+            <File>
+              <FileName>dev_pca9555.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/dev_pca9555.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_pca9555.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/dev_pca9555.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1099,4 +1119,3 @@
     </Layers>
   </LayerInfo>
 </Project>
-

@@ -10,12 +10,15 @@
 #include "port_dwt.h"
 #include "port_gpio.h"
 #include "dev_led.h"
+#include "bsp_led.h"
 #include "dev_buzzer.h"
 #include "port_i2c.h"
+#include "dev_pca9555.h"
 #define LOG_TAG "SHELL_DEMO"
 #include "elog.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 void shell_print_test(void)
 {
@@ -311,4 +314,133 @@ bsp_status_t app_shell_demo_init(void)
     log_i("[APP] Shell demo module initialized successfully");
     return BSP_OK;
 }
+
+extern dev_pca9555_t g_pca_led;
+
+int shell_io_read(int argc, char *argv[])
+{
+    if (argc < 3)
+    {
+        log_e("Usage: io_read <port> <pin>");
+        return -1;
+    }
+
+    uint8_t port = (uint8_t)atoi(argv[1]);
+    uint8_t pin = (uint8_t)atoi(argv[2]);
+
+    dev_pca9555_state_t state;
+    bsp_status_t status = dev_pca9555_read_pin(&g_pca_led, port, pin, &state);
+    if (status != BSP_OK)
+    {
+        log_e("Failed to read PCA9555 pin (status: %d)", status);
+        return -2;
+    }
+
+    log_i("PCA9555 Port %d Pin %d state: %d", port, pin, state);
+    return 0;
+}
+
+int shell_io_write(int argc, char *argv[])
+{
+    if (argc < 4)
+    {
+        log_e("Usage: io_write <port> <pin> <val>");
+        return -1;
+    }
+
+    uint8_t port = (uint8_t)atoi(argv[1]);
+    uint8_t pin = (uint8_t)atoi(argv[2]);
+    dev_pca9555_state_t state = atoi(argv[3]) ? DEV_PCA9555_SET : DEV_PCA9555_RESET;
+
+    bsp_status_t status = dev_pca9555_write_pin(&g_pca_led, port, pin, state);
+    if (status != BSP_OK)
+    {
+        log_e("Failed to write PCA9555 pin (status: %d)", status);
+        return -2;
+    }
+
+    log_i("Successfully set PCA9555 Port %d Pin %d to %d", port, pin, state);
+    return 0;
+}
+
+int shell_io_dir(int argc, char *argv[])
+{
+    if (argc < 4)
+    {
+        log_e("Usage: io_dir <port> <pin> <in|out>");
+        return -1;
+    }
+
+    uint8_t port = (uint8_t)atoi(argv[1]);
+    uint8_t pin = (uint8_t)atoi(argv[2]);
+    uint8_t is_input = (strcmp(argv[3], "in") == 0) ? 1 : 0;
+
+    bsp_status_t status = dev_pca9555_set_pin_dir(&g_pca_led, port, pin, is_input);
+    if (status != BSP_OK)
+    {
+        log_e("Failed to set PCA9555 pin direction (status: %d)", status);
+        return -2;
+    }
+
+    log_i("Successfully set PCA9555 Port %d Pin %d direction to %s", port, pin, is_input ? "INPUT" : "OUTPUT");
+    return 0;
+}
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, io_read, shell_io_read, "read pca9555 expander pin level");
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, io_write, shell_io_write, "write pca9555 expander pin level");
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, io_dir, shell_io_dir, "set pca9555 expander pin direction");
+
+int shell_bsp_led(int argc, char *argv[])
+{
+    if (argc < 3)
+    {
+        log_e("Usage: bsp_led <led_id 1-8> <0|1>");
+        return -1;
+    }
+    int led_val = atoi(argv[1]);
+    int state_val = atoi(argv[2]);
+    if (led_val < 1 || led_val > 8)
+    {
+        log_e("Invalid led_id. Must be 1-8.");
+        return -2;
+    }
+    bsp_led_id_t led_id = (bsp_led_id_t)(led_val - 1);
+    bsp_led_state_t state = state_val ? BSP_LED_ON : BSP_LED_OFF;
+    bsp_status_t status = bsp_led_set(led_id, state);
+    if (status != BSP_OK)
+    {
+        log_e("Failed to set board LED (status: %d)", status);
+        return -3;
+    }
+    log_i("Successfully set board LED %d to %s", led_val, state ? "ON" : "OFF");
+    return 0;
+}
+
+int shell_bsp_led_toggle(int argc, char *argv[])
+{
+    if (argc < 2)
+    {
+        log_e("Usage: bsp_led_toggle <led_id 1-8>");
+        return -1;
+    }
+    int led_val = atoi(argv[1]);
+    if (led_val < 1 || led_val > 8)
+    {
+        log_e("Invalid led_id. Must be 1-8.");
+        return -2;
+    }
+    bsp_led_id_t led_id = (bsp_led_id_t)(led_val - 1);
+    bsp_status_t status = bsp_led_toggle(led_id);
+    if (status != BSP_OK)
+    {
+        log_e("Failed to toggle board LED (status: %d)", status);
+        return -3;
+    }
+    log_i("Successfully toggled board LED %d", led_val);
+    return 0;
+}
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, bsp_led, shell_bsp_led, "control board expansion led");
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, bsp_led_toggle, shell_bsp_led_toggle, "toggle board expansion led");
+
 

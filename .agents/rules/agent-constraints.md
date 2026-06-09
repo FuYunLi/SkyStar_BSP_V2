@@ -83,6 +83,7 @@ git merge <branch>
 3. 询问用户确认
 4. 用户确认后执行 git add + git commit
 5. 禁止自动执行 git push
+6. 提交消息（Commit Message）及相关日志记录必须全部使用**中文**编写。
 ```
 
 ### 3.3 分支操作流程
@@ -305,6 +306,7 @@ git merge <branch>
 2. **确认约束**：涉及提交/推送/分支操作必须用户确认
 3. **规范约束**：遵循 Docs/代码规范.md 和 Docs/Git规范.md
 4. **停止约束**：遇到不确定情况立即停止并询问
+5. **语言约束**：提交日志（Git commit message）、开发日志以及修订历史必须使用**中文**编写。
 
 详细规范见：.agents/rules/agent-constraints.md
 ```
