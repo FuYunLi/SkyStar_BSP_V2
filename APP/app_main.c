@@ -11,6 +11,7 @@
 #include "port_gpio.h"
 #include "dev_key.h"
 #include "dev_led.h"
+#include "bsp_led.h"
 #include "dev_buzzer.h"
 #include "dev_ws2812.h"
 #include "bsp_shell.h"
@@ -50,6 +51,7 @@ void app_main_init(void)
 
     /* 初始化 LED、无源蜂鸣器与 WS2812 驱动 */
     dev_led_init();
+    bsp_led_init();
     dev_buzzer_init();
     dev_ws2812_init();
 

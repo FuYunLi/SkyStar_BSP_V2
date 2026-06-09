@@ -17,11 +17,11 @@ extern "C" {
 typedef enum
 {
     /* 硬件 I2C 通道空间 (0 ~ 0x7F) */
-    PORT_I2C_1 = 0,
+    PORT_I2C_1 = 0U,
     PORT_I2C_HW_MAX,            /* 硬件通道上限哨兵 */
 
     /* 软件 I2C 通道空间 (以 0x80 起始偏置) */
-    PORT_I2C_SOFT_1 = 0x80,
+    PORT_I2C_SOFT_1 = 0x80U,
     PORT_I2C_SOFT_MAX,          /* 软件通道上限哨兵 */
 
     PORT_I2C_MAX                /* 逻辑通道大上限哨兵 */
