@@ -45,10 +45,12 @@ static const port_i2c_hw_pin_t hw_pins[] = {
     }
 };
 
-static soft_i2c_t s_soft_i2c = {
-    .scl   = PORT_GPIO_TOUCH_SCL,
-    .sda   = PORT_GPIO_TOUCH_SDA,
-    .delay = 2,
+static soft_i2c_t sw_mapping[] = {
+    [PORT_I2C_SOFT_1 - PORT_I2C_SOFT_1] = {
+        .scl   = PORT_GPIO_TOUCH_SCL,
+        .sda   = PORT_GPIO_TOUCH_SDA,
+        .delay = 2,
+    }
 };
 
 /* ================================================================
@@ -57,6 +59,12 @@ static soft_i2c_t s_soft_i2c = {
 
 static I2C_HandleTypeDef *get_hw(port_i2c_id_t bus)
 {
+    /* 确保逻辑 ID 落在硬件 I2C 通道区间内 */
+    if (bus >= PORT_I2C_HW_MAX)
+    {
+        return NULL;
+    }
+
     /* 采用数组实际大小进行防溢出安全保护 */
     if (bus >= (port_i2c_id_t)(sizeof(hw_mapping) / sizeof(hw_mapping[0])))
     {
@@ -67,15 +75,29 @@ static I2C_HandleTypeDef *get_hw(port_i2c_id_t bus)
 
 static soft_i2c_t *get_sw(port_i2c_id_t bus)
 {
-    if (bus == PORT_I2C_SOFT)
+    /* 确保逻辑 ID 落在软件 I2C 通道区间内 */
+    if (bus < PORT_I2C_SOFT_1 || bus >= PORT_I2C_SOFT_MAX)
     {
-        return &s_soft_i2c;
+        return NULL;
     }
-    return NULL;
+
+    uint32_t idx = (uint32_t)(bus - PORT_I2C_SOFT_1);
+    /* 采用软件通道数组的实际大小进行防溢出保护 */
+    if (idx >= sizeof(sw_mapping) / sizeof(sw_mapping[0]))
+    {
+        return NULL;
+    }
+    return &sw_mapping[idx];
 }
 
 static void s_hw_i2c_reset_gpio(port_i2c_id_t bus)
 {
+    /* 确保逻辑 ID 落在硬件 I2C 通道区间内 */
+    if (bus >= PORT_I2C_HW_MAX)
+    {
+        return;
+    }
+
     /* 采用数组实际大小进行防溢出安全保护 */
     if (bus >= (port_i2c_id_t)(sizeof(hw_pins) / sizeof(hw_pins[0])))
     {
@@ -134,6 +156,7 @@ static void s_hw_i2c_reset_gpio(port_i2c_id_t bus)
     /* 重新恢复初始化对应的硬件 I2C 外设以准备正常的通信 */
     if (bus == PORT_I2C_1)
     {
+        HAL_I2C_DeInit(get_hw(bus));
         MX_I2C1_Init();
     }
 }
