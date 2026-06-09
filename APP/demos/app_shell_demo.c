@@ -11,6 +11,7 @@
 #include "port_gpio.h"
 #include "dev_led.h"
 #include "dev_buzzer.h"
+#include "port_i2c.h"
 #define LOG_TAG "SHELL_DEMO"
 #include "elog.h"
 #include <stdio.h>
@@ -240,6 +241,66 @@ int shell_buzzer_test(int argc, char *argv[])
 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, buzzer, shell_buzzer_test, "buzzer test command");
 
+int shell_i2c_scan(int argc, char *argv[])
+{
+    if (argc < 2)
+    {
+        log_e("Usage: i2c_scan <hw|sw>");
+        return -1;
+    }
+
+    port_i2c_id_t id = PORT_I2C_1;
+    if (strcmp(argv[1], "hw") == 0)
+    {
+        id = PORT_I2C_1;
+    }
+    else if (strcmp(argv[1], "sw") == 0)
+    {
+        id = PORT_I2C_SOFT;
+    }
+    else
+    {
+        log_e("Unknown bus: %s. Use hw or sw.", argv[1]);
+        return -2;
+    }
+
+    // 确保扫描前总线初始化完成
+    if (port_i2c_init(id) != BSP_OK)
+    {
+        log_e("Failed to initialize I2C bus %s", argv[1]);
+        return -3;
+    }
+
+    log_i("Scanning I2C bus %s...", argv[1]);
+
+    int devices_found = 0;
+    uint8_t dummy_data = 0x00;
+
+    for (uint8_t addr = 0x01; addr < 0x80; addr++)
+    {
+        // 使用 I2C 写接口探测器件响应，从机地址需左移 1 位
+        bsp_status_t status = port_i2c_write(id, addr << 1, &dummy_data, 1, 10);
+        if (status == BSP_OK)
+        {
+            log_i("Found device at address: 0x%02X (7-bit: 0x%02X)", addr << 1, addr);
+            devices_found++;
+        }
+    }
+
+    if (devices_found == 0)
+    {
+        log_w("No I2C devices found on bus %s.", argv[1]);
+    }
+    else
+    {
+        log_i("Scan complete. Found %d devices.", devices_found);
+    }
+
+    return 0;
+}
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, i2c_scan, shell_i2c_scan, "scan i2c devices on hw/sw bus");
+
 /**
  * @brief 初始化 Letter Shell 演示模块
  * @return bsp_status_t 初始化状态，成功返回 BSP_OK
@@ -250,3 +311,4 @@ bsp_status_t app_shell_demo_init(void)
     log_i("[APP] Shell demo module initialized successfully");
     return BSP_OK;
 }
+
