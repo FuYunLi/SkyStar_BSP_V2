@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <Project noNamespaceSchemaLocation="project_projx.xsd">
   <SchemaVersion>2.1</SchemaVersion>
   <Header>### uVision Project, (C) Keil Software</Header>
@@ -475,6 +475,66 @@
               </FileOption>
             </File>
             <File>
+              <FileName>spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Core/Src/spi.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>1</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <ComprImg>1</ComprImg>
+                </CommonProperty>
+                <FileArmAds>
+                  <Cads>
+                    <interw>2</interw>
+                    <Optim>0</Optim>
+                    <oTime>2</oTime>
+                    <SplitLS>2</SplitLS>
+                    <OneElfS>2</OneElfS>
+                    <Strict>2</Strict>
+                    <EnumInt>2</EnumInt>
+                    <PlainCh>2</PlainCh>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <wLevel>0</wLevel>
+                    <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
+                    <uC99>2</uC99>
+                    <uGnu>2</uGnu>
+                    <useXO>2</useXO>
+                    <v6Lang>0</v6Lang>
+                    <v6LangP>0</v6LangP>
+                    <vShortEn>2</vShortEn>
+                    <vShortWch>2</vShortWch>
+                    <v6Lto>2</v6Lto>
+                    <v6WtE>2</v6WtE>
+                    <v6Rtti>2</v6Rtti>
+                  </Cads>
+                  <Aads>
+                    <interw>2</interw>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <thumb>2</thumb>
+                    <SplitLS>2</SplitLS>
+                    <SwStkChk>2</SwStkChk>
+                    <NoWarn>2</NoWarn>
+                    <uSurpInc>2</uSurpInc>
+                    <useXO>2</useXO>
+                    <ClangAsOpt>1</ClangAsOpt>
+                  </Aads>
+                </FileArmAds>
+              </FileOption>
+            </File>
+            <File>
               <FileName>tim.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/tim.c</FilePath>
@@ -661,6 +721,66 @@
               <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c</FilePath>
             </File>
             <File>
+              <FileName>stm32f4xx_hal_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <UseCPPCompiler>2</UseCPPCompiler>
+                  <RVCTCodeConst>0</RVCTCodeConst>
+                  <RVCTZI>0</RVCTZI>
+                  <RVCTOtherData>0</RVCTOtherData>
+                  <ModuleSelection>0</ModuleSelection>
+                  <IncludeInBuild>1</IncludeInBuild>
+                  <AlwaysBuild>2</AlwaysBuild>
+                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
+                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
+                  <PublicsOnly>2</PublicsOnly>
+                  <StopOnExitCode>11</StopOnExitCode>
+                  <ComprImg>1</ComprImg>
+                </CommonProperty>
+                <FileArmAds>
+                  <Cads>
+                    <interw>2</interw>
+                    <Optim>0</Optim>
+                    <oTime>2</oTime>
+                    <SplitLS>2</SplitLS>
+                    <OneElfS>2</OneElfS>
+                    <Strict>2</Strict>
+                    <EnumInt>2</EnumInt>
+                    <PlainCh>2</PlainCh>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <wLevel>0</wLevel>
+                    <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
+                    <uC99>2</uC99>
+                    <uGnu>2</uGnu>
+                    <useXO>2</useXO>
+                    <v6Lang>0</v6Lang>
+                    <v6LangP>0</v6LangP>
+                    <vShortEn>2</vShortEn>
+                    <vShortWch>2</vShortWch>
+                    <v6Lto>2</v6Lto>
+                    <v6WtE>2</v6WtE>
+                    <v6Rtti>2</v6Rtti>
+                  </Cads>
+                  <Aads>
+                    <interw>2</interw>
+                    <Ropi>2</Ropi>
+                    <Rwpi>2</Rwpi>
+                    <thumb>2</thumb>
+                    <SplitLS>2</SplitLS>
+                    <SwStkChk>2</SwStkChk>
+                    <NoWarn>2</NoWarn>
+                    <uSurpInc>2</uSurpInc>
+                    <useXO>2</useXO>
+                    <ClangAsOpt>1</ClangAsOpt>
+                  </Aads>
+                </FileArmAds>
+              </FileOption>
+            </File>
+            <File>
               <FileName>stm32f4xx_hal_tim.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c</FilePath>
@@ -745,7 +865,17 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Board/bsp_led.h</FilePath>
             </File>
-          <File><FileName>bsp_storage.c</FileName><FileType>1</FileType><FilePath>../BSP/Board/bsp_storage.c</FilePath></File><File><FileName>bsp_storage.h</FileName><FileType>5</FileType><FilePath>../BSP/Board/bsp_storage.h</FilePath></File></Files>
+            <File>
+              <FileName>bsp_storage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Board/bsp_storage.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_storage.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Board/bsp_storage.h</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>BSP/Interface</GroupName>
@@ -1060,7 +1190,17 @@
               <FileType>5</FileType>
               <FilePath>../APP/demos/app_multibutton_demo.h</FilePath>
             </File>
-          <File><FileName>app_storage_demo.c</FileName><FileType>1</FileType><FilePath>..\APP\demos\app_storage_demo.c</FilePath></File><File><FileName>app_storage_demo.h</FileName><FileType>5</FileType><FilePath>..\APP\demos\app_storage_demo.h</FilePath></File></Files>
+            <File>
+              <FileName>app_storage_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_storage_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_storage_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_storage_demo.h</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>Middleware/MultiButton</GroupName>
@@ -1095,7 +1235,42 @@
         <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
-      <Group><GroupName>BSP/Driver/LibDriver/AT24Cxx</GroupName><Files><File><FileName>driver_at24cxx.c</FileName><FileType>1</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/src/driver_at24cxx.c</FilePath></File><File><FileName>driver_at24cxx.h</FileName><FileType>5</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/src/driver_at24cxx.h</FilePath></File><File><FileName>driver_at24cxx_interface.c</FileName><FileType>1</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/interface/driver_at24cxx_interface.c</FilePath></File><File><FileName>driver_at24cxx_interface.h</FileName><FileType>5</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/interface/driver_at24cxx_interface.h</FilePath></File><File><FileName>driver_at24cxx_basic.c</FileName><FileType>1</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/example/driver_at24cxx_basic.c</FilePath></File><File><FileName>driver_at24cxx_basic.h</FileName><FileType>5</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/example/driver_at24cxx_basic.h</FilePath></File></Files></Group></Groups>
+        <Group>
+          <GroupName>BSP/Driver/LibDriver/AT24Cxx</GroupName>
+          <Files>
+            <File>
+              <FileName>driver_at24cxx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/LibDriver/AT24Cxx/src/driver_at24cxx.c</FilePath>
+            </File>
+            <File>
+              <FileName>driver_at24cxx.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/LibDriver/AT24Cxx/src/driver_at24cxx.h</FilePath>
+            </File>
+            <File>
+              <FileName>driver_at24cxx_interface.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/LibDriver/AT24Cxx/interface/driver_at24cxx_interface.c</FilePath>
+            </File>
+            <File>
+              <FileName>driver_at24cxx_interface.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/LibDriver/AT24Cxx/interface/driver_at24cxx_interface.h</FilePath>
+            </File>
+            <File>
+              <FileName>driver_at24cxx_basic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/LibDriver/AT24Cxx/example/driver_at24cxx_basic.c</FilePath>
+            </File>
+            <File>
+              <FileName>driver_at24cxx_basic.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/LibDriver/AT24Cxx/example/driver_at24cxx_basic.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+      </Groups>
     </Target>
   </Targets>
   <RTE>
@@ -1119,3 +1294,4 @@
     </Layers>
   </LayerInfo>
 </Project>
+
