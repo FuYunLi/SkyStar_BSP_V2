@@ -23,6 +23,8 @@
 #include "demos/app_shell_demo.h"
 #include "demos/app_rgb_demo.h"
 #include "demos/app_storage_demo.h"
+#include "demos/app_spi_demo.h"
+#include "port_spi.h"
 #include "tasks/app_sys_monitor.h"
 
 #if 0
@@ -57,6 +59,10 @@ void app_main_init(void)
     dev_buzzer_init();
     dev_ws2812_init();
 
+    /* 初始化 SPI 通道 */
+    port_spi_init(PORT_SPI_1);
+    port_spi_init(PORT_SPI_2);
+
     /* 初始化日志服务并打印测试日志 */
     bsp_logger_init();
     (void)bsp_storage_init();
@@ -80,6 +86,7 @@ void app_main_init(void)
     app_shell_demo_init();
     app_rgb_demo_init();
     app_storage_demo_init();
+    app_spi_demo_init();
     app_sys_monitor_init();
 
     /* 后续在此注册其他常驻任务 */

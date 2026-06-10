@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project noNamespaceSchemaLocation="project_projx.xsd">
   <SchemaVersion>2.1</SchemaVersion>
   <Header>### uVision Project, (C) Keil Software</Header>
@@ -965,7 +965,7 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Interface/soft_i2c.h</FilePath>
             </File>
-          </Files>
+          <File><FileName>port_spi.c</FileName><FileType>1</FileType><FilePath>../BSP/Interface/port_spi.c</FilePath></File><File><FileName>port_spi.h</FileName><FileType>5</FileType><FilePath>../BSP/Interface/port_spi.h</FilePath></File></Files>
         </Group>
         <Group>
           <GroupName>App</GroupName>
@@ -1200,7 +1200,7 @@
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_storage_demo.h</FilePath>
             </File>
-          </Files>
+          <File><FileName>app_spi_demo.c</FileName><FileType>1</FileType><FilePath>../APP/demos/app_spi_demo.c</FilePath></File><File><FileName>app_spi_demo.h</FileName><FileType>5</FileType><FilePath>../APP/demos/app_spi_demo.h</FilePath></File></Files>
         </Group>
         <Group>
           <GroupName>Middleware/MultiButton</GroupName>
@@ -1294,4 +1294,3 @@
     </Layers>
   </LayerInfo>
 </Project>
-
