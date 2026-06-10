@@ -24,6 +24,7 @@
 #include "demos/app_rgb_demo.h"
 #include "demos/app_storage_demo.h"
 #include "demos/app_spi_demo.h"
+#include "demos/app_flash_demo.h"
 #include "port_spi.h"
 #include "tasks/app_sys_monitor.h"
 
@@ -87,6 +88,7 @@ void app_main_init(void)
     app_rgb_demo_init();
     app_storage_demo_init();
     app_spi_demo_init();
+    app_flash_demo_init();
     app_sys_monitor_init();
 
     /* 后续在此注册其他常驻任务 */
