@@ -337,7 +337,7 @@
               <MiscControls />
               <Define>USE_HAL_DRIVER,STM32F407xx,LWRB_DISABLE_ATOMIC</Define>
               <Undefine />
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc;../BSP/Driver;../APP/demos;../Middleware/MultiButton;../APP/tasks</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc;../BSP/Driver;../APP/demos;../Middleware/MultiButton;../APP/tasks;../BSP/Driver/LibDriver/AT24Cxx/src;../BSP/Driver/LibDriver/AT24Cxx/interface;../BSP/Driver/LibDriver/AT24Cxx/example</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -745,7 +745,7 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Board/bsp_led.h</FilePath>
             </File>
-          </Files>
+          <File><FileName>bsp_storage.c</FileName><FileType>1</FileType><FilePath>../BSP/Board/bsp_storage.c</FilePath></File><File><FileName>bsp_storage.h</FileName><FileType>5</FileType><FilePath>../BSP/Board/bsp_storage.h</FilePath></File></Files>
         </Group>
         <Group>
           <GroupName>BSP/Interface</GroupName>
@@ -1060,7 +1060,7 @@
               <FileType>5</FileType>
               <FilePath>../APP/demos/app_multibutton_demo.h</FilePath>
             </File>
-          </Files>
+          <File><FileName>app_storage_demo.c</FileName><FileType>1</FileType><FilePath>..\APP\demos\app_storage_demo.c</FilePath></File><File><FileName>app_storage_demo.h</FileName><FileType>5</FileType><FilePath>..\APP\demos\app_storage_demo.h</FilePath></File></Files>
         </Group>
         <Group>
           <GroupName>Middleware/MultiButton</GroupName>
@@ -1095,7 +1095,7 @@
         <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
-      </Groups>
+      <Group><GroupName>BSP/Driver/LibDriver/AT24Cxx</GroupName><Files><File><FileName>driver_at24cxx.c</FileName><FileType>1</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/src/driver_at24cxx.c</FilePath></File><File><FileName>driver_at24cxx.h</FileName><FileType>5</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/src/driver_at24cxx.h</FilePath></File><File><FileName>driver_at24cxx_interface.c</FileName><FileType>1</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/interface/driver_at24cxx_interface.c</FilePath></File><File><FileName>driver_at24cxx_interface.h</FileName><FileType>5</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/interface/driver_at24cxx_interface.h</FilePath></File><File><FileName>driver_at24cxx_basic.c</FileName><FileType>1</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/example/driver_at24cxx_basic.c</FilePath></File><File><FileName>driver_at24cxx_basic.h</FileName><FileType>5</FileType><FilePath>../BSP/Driver/LibDriver/AT24Cxx/example/driver_at24cxx_basic.h</FilePath></File></Files></Group></Groups>
     </Target>
   </Targets>
   <RTE>

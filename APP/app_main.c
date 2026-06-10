@@ -15,12 +15,14 @@
 #include "dev_buzzer.h"
 #include "dev_ws2812.h"
 #include "bsp_shell.h"
+#include "bsp_storage.h"
 
 #define LOG_TAG "APP_MAIN"
 #include "bsp_logger.h"
 #include "demos/app_uart_demo.h"
 #include "demos/app_shell_demo.h"
 #include "demos/app_rgb_demo.h"
+#include "demos/app_storage_demo.h"
 #include "tasks/app_sys_monitor.h"
 
 #if 0
@@ -57,6 +59,7 @@ void app_main_init(void)
 
     /* 初始化日志服务并打印测试日志 */
     bsp_logger_init();
+    (void)bsp_storage_init();
     log_i("Hello world");
     log_d("Hello world");
     log_w("Hello world");
@@ -76,6 +79,7 @@ void app_main_init(void)
     //app_uart_demo_init();
     app_shell_demo_init();
     app_rgb_demo_init();
+    app_storage_demo_init();
     app_sys_monitor_init();
 
     /* 后续在此注册其他常驻任务 */
