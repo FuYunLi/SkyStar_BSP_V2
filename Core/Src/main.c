@@ -98,6 +98,7 @@ int main(void)
   MX_I2C1_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
+  MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
     extern void multi_timer_port_init(void);
     multi_timer_port_init();
