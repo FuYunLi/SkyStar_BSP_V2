@@ -18,7 +18,7 @@ static const port_pwm_map_t pwm_mapping[PORT_PWM_MAX] =
 {
     [PORT_PWM_BUZZER] = {&htim13, TIM_CHANNEL_1},
     [PORT_PWM_WS2812] = {&htim5, TIM_CHANNEL_4},
-    [PORT_PWM_LCD_BL] = {NULL, 0}
+    [PORT_PWM_LCD_BL] = {&htim10, TIM_CHANNEL_1}
 };
 
 /**
