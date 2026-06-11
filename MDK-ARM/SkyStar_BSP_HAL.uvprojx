@@ -904,6 +904,16 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Board/bsp_lfs.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_backlight.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Board/bsp_backlight.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_backlight.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Board/bsp_backlight.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1219,6 +1229,16 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Driver/dev_w25q.h</FilePath>
             </File>
+            <File>
+              <FileName>dev_st7789.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/dev_st7789.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_st7789.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/dev_st7789.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1269,6 +1289,16 @@
               <FileType>5</FileType>
               <FilePath>../APP/demos/app_flash_demo.h</FilePath>
             </File>
+            <File>
+              <FileName>app_lcd_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../APP/demos/app_lcd_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_lcd_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../APP/demos/app_lcd_demo.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1300,9 +1330,6 @@
               <FilePath>../APP/tasks/app_sys_monitor.h</FilePath>
             </File>
           </Files>
-        </Group>
-        <Group>
-          <GroupName>::CMSIS</GroupName>
         </Group>
         <Group>
           <GroupName>BSP/Driver/LibDriver/AT24Cxx</GroupName>
@@ -1363,6 +1390,9 @@
               <FilePath>../Middleware/LittleFS/lfs_util.h</FilePath>
             </File>
           </Files>
+        </Group>
+        <Group>
+          <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>
     </Target>

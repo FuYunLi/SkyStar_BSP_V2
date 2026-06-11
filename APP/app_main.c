@@ -25,7 +25,9 @@
 #include "demos/app_storage_demo.h"
 #include "demos/app_spi_demo.h"
 #include "demos/app_flash_demo.h"
+#include "demos/app_lcd_demo.h"
 #include "port_spi.h"
+#include "dev_st7789.h"
 #include "tasks/app_sys_monitor.h"
 
 #if 0
@@ -64,6 +66,9 @@ void app_main_init(void)
     port_spi_init(PORT_SPI_1);
     port_spi_init(PORT_SPI_2);
 
+    /* 初始化 LCD 物理驱动及背光 */
+    lcd_init();
+
     /* 初始化日志服务并打印测试日志 */
     bsp_logger_init();
     (void)bsp_storage_init();
@@ -89,6 +94,7 @@ void app_main_init(void)
     app_storage_demo_init();
     app_spi_demo_init();
     app_flash_demo_init();
+    app_lcd_demo_init();
     app_sys_monitor_init();
 
     /* 后续在此注册其他常驻任务 */

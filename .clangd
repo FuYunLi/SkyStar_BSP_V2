@@ -19,6 +19,7 @@ CompileFlags:
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/BSP/Driver/LibDriver/AT24Cxx/src"
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/BSP/Driver/LibDriver/AT24Cxx/interface"
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/BSP/Driver/LibDriver/AT24Cxx/example"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middleware/LittleFS"
     - "-DUSE_HAL_DRIVER"
     - "-DSTM32F407xx"
     - "-DLWRB_DISABLE_ATOMIC"

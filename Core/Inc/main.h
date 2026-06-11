@@ -77,8 +77,8 @@ void Error_Handler(void);
 #define TOUCH_I2C_SCL_GPIO_Port GPIOD
 #define LCD_DC_Pin GPIO_PIN_14
 #define LCD_DC_GPIO_Port GPIOD
-#define LED_CORE_Pin GPIO_PIN_8
-#define LED_CORE_GPIO_Port GPIOB
+#define LCD_BLK_Pin GPIO_PIN_8
+#define LCD_BLK_GPIO_Port GPIOB
 #define LCD_RST_Pin GPIO_PIN_1
 #define LCD_RST_GPIO_Port GPIOE
 
