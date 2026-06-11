@@ -1,10 +1,7 @@
-<?xml version='1.0' encoding='utf-8'?>
-<Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_projx.xsd">
-
+<?xml version="1.0" encoding="UTF-8"?>
+<Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" noNamespaceSchemaLocation="project_projx.xsd">
   <SchemaVersion>2.1</SchemaVersion>
-
   <Header>### uVision Project, (C) Keil Software</Header>
-
   <Targets>
     <Target>
       <TargetName>SkyStar_BSP_HAL</TargetName>
@@ -446,8 +443,6 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
-                  <CustomArgument />
-                  <IncludeLibraryModules />
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -475,12 +470,6 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
-                    <VariousControls>
-                      <MiscControls />
-                      <Define />
-                      <Undefine />
-                      <IncludePath />
-                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -502,8 +491,6 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
-                  <CustomArgument />
-                  <IncludeLibraryModules />
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -531,12 +518,6 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
-                    <VariousControls>
-                      <MiscControls />
-                      <Define />
-                      <Undefine />
-                      <IncludePath />
-                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -583,8 +564,6 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
-                  <CustomArgument />
-                  <IncludeLibraryModules />
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -612,12 +591,6 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
-                    <VariousControls>
-                      <MiscControls />
-                      <Define />
-                      <Undefine />
-                      <IncludePath />
-                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -639,8 +612,6 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
-                  <CustomArgument />
-                  <IncludeLibraryModules />
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -668,12 +639,6 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
-                    <VariousControls>
-                      <MiscControls />
-                      <Define />
-                      <Undefine />
-                      <IncludePath />
-                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -760,8 +725,6 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
-                  <CustomArgument />
-                  <IncludeLibraryModules />
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -789,12 +752,6 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
-                    <VariousControls>
-                      <MiscControls />
-                      <Define />
-                      <Undefine />
-                      <IncludePath />
-                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1239,7 +1196,17 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Driver/dev_st7789.h</FilePath>
             </File>
-          <File><FileName>dev_ft6336.c</FileName><FileType>1</FileType><FilePath>../BSP/Driver/dev_ft6336.c</FilePath></File><File><FileName>dev_ft6336.h</FileName><FileType>5</FileType><FilePath>../BSP/Driver/dev_ft6336.h</FilePath></File></Files>
+            <File>
+              <FileName>dev_ft6336.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/dev_ft6336.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_ft6336.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/dev_ft6336.h</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>APP/demos</GroupName>
@@ -1299,7 +1266,17 @@
               <FileType>5</FileType>
               <FilePath>../APP/demos/app_lcd_demo.h</FilePath>
             </File>
-          <File><FileName>app_touch_demo.c</FileName><FileType>1</FileType><FilePath>../APP/demos/app_touch_demo.c</FilePath></File><File><FileName>app_touch_demo.h</FileName><FileType>5</FileType><FilePath>../APP/demos/app_touch_demo.h</FilePath></File></Files>
+            <File>
+              <FileName>app_touch_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../APP/demos/app_touch_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_touch_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../APP/demos/app_touch_demo.h</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>Middleware/MultiButton</GroupName>
@@ -1397,7 +1374,6 @@
       </Groups>
     </Target>
   </Targets>
-
   <RTE>
     <apis />
     <components>
@@ -1410,7 +1386,6 @@
     </components>
     <files />
   </RTE>
-
   <LayerInfo>
     <Layers>
       <Layer>
@@ -1419,5 +1394,5 @@
       </Layer>
     </Layers>
   </LayerInfo>
-
 </Project>
+
