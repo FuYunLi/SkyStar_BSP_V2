@@ -1,0 +1,4 @@
+#ifndef LV_EVDEV_PRIVATE_H
+#define LV_EVDEV_PRIVATE_H
+
+#endif /* LV_EVDEV_PRIVATE_H */
