@@ -1299,7 +1299,7 @@
               <FileType>5</FileType>
               <FilePath>../APP/demos/app_lcd_demo.h</FilePath>
             </File>
-          </Files>
+          <File><FileName>app_touch_demo.c</FileName><FileType>1</FileType><FilePath>../APP/demos/app_touch_demo.c</FilePath></File><File><FileName>app_touch_demo.h</FileName><FileType>5</FileType><FilePath>../APP/demos/app_touch_demo.h</FilePath></File></Files>
         </Group>
         <Group>
           <GroupName>Middleware/MultiButton</GroupName>

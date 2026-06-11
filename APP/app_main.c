@@ -26,6 +26,7 @@
 #include "demos/app_spi_demo.h"
 #include "demos/app_flash_demo.h"
 #include "demos/app_lcd_demo.h"
+#include "demos/app_touch_demo.h"
 #include "port_spi.h"
 #include "dev_st7789.h"
 #include "tasks/app_sys_monitor.h"
@@ -95,6 +96,7 @@ void app_main_init(void)
     app_spi_demo_init();
     app_flash_demo_init();
     app_lcd_demo_init();
+    app_touch_demo_init();
     app_sys_monitor_init();
 
     /* 后续在此注册其他常驻任务 */
