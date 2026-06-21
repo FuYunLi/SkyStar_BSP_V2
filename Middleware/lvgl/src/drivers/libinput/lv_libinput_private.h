@@ -1,0 +1,4 @@
+#ifndef LV_LIBINPUT_PRIVATE_H
+#define LV_LIBINPUT_PRIVATE_H
+
+#endif /* LV_LIBINPUT_PRIVATE_H */

@@ -13,15 +13,37 @@ static char shell_buffer[512];
 
 /**
  * @brief 移植层的底层写接口
- * @note 采用状态驱动与写入保障机制。由 bsp_uart_write 异步接管发送，成功则返回期望长度，失败则返回 0。
+ * @note 采用分包与写等待机制，当发送环形缓冲区满时进行有限等待，避免命令输出被截断。
  */
 static short user_shell_write(char *data, unsigned short len)
 {
-    if (bsp_uart_write((const uint8_t *)data, len) == BSP_OK)
+    unsigned short remaining = len;
+    uint32_t start_tick = HAL_GetTick();
+
+    while (remaining > 0)
     {
-        return len;
+        uint16_t free_space = bsp_uart_get_tx_free_space();
+        if (free_space > 0)
+        {
+            uint16_t write_len = (remaining < (unsigned short)free_space) ? remaining : (unsigned short)free_space;
+            if (bsp_uart_write((const uint8_t *)data, write_len) == BSP_OK)
+            {
+                data += write_len;
+                remaining -= write_len;
+                start_tick = HAL_GetTick(); // 重置超时计时器
+            }
+        }
+        else
+        {
+            // 超过 500 毫秒未释放空间则强制退出，防止硬件挂死导致死锁
+            if (HAL_GetTick() - start_tick > 500U)
+            {
+                break;
+            }
+        }
     }
-    return 0;
+
+    return len - remaining;
 }
 
 /**

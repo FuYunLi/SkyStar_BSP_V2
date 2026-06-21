@@ -4,7 +4,16 @@
  */
 
 #include "dev_ft6336.h"
+#include "port_gpio.h"
 #include <stddef.h>
+
+/* 中断触发标志与 EXTI 回调 */
+static volatile bool g_touch_interrupt_fired = false;
+
+static void ft6336_exti_callback(void)
+{
+    g_touch_interrupt_fired = true;
+}
 
 /* FT6336 内部寄存器偏置地址定义 */
 #define FT6336_REG_TD_STATUS       0x02U /* 触摸状态和点数寄存器 */
@@ -74,6 +83,13 @@ bsp_status_t dev_ft6336_init(ft6336_dev_t *dev)
         return ret;
     }
 
+    /* 注册触摸引脚的外部中断回调函数，配置为下降沿触发 */
+    ret = port_gpio_exti_init(PORT_GPIO_TOUCH_INT, PORT_EXTI_TRIGGER_FALLING, ft6336_exti_callback);
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
+
     /* 读取芯片厂商 ID 寄存器进行硬件在线校验 */
     uint8_t vendor_id = 0;
     ret = ft6336_read_regs(dev, FT6336_REG_CHIP_VENDOR_ID, &vendor_id, 1);
@@ -111,6 +127,24 @@ bsp_status_t dev_ft6336_read_touch(ft6336_dev_t *dev)
     {
         return BSP_EINVAL;
     }
+
+    /* 读取 INT 引脚的物理电平作为兜底 */
+    port_gpio_state_t int_state = PORT_GPIO_HIGH;
+    port_gpio_read(PORT_GPIO_TOUCH_INT, &int_state);
+
+    /* 若未检测到中断触发标志且物理引脚为高电平，说明无有效触摸，直接返回 */
+    if (!g_touch_interrupt_fired && (int_state == PORT_GPIO_HIGH))
+    {
+        dev->touch_count = 0;
+        for (int i = 0; i < FT6336_MAX_TOUCH_POINTS; ++i)
+        {
+            dev->points[i].valid = false;
+        }
+        return BSP_OK;
+    }
+
+    /* 清除中断标记 */
+    g_touch_interrupt_fired = false;
 
     /* 寄存器缓冲区：TD_STATUS (1 字节) + 最多 2 个点的触摸数据 (每点 6 字节) */
     uint8_t data_buf[1 + FT6336_MAX_TOUCH_POINTS * 6] = {0};
