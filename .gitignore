@@ -93,3 +93,4 @@ desktop.ini
 # clangd 索引缓存
 .cache/
 MDK-ARM/SkyStar_BSP_HAL_build.log
+.trae
