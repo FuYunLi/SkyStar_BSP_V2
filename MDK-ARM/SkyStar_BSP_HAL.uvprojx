@@ -3446,6 +3446,16 @@
               <FileType>5</FileType>
               <FilePath>../Middleware/lvgl/examples/porting/lv_port_indev.h</FilePath>
             </File>
+            <File>
+              <FileName>lv_port_fs.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Middleware/lvgl/examples/porting/lv_port_fs.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_port_fs.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Middleware/lvgl/examples/porting/lv_port_fs.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -3895,6 +3905,16 @@
               <FileName>app_uart_demo.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_uart_demo.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_lvgl_fs_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_lvgl_fs_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_lvgl_fs_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_lvgl_fs_demo.h</FilePath>
             </File>
           </Files>
         </Group>

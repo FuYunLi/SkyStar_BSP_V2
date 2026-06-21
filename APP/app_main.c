@@ -27,6 +27,7 @@
 #include "demos/app_flash_demo.h"
 #include "demos/app_lcd_demo.h"
 #include "demos/app_touch_demo.h"
+#include "demos/app_lvgl_fs_demo.h"
 #include "port_spi.h"
 #include "dev_st7789.h"
 #include "tasks/app_sys_monitor.h"
@@ -35,6 +36,7 @@
 #include "lvgl.h"
 #include "examples/porting/lv_port_disp.h"
 #include "examples/porting/lv_port_indev.h"
+#include "examples/porting/lv_port_fs.h"
 
 /* LVGL 测试按钮回调 */
 static void btn_event_cb(lv_event_t *e)
@@ -114,6 +116,7 @@ void app_main_init(void)
     lv_init();
     lv_port_disp_init();
     lv_port_indev_init();
+    lv_port_fs_init();
 
     /* 创建极简测试界面：白色背景 + 蓝色按钮 + 状态提示 */
     lv_obj_t *scr = lv_screen_active();
@@ -151,6 +154,7 @@ void app_main_init(void)
     app_lcd_demo_init();
     app_touch_demo_init();
     app_sys_monitor_init();
+    app_lvgl_fs_demo_init();
 
     /* 后续在此注册其他常驻任务 */
 }
