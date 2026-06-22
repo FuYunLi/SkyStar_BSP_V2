@@ -96,7 +96,7 @@ static uint32_t calc_tx_timeout_ms(uint16_t len, uint32_t baudrate)
 }
 
 /* 循环 DMA 接收通道初始化，重置软件写指针基准 */
-static bsp_status_t start_rx_dma(uart_context_t *ctx)
+static bsp_status_t s_rx_start_dma(uart_context_t *ctx)
 {
     /* 循环模式利用硬件自动绕回，无需软件重启 DMA */
     ctx->huart->hdmarx->Init.Mode = DMA_CIRCULAR;
@@ -114,7 +114,7 @@ static bsp_status_t start_rx_dma(uart_context_t *ctx)
 }
 
 /* 从 tx_rb 取出一段连续数据发起 DMA（队列模式专用） */
-static void tx_start_dma(uart_context_t *ctx)
+static void s_tx_start_dma(uart_context_t *ctx)
 {
     if (ctx->tx_busy)
         return;
@@ -193,7 +193,7 @@ bsp_status_t port_uart_init(port_uart_id_t uart, const port_uart_config_t *cfg)
     ctx->initialized = true;
 
     /* 启动 DMA 接收 */
-    if (start_rx_dma(ctx) != BSP_OK)
+    if (s_rx_start_dma(ctx) != BSP_OK)
         return BSP_ERROR;
 
     __HAL_UART_ENABLE_IT(ctx->huart, UART_IT_IDLE);
@@ -267,7 +267,7 @@ bsp_status_t port_uart_write_async(port_uart_id_t uart, const uint8_t *data, uin
         if (written < (lwrb_sz_t)len)
             return BSP_ERROR;
 
-        tx_start_dma(ctx);
+        s_tx_start_dma(ctx);
         return BSP_OK;
     }
     else
@@ -341,7 +341,7 @@ bsp_status_t port_uart_enable_rx(port_uart_id_t uart)
     if (ctx->rx_enabled)
         return BSP_OK;
 
-    bsp_status_t ret = start_rx_dma(ctx);
+    bsp_status_t ret = s_rx_start_dma(ctx);
     if (ret == BSP_OK)
     {
         __HAL_UART_ENABLE_IT(ctx->huart, UART_IT_IDLE);
@@ -427,7 +427,7 @@ bsp_status_t port_uart_recover(port_uart_id_t uart)
     ctx->tx_dma_len = 0;
 
     if (ctx->rx_enabled)
-        start_rx_dma(ctx);
+        s_rx_start_dma(ctx);
 
     return BSP_OK;
 }
@@ -504,7 +504,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
             if (ctx->on_tx_complete != NULL)
                 ctx->on_tx_complete((uint8_t)uart, BSP_OK, ctx->user_ctx);
 
-            tx_start_dma(ctx);
+            s_tx_start_dma(ctx);
         }
         else
         {
@@ -544,7 +544,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
         if (ctx->rx_enabled)
         {
             /* 恢复脱机的循环 DMA 接收流 */
-            start_rx_dma(ctx);
+            s_rx_start_dma(ctx);
         }
 
         break;
