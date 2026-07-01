@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "port_uart.h"
 #include "lvgl.h"
+#include "dev_ec11.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

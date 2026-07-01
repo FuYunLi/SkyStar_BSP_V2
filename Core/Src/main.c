@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "dma.h"
 #include "i2c.h"
 #include "spi.h"
@@ -99,6 +100,8 @@ int main(void)
   MX_SPI1_Init();
   MX_SPI2_Init();
   MX_TIM10_Init();
+  MX_ADC1_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
     extern void multi_timer_port_init(void);
     multi_timer_port_init();
