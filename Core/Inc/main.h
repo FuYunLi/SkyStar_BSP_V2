@@ -73,6 +73,8 @@ void Error_Handler(void);
 #define WS2812_GPIO_Port GPIOA
 #define BUZZER_Pin GPIO_PIN_6
 #define BUZZER_GPIO_Port GPIOA
+#define IMU_CS_Pin GPIO_PIN_7
+#define IMU_CS_GPIO_Port GPIOE
 #define KEY2_Pin GPIO_PIN_8
 #define KEY2_GPIO_Port GPIOE
 #define TOUCH_I2C_SDA_Pin GPIO_PIN_13
