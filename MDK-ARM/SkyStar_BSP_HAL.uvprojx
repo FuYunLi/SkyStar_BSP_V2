@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" noNamespaceSchemaLocation="project_projx.xsd">
+<?xml version='1.0' encoding='utf-8'?>
+<Project noNamespaceSchemaLocation="project_projx.xsd">
   <SchemaVersion>2.1</SchemaVersion>
   <Header>### uVision Project, (C) Keil Software</Header>
   <Targets>
@@ -3736,7 +3736,7 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\Driver\dev_ws2812.h</FilePath>
             </File>
-          </Files>
+          <File><FileName>dev_sd3078.c</FileName><FileType>1</FileType><FilePath>../BSP/Driver/dev_sd3078.c</FilePath></File><File><FileName>dev_sd3078.h</FileName><FileType>5</FileType><FilePath>../BSP/Driver/dev_sd3078.h</FilePath></File></Files>
         </Group>
         <Group>
           <GroupName>BSP/Driver/LibDriver/AT24Cxx</GroupName>
@@ -3926,7 +3926,7 @@
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_lvgl_fs_demo.h</FilePath>
             </File>
-          </Files>
+          <File><FileName>app_rtc_demo.c</FileName><FileType>1</FileType><FilePath>../APP/demos/app_rtc_demo.c</FilePath></File><File><FileName>app_rtc_demo.h</FileName><FileType>5</FileType><FilePath>../APP/demos/app_rtc_demo.h</FilePath></File></Files>
         </Group>
         <Group>
           <GroupName>::CMSIS</GroupName>
@@ -3955,4 +3955,3 @@
     </Layers>
   </LayerInfo>
 </Project>
-
