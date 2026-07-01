@@ -43,6 +43,8 @@ typedef enum
     PORT_GPIO_W25Q_CS,
     /* SD3078 中断 (PE3) */
     PORT_GPIO_SD3078_INT,
+    /* IMU CS (PE7) */
+    PORT_GPIO_IMU_CS,
     /* 逻辑引脚最大值 */
     PORT_GPIO_MAX
 } port_gpio_id_t;

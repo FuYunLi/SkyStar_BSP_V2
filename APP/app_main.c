@@ -21,6 +21,8 @@
 #include "demos/app_sensor_demo.h"
 #include "bsp_power.h"
 #include "demos/app_power_demo.h"
+#include "bsp_imu.h"
+#include "demos/app_imu_demo.h"
 
 #define LOG_TAG "APP_MAIN"
 #include "bsp_logger.h"
@@ -74,6 +76,13 @@ static void       log_test_callback(MultiTimer *timer, void *userData)
 }
 #endif
 
+static MultiTimer s_timer_imu;
+static void imu_timer_callback(MultiTimer *timer, void *userData)
+{
+    (void)bsp_imu_update();
+    multiTimerStart(timer, 10, imu_timer_callback, userData);
+}
+
 /* ================================================================
  * 应用初始化
  * ================================================================ */
@@ -107,6 +116,7 @@ void app_main_init(void)
     (void)bsp_storage_init();
     (void)bsp_sensor_init();
     (void)bsp_power_init();
+    (void)bsp_imu_init();
     log_i("Hello world");
     log_d("Hello world");
     log_w("Hello world");
@@ -167,6 +177,9 @@ void app_main_init(void)
     app_rtc_demo_init();
     app_sensor_demo_init();
     app_power_demo_init();
+    app_imu_demo_init();
+
+    multiTimerStart(&s_timer_imu, 10, imu_timer_callback, NULL);
 
     /* 后续在此注册其他常驻任务 */
 }
