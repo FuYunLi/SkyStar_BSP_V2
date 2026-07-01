@@ -17,6 +17,8 @@
 #include "bsp_shell.h"
 #include "bsp_storage.h"
 #include "demos/app_rtc_demo.h"
+#include "bsp_sensor.h"
+#include "demos/app_sensor_demo.h"
 
 #define LOG_TAG "APP_MAIN"
 #include "bsp_logger.h"
@@ -101,6 +103,7 @@ void app_main_init(void)
     /* 初始化日志服务并打印测试日志 */
     bsp_logger_init();
     (void)bsp_storage_init();
+    (void)bsp_sensor_init();
     log_i("Hello world");
     log_d("Hello world");
     log_w("Hello world");
@@ -159,6 +162,7 @@ void app_main_init(void)
     app_sys_monitor_init();
     app_lvgl_fs_demo_init();
     app_rtc_demo_init();
+    app_sensor_demo_init();
 
     /* 后续在此注册其他常驻任务 */
 }
