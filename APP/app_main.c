@@ -16,6 +16,7 @@
 #include "dev_ws2812.h"
 #include "bsp_shell.h"
 #include "bsp_storage.h"
+#include "demos/app_rtc_demo.h"
 
 #define LOG_TAG "APP_MAIN"
 #include "bsp_logger.h"
@@ -157,6 +158,7 @@ void app_main_init(void)
     app_lcd_touch_demo_init();
     app_sys_monitor_init();
     app_lvgl_fs_demo_init();
+    app_rtc_demo_init();
 
     /* 后续在此注册其他常驻任务 */
 }
