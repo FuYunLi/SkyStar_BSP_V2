@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" noNamespaceSchemaLocation="project_projx.xsd">
+<?xml version='1.0' encoding='utf-8'?>
+<Project noNamespaceSchemaLocation="project_projx.xsd">
   <SchemaVersion>2.1</SchemaVersion>
   <Header>### uVision Project, (C) Keil Software</Header>
   <Targets>
@@ -3878,7 +3878,7 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\Interface\soft_i2c.h</FilePath>
             </File>
-          </Files>
+          <File><FileName>port_adc.c</FileName><FileType>1</FileType><FilePath>..\BSP\Interface\port_adc.c</FilePath></File><File><FileName>port_adc.h</FileName><FileType>5</FileType><FilePath>..\BSP\Interface\port_adc.h</FilePath></File></Files>
         </Group>
         <Group>
           <GroupName>BSP/Driver</GroupName>
@@ -3998,7 +3998,7 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\Driver\dev_ec11.h</FilePath>
             </File>
-          </Files>
+          <File><FileName>dev_potentiometer.c</FileName><FileType>1</FileType><FilePath>..\BSP\Driver\dev_potentiometer.c</FilePath></File><File><FileName>dev_potentiometer.h</FileName><FileType>5</FileType><FilePath>..\BSP\Driver\dev_potentiometer.h</FilePath></File></Files>
         </Group>
         <Group>
           <GroupName>BSP/Driver/LibDriver/AT24Cxx</GroupName>
@@ -4238,7 +4238,7 @@
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_ec11_demo.h</FilePath>
             </File>
-          </Files>
+          <File><FileName>app_adc_demo.c</FileName><FileType>1</FileType><FilePath>..\APP\demos\app_adc_demo.c</FilePath></File><File><FileName>app_adc_demo.h</FileName><FileType>5</FileType><FilePath>..\APP\demos\app_adc_demo.h</FilePath></File></Files>
         </Group>
         <Group>
           <GroupName>BSP/Driver/LibDriver/AHT20</GroupName>
@@ -4337,4 +4337,3 @@
     </Layers>
   </LayerInfo>
 </Project>
-
