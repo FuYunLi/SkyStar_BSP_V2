@@ -25,6 +25,8 @@
 #include "demos/app_imu_demo.h"
 #include "bsp_ec11.h"
 #include "demos/app_ec11_demo.h"
+#include "dev_potentiometer.h"
+#include "demos/app_adc_demo.h"
 
 #define LOG_TAG "APP_MAIN"
 #include "bsp_logger.h"
@@ -120,6 +122,7 @@ void app_main_init(void)
     (void)bsp_power_init();
     (void)bsp_imu_init();
     (void)bsp_ec11_init();
+    (void)dev_potentiometer_init();
     log_i("Hello world");
     log_d("Hello world");
     log_w("Hello world");
@@ -182,6 +185,7 @@ void app_main_init(void)
     app_power_demo_init();
     app_imu_demo_init();
     app_ec11_demo_init();
+    app_adc_demo_init();
 
     multiTimerStart(&s_timer_imu, 10, imu_timer_callback, NULL);
 
