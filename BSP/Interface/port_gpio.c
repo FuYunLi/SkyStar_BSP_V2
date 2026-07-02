@@ -29,7 +29,9 @@ static const port_gpio_map_t gpio_mapping[] =
     [PORT_GPIO_TOUCH_INT] = {GPIOE, GPIO_PIN_2},
     [PORT_GPIO_W25Q_CS] = {GPIOE, GPIO_PIN_4},
     [PORT_GPIO_SD3078_INT] = {GPIOE, GPIO_PIN_3},
-    [PORT_GPIO_IMU_CS] = {GPIOE, GPIO_PIN_7}
+    [PORT_GPIO_IMU_CS] = {GPIOE, GPIO_PIN_7},
+    [PORT_GPIO_EC11_A] = {GPIOD, GPIO_PIN_12},
+    [PORT_GPIO_EC11_B] = {GPIOD, GPIO_PIN_13}
 };
 
 /* 外部中断业务回调函数表 */

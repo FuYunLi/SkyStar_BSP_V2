@@ -83,6 +83,10 @@ void Error_Handler(void);
 #define LCD_CS_GPIO_Port GPIOE
 #define TOUCH_I2C_SCL_Pin GPIO_PIN_10
 #define TOUCH_I2C_SCL_GPIO_Port GPIOD
+#define EC11_ENCODER_A_Pin GPIO_PIN_12
+#define EC11_ENCODER_A_GPIO_Port GPIOD
+#define EC11_ENCODER_B_Pin GPIO_PIN_13
+#define EC11_ENCODER_B_GPIO_Port GPIOD
 #define LCD_DC_Pin GPIO_PIN_14
 #define LCD_DC_GPIO_Port GPIOD
 #define LCD_BLK_Pin GPIO_PIN_8
