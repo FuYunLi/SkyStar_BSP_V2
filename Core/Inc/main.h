@@ -89,6 +89,8 @@ void Error_Handler(void);
 #define EC11_ENCODER_B_GPIO_Port GPIOD
 #define LCD_DC_Pin GPIO_PIN_14
 #define LCD_DC_GPIO_Port GPIOD
+#define TF_DET_Pin GPIO_PIN_3
+#define TF_DET_GPIO_Port GPIOD
 #define LCD_BLK_Pin GPIO_PIN_8
 #define LCD_BLK_GPIO_Port GPIOB
 #define LCD_RST_Pin GPIO_PIN_1
