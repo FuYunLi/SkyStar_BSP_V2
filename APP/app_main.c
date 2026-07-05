@@ -43,6 +43,7 @@
 #include "port_spi.h"
 #include "dev_st7789.h"
 #include "tasks/app_sys_monitor.h"
+#include "demos/app_fatfs_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -186,6 +187,7 @@ void app_main_init(void)
     app_imu_demo_init();
     app_ec11_demo_init();
     app_adc_demo_init();
+    (void)app_fatfs_demo_init();
 
     multiTimerStart(&s_timer_imu, 10, imu_timer_callback, NULL);
 
