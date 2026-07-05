@@ -44,6 +44,7 @@
 #include "dev_st7789.h"
 #include "tasks/app_sys_monitor.h"
 #include "demos/app_fatfs_demo.h"
+#include "demos/app_ymodem_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -188,6 +189,7 @@ void app_main_init(void)
     app_ec11_demo_init();
     app_adc_demo_init();
     (void)app_fatfs_demo_init();
+    (void)app_ymodem_demo_init();
 
     multiTimerStart(&s_timer_imu, 10, imu_timer_callback, NULL);
 
@@ -201,6 +203,7 @@ void app_main_process(void)
 {
     multiTimerYield();
     bsp_shell_process();
+    app_ymodem_demo_process();
 
     /* LVGL GUI 任务处理 */
     (void)lv_timer_handler();

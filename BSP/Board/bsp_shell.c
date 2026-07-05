@@ -52,6 +52,13 @@ static short user_shell_write(char *data, unsigned short len)
  */
 static short bsp_shell_read(char *data, unsigned short len)
 {
+    extern volatile bool g_ymodem_active;
+    
+    if (g_ymodem_active)
+    {
+        return 0;
+    }
+    
     return (short)bsp_uart_read((uint8_t *)data, len);
 }
 
