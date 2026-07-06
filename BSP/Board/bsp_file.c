@@ -1,0 +1,197 @@
+/**
+ * @file bsp_file.c
+ * @brief 板级虚拟文件系统 (VFS) 胶水层实现
+ * @note 支持将文件操作动态路由至 FatFS (SD卡) 或 LittleFS (W25Q128 Flash)
+ */
+
+#include "bsp_file.h"
+#include "bsp_lfs.h"
+#include <string.h>
+
+/* =========================================================================
+ * 导出 API 接口
+ * ========================================================================= */
+
+/**
+ * @brief 打开或创建文件
+ */
+bsp_status_t bsp_file_open(bsp_file_t *file, const char *path, uint8_t flags)
+{
+    if (file == NULL || path == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    /* 1. 路径路由：以 "0:" 开头则分发至 FatFS (SD卡) */
+    if (strncmp(path, "0:", 2) == 0)
+    {
+        file->type = BSP_FILE_TYPE_FATFS;
+
+        BYTE mode = 0;
+        if (flags & BSP_FILE_READ)
+        {
+            mode |= FA_READ;
+        }
+        if (flags & BSP_FILE_WRITE)
+        {
+            mode |= FA_WRITE;
+        }
+        if (flags & BSP_FILE_CREATE)
+        {
+            if (flags & BSP_FILE_TRUNC)
+            {
+                mode |= FA_CREATE_ALWAYS;
+            }
+            else
+            {
+                mode |= FA_OPEN_ALWAYS;
+            }
+        }
+
+        FRESULT fr = f_open(&file->handle.fat_file, path, mode);
+        return (fr == FR_OK) ? BSP_OK : BSP_ERROR;
+    }
+    /* 2. 路径路由：以 "flash/" 开头则分发至 LittleFS (板载 Flash) */
+    else if (strncmp(path, "flash/", 6) == 0)
+    {
+        file->type = BSP_FILE_TYPE_LITTLEFS;
+
+        lfs_t *lfs = bsp_lfs_get_handle();
+        if (lfs == NULL)
+        {
+            return BSP_ENODEV;
+        }
+
+        int mode = 0;
+        if (flags & BSP_FILE_READ)
+        {
+            mode |= LFS_O_RDONLY;
+        }
+        if (flags & BSP_FILE_WRITE)
+        {
+            mode |= LFS_O_WRONLY;
+        }
+        if (flags & BSP_FILE_CREATE)
+        {
+            mode |= LFS_O_CREAT;
+        }
+        if (flags & BSP_FILE_TRUNC)
+        {
+            mode |= LFS_O_TRUNC;
+        }
+
+        /* 剥离 "flash/" 前缀，直接将相对路径传给 LittleFS */
+        const char *lfs_path = path + 6;
+
+        int err = lfs_file_open(lfs, &file->handle.lfs_file, lfs_path, mode);
+        return (err >= 0) ? BSP_OK : BSP_ERROR;
+    }
+
+    file->type = BSP_FILE_TYPE_UNKNOWN;
+    return BSP_EINVAL;
+}
+
+/**
+ * @brief 写入文件数据
+ */
+bsp_status_t bsp_file_write(bsp_file_t *file, const void *buf, uint32_t len, uint32_t *written)
+{
+    if (file == NULL || buf == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    if (file->type == BSP_FILE_TYPE_FATFS)
+    {
+        UINT bw = 0;
+        FRESULT fr = f_write(&file->handle.fat_file, buf, len, &bw);
+        if (written != NULL)
+        {
+            *written = (uint32_t)bw;
+        }
+        return (fr == FR_OK) ? BSP_OK : BSP_ERROR;
+    }
+    else if (file->type == BSP_FILE_TYPE_LITTLEFS)
+    {
+        lfs_t *lfs = bsp_lfs_get_handle();
+        if (lfs == NULL)
+        {
+            return BSP_ENODEV;
+        }
+
+        lfs_ssize_t res = lfs_file_write(lfs, &file->handle.lfs_file, buf, len);
+        if (res >= 0)
+        {
+            if (written != NULL)
+            {
+                *written = (uint32_t)res;
+            }
+            return BSP_OK;
+        }
+        return BSP_ERROR;
+    }
+
+    return BSP_EINVAL;
+}
+
+/**
+ * @brief 关闭文件并释放资源
+ */
+bsp_status_t bsp_file_close(bsp_file_t *file)
+{
+    if (file == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    if (file->type == BSP_FILE_TYPE_FATFS)
+    {
+        FRESULT fr = f_close(&file->handle.fat_file);
+        file->type = BSP_FILE_TYPE_UNKNOWN;
+        return (fr == FR_OK) ? BSP_OK : BSP_ERROR;
+    }
+    else if (file->type == BSP_FILE_TYPE_LITTLEFS)
+    {
+        lfs_t *lfs = bsp_lfs_get_handle();
+        if (lfs == NULL)
+        {
+            return BSP_ENODEV;
+        }
+
+        int err = lfs_file_close(lfs, &file->handle.lfs_file);
+        file->type = BSP_FILE_TYPE_UNKNOWN;
+        return (err >= 0) ? BSP_OK : BSP_ERROR;
+    }
+
+    return BSP_EINVAL;
+}
+
+/**
+ * @brief 同步文件数据到物理介质
+ */
+bsp_status_t bsp_file_sync(bsp_file_t *file)
+{
+    if (file == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    if (file->type == BSP_FILE_TYPE_FATFS)
+    {
+        FRESULT fr = f_sync(&file->handle.fat_file);
+        return (fr == FR_OK) ? BSP_OK : BSP_ERROR;
+    }
+    else if (file->type == BSP_FILE_TYPE_LITTLEFS)
+    {
+        lfs_t *lfs = bsp_lfs_get_handle();
+        if (lfs == NULL)
+        {
+            return BSP_ENODEV;
+        }
+
+        int err = lfs_file_sync(lfs, &file->handle.lfs_file);
+        return (err >= 0) ? BSP_OK : BSP_ERROR;
+    }
+
+    return BSP_EINVAL;
+}
