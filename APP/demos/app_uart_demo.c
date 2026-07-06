@@ -100,7 +100,7 @@ static void periodic_tx_callback(MultiTimer *timer, void *userData)
 
     /* 周期性使用阻塞 printf 进行基础吞吐压力测试 */
     printf("[UART DEMO] Periodic print. Count: %u, Tick: %u ms\r\n", 
-           (unsigned int)s_count, (unsigned int)HAL_GetTick());
+           (unsigned int)s_count, (unsigned int)bsp_tick_get_ms());
 
     /* 周期性通过异步队列发送大块数据 */
     const char *msg = "===> Async queue transmission block test <===\r\n";

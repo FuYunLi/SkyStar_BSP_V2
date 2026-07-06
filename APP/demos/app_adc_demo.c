@@ -123,7 +123,7 @@ static int shell_pot_monitor(int argc, char *argv[])
             log_e("Error reading potentiometer percent! ret = %d", status);
             break;
         }
-        HAL_Delay(50);
+        bsp_tick_delay_ms(50);
     }
 
     log_i("Potentiometer monitoring finished.");
