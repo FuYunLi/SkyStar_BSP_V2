@@ -6,7 +6,7 @@
 #include "app_ymodem_demo.h"
 #include "ymodem.h"
 #include "bsp_uart.h"
-#include "fatfs.h"
+#include "bsp_file.h"
 #include "shell.h"
 
 #define LOG_TAG "YMODEM_DEMO"
@@ -20,9 +20,12 @@
 volatile bool g_ymodem_active = false;
 
 static ymodem_ctx_t s_ymodem_ctx;
-static FIL s_ymodem_file;
+static bsp_file_t s_ymodem_file;
 static volatile bool s_ymodem_file_opened = false;
 static uint32_t s_last_tick = 0U;
+
+/* 存储目标前缀，默认为 0:/ (FatFS/SD卡) */
+static char s_filepath_prefix[16] = "0:/";
 
 /* ================================================================
  * Ymodem 底层操作回调函数实现
@@ -44,7 +47,7 @@ static int s_ymodem_on_file_header(ymodem_ctx_t *ctx, const char *filename, uint
 {
     (void)ctx;
     char filepath[128];
-    FRESULT fr;
+    bsp_status_t status;
 
     /* 剥离可能含有的目录前缀，仅提取纯文件名 */
     const char *basename = filename;
@@ -58,14 +61,14 @@ static int s_ymodem_on_file_header(ymodem_ctx_t *ctx, const char *filename, uint
         p++;
     }
 
-    /* 拼接写入 TF 卡的完整路径 */
-    snprintf(filepath, sizeof(filepath), "0:/%s", basename);
+    /* 动态拼接存储前缀与纯文件名 */
+    snprintf(filepath, sizeof(filepath), "%s%s", s_filepath_prefix, basename);
     log_i("Ymodem: Creating destination file: %s (%u bytes)", filepath, (unsigned int)filesize);
 
-    fr = f_open(&s_ymodem_file, filepath, FA_CREATE_ALWAYS | FA_WRITE);
-    if (fr != FR_OK)
+    status = bsp_file_open(&s_ymodem_file, filepath, BSP_FILE_CREATE | BSP_FILE_TRUNC | BSP_FILE_WRITE);
+    if (status != BSP_OK)
     {
-        log_e("Ymodem: Failed to create file: %s (Error code: %d)", filepath, (int)fr);
+        log_e("Ymodem: Failed to create file: %s (Error code: %d)", filepath, (int)status);
         s_ymodem_file_opened = false;
         return -1;
     }
@@ -81,8 +84,8 @@ static int s_ymodem_on_data_block(ymodem_ctx_t *ctx, const uint8_t *data, uint32
 {
     (void)ctx;
     (void)offset;
-    UINT bw = 0;
-    FRESULT fr;
+    uint32_t bw = 0;
+    bsp_status_t status;
 
     if (!s_ymodem_file_opened)
     {
@@ -90,15 +93,15 @@ static int s_ymodem_on_data_block(ymodem_ctx_t *ctx, const uint8_t *data, uint32
         return -1;
     }
 
-    fr = f_write(&s_ymodem_file, data, size, &bw);
-    if (fr != FR_OK || bw != size)
+    status = bsp_file_write(&s_ymodem_file, data, size, &bw);
+    if (status != BSP_OK || bw != size)
     {
-        log_e("Ymodem: File write error: %d (Written: %u/%u)", (int)fr, (unsigned int)bw, (unsigned int)size);
+        log_e("Ymodem: File write error: %d (Written: %u/%u)", (int)status, (unsigned int)bw, (unsigned int)size);
         return -1;
     }
 
     /* 实时数据刷新，以防传输突发中断导致数据损坏 */
-    (void)f_sync(&s_ymodem_file);
+    (void)bsp_file_sync(&s_ymodem_file);
     
     return 0;
 }
@@ -112,7 +115,7 @@ static void s_ymodem_on_transfer_end(ymodem_ctx_t *ctx, ymodem_result_t result)
     
     if (s_ymodem_file_opened)
     {
-        (void)f_close(&s_ymodem_file);
+        (void)bsp_file_close(&s_ymodem_file);
         s_ymodem_file_opened = false;
     }
 
@@ -149,7 +152,7 @@ static const ymodem_ops_t s_ymodem_ops =
 bsp_status_t app_ymodem_demo_init(void)
 {
     g_ymodem_active = false;
-    s_last_tick = HAL_GetTick();
+    s_last_tick = bsp_tick_get_ms();
     return ymodem_init(&s_ymodem_ctx, &s_ymodem_ops) == 0 ? BSP_OK : BSP_ERROR;
 }
 
@@ -158,7 +161,7 @@ bsp_status_t app_ymodem_demo_init(void)
  */
 void app_ymodem_demo_process(void)
 {
-    uint32_t current_tick = HAL_GetTick();
+    uint32_t current_tick = bsp_tick_get_ms();
     uint32_t elapsed = current_tick - s_last_tick;
     s_last_tick = current_tick;
 
@@ -187,13 +190,24 @@ void app_ymodem_demo_process(void)
  */
 static int shell_ymodem_recv(int argc, char *argv[])
 {
-    (void)argc;
-    (void)argv;
-
     if (g_ymodem_active)
     {
         log_w("Ymodem: Session is already active.");
         return -1;
+    }
+
+    /* 解析存储目标路径前缀 */
+    if (argc == 2 && strcmp(argv[1], "-flash") == 0)
+    {
+        strncpy(s_filepath_prefix, "flash/", sizeof(s_filepath_prefix) - 1);
+        s_filepath_prefix[sizeof(s_filepath_prefix) - 1] = '\0';
+        log_i("Ymodem: Target storage set to Board SPI Flash (LittleFS)");
+    }
+    else
+    {
+        strncpy(s_filepath_prefix, "0:/", sizeof(s_filepath_prefix) - 1);
+        s_filepath_prefix[sizeof(s_filepath_prefix) - 1] = '\0';
+        log_i("Ymodem: Target storage set to SD Card (FatFS)");
     }
 
     log_i("Ymodem: Starting transfer listener...");
@@ -211,4 +225,4 @@ static int shell_ymodem_recv(int argc, char *argv[])
 
     return 0;
 }
-SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, ymodem_recv, shell_ymodem_recv, "Start Ymodem receiver");
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, ymodem_recv, shell_ymodem_recv, "Start Ymodem receiver. Usage: ymodem_recv [-flash]");
