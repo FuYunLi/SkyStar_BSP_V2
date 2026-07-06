@@ -85,7 +85,7 @@ bsp_status_t app_fatfs_test_run(void)
     
     /* 1. 写入测试 (4KB) */
     log_i("Creating and writing file: %s (%d bytes)...", TEST_FILE_PATH, TEST_BUF_SIZE);
-    t_start = HAL_GetTick();
+    t_start = bsp_tick_get_ms();
     fr = f_open(&file, TEST_FILE_PATH, FA_CREATE_ALWAYS | FA_WRITE);
     if (fr != FR_OK)
     {
@@ -95,7 +95,7 @@ bsp_status_t app_fatfs_test_run(void)
     
     fr = f_write(&file, s_test_write_buf, TEST_BUF_SIZE, &bw);
     f_close(&file);
-    t_end = HAL_GetTick();
+    t_end = bsp_tick_get_ms();
     
     if (fr != FR_OK || bw != TEST_BUF_SIZE)
     {
@@ -105,13 +105,13 @@ bsp_status_t app_fatfs_test_run(void)
     
     write_time = t_end - t_start;
     log_i("Write complete. Duration: %d ms, Speed: %d KB/s", 
-          (int)write_time, 
-          (int)(TEST_BUF_SIZE / (write_time ? write_time : 1)));
-          
+      (int)write_time, 
+      (int)(TEST_BUF_SIZE / (write_time ? write_time : 1)));
+      
     /* 2. 读取测试 (4KB) */
     log_i("Opening and reading file: %s...", TEST_FILE_PATH);
     memset(s_test_read_buf, 0, sizeof(s_test_read_buf));
-    t_start = HAL_GetTick();
+    t_start = bsp_tick_get_ms();
     fr = f_open(&file, TEST_FILE_PATH, FA_READ);
     if (fr != FR_OK)
     {
@@ -121,7 +121,7 @@ bsp_status_t app_fatfs_test_run(void)
     
     fr = f_read(&file, s_test_read_buf, TEST_BUF_SIZE, &br);
     f_close(&file);
-    t_end = HAL_GetTick();
+    t_end = bsp_tick_get_ms();
     
     if (fr != FR_OK || br != TEST_BUF_SIZE)
     {

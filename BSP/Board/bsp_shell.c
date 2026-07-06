@@ -5,6 +5,7 @@
  */
 
 #include "shell.h"
+#include "bsp_board.h"
 #include "bsp_uart.h"
 
 /* Shell 实例，允许其他模块调用重绘 API */
@@ -18,7 +19,7 @@ static char shell_buffer[512];
 static short user_shell_write(char *data, unsigned short len)
 {
     unsigned short remaining = len;
-    uint32_t start_tick = HAL_GetTick();
+    uint32_t start_tick = bsp_tick_get_ms();
 
     while (remaining > 0)
     {
@@ -30,13 +31,13 @@ static short user_shell_write(char *data, unsigned short len)
             {
                 data += write_len;
                 remaining -= write_len;
-                start_tick = HAL_GetTick(); // 重置超时计时器
+                start_tick = bsp_tick_get_ms(); // 重置超时计时器
             }
         }
         else
         {
             // 超过 500 毫秒未释放空间则强制退出，防止硬件挂死导致死锁
-            if (HAL_GetTick() - start_tick > 500U)
+            if (bsp_tick_get_ms() - start_tick > 500U)
             {
                 break;
             }
@@ -52,6 +53,13 @@ static short user_shell_write(char *data, unsigned short len)
  */
 static short bsp_shell_read(char *data, unsigned short len)
 {
+    extern volatile bool g_ymodem_active;
+    
+    if (g_ymodem_active)
+    {
+        return 0;
+    }
+    
     return (short)bsp_uart_read((uint8_t *)data, len);
 }
 

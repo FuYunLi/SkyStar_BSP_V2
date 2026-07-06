@@ -72,7 +72,7 @@ static int shell_aht20_read(int argc, char *argv[])
             s_sensor_read_once();
             if (i < count - 1)
             {
-                HAL_Delay(1000);
+                bsp_tick_delay_ms(1000);
             }
         }
         log_i("Continuous reading done.");

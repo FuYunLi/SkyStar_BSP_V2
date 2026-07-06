@@ -87,7 +87,7 @@ static int shell_imu_read(int argc, char *argv[])
             s_imu_read_once();
             if (i < count - 1)
             {
-                HAL_Delay(100);
+                bsp_tick_delay_ms(100);
             }
         }
         log_i("Continuous reading done.");
@@ -133,7 +133,7 @@ static int shell_imu_attitude(int argc, char *argv[])
             s_imu_attitude_once();
             if (i < count - 1)
             {
-                HAL_Delay(100);
+                bsp_tick_delay_ms(100);
             }
         }
         log_i("Continuous attitude calculation done.");

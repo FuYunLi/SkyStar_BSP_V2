@@ -101,7 +101,7 @@ static int shell_ec11_monitor(int argc, char *argv[])
             log_e("Error reading EC11! ret = %d", status);
             break;
         }
-        HAL_Delay(100);
+        bsp_tick_delay_ms(100);
     }
 
     log_i("EC11 monitoring finished.");

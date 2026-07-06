@@ -61,3 +61,25 @@ int fputc(int ch, FILE *f)
 }
 
 #endif /* __ARMCC_VERSION */
+
+/* ================================================================
+ * 系统时基与延时统一接口实现
+ * ================================================================ */
+
+#include "port_tick.h"
+#include "port_dwt.h"
+
+uint32_t bsp_tick_get_ms(void)
+{
+    return port_tick_get_ms();
+}
+
+void bsp_tick_delay_ms(uint32_t ms)
+{
+    port_tick_delay_ms(ms);
+}
+
+void bsp_tick_delay_us(uint32_t us)
+{
+    port_dwt_delay_us(us);
+}

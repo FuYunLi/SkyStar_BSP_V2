@@ -44,13 +44,13 @@ class KeilTarget:
 def parse_keil_project(project_path: Path) -> list[KeilTarget]:
     """解析 Keil 工程文件，提取目标配置。"""
     if ET is None:
-        print("❌ xml.etree.ElementTree 不可用")
+        print("[ERROR] xml.etree.ElementTree 不可用")
         return []
 
     try:
         tree = ET.parse(project_path)
     except ET.ParseError as exc:
-        print(f"❌ 工程文件解析失败: {exc}")
+        print(f"[ERROR] 工程文件解析失败: {exc}")
         return []
 
     root = tree.getroot()
@@ -230,21 +230,21 @@ def main() -> int:
     args = parser.parse_args()
 
     if not args.project:
-        print("❌ 请指定工程文件路径: --project <path>")
+        print("[ERROR] 请指定工程文件路径: --project <path>")
         return 1
 
     project_path = Path(args.project).resolve()
     if not project_path.exists():
-        print(f"❌ 工程文件不存在: {project_path}")
+        print(f"[ERROR] 工程文件不存在: {project_path}")
         return 1
 
     targets = parse_keil_project(project_path)
     if not targets:
-        print("❌ 未找到有效的编译目标")
+        print("[ERROR] 未找到有效的编译目标")
         return 1
 
     if args.list_targets:
-        print(f"📋 工程目标列表 ({project_path.name}):")
+        print(f"[INFO] 工程目标列表 ({project_path.name}):")
         for i, t in enumerate(targets, 1):
             print(f"  {i}. {t.name} [{t.toolchain}] {t.device}")
         return 0
@@ -256,7 +256,7 @@ def main() -> int:
                 selected = t
                 break
         else:
-            print(f"❌ 未找到目标: {args.target}")
+            print(f"[ERROR] 未找到目标: {args.target}")
             return 1
 
     project_root = project_path.parent.parent.resolve()
@@ -264,20 +264,20 @@ def main() -> int:
     if args.export_all or args.export_compile_commands:
         output = Path(args.output) if args.output else None
         cc_path = export_compile_commands(project_path, selected, output, args.compiler)
-        print(f"✅ 生成 compile_commands.json: {cc_path}")
+        print(f"[SUCCESS] 生成 compile_commands.json: {cc_path}")
 
     if args.export_all or args.export_clangd:
         output = Path(args.output) if args.output else None
         if args.export_all and args.export_compile_commands:
             output = None
         clangd_path = export_clangd_config(project_path, selected, output)
-        print(f"✅ 生成 .clangd: {clangd_path}")
+        print(f"[SUCCESS] 生成 .clangd: {clangd_path}")
 
     if not (args.export_all or args.export_compile_commands or args.export_clangd):
-        print("❌ 请指定要生成的配置文件: --export-all, --export-compile-commands, 或 --export-clangd")
+        print("[ERROR] 请指定要生成的配置文件: --export-all, --export-compile-commands, 或 --export-clangd")
         return 1
 
-    print(f"\n📁 输出目录: {project_root}")
+    print(f"\n[INFO] 输出目录: {project_root}")
     return 0
 
 

@@ -139,6 +139,28 @@ typedef void (*port_async_cb_t)(uint8_t bus_id, bsp_status_t result, void *user_
 #define CONTAINER_OF(ptr, type, member) \
     ((type *)((char *)(ptr) - offsetof(type, member)))
 
+/* ================================================================
+ * 系统时基与延时统一接口
+ * ================================================================ */
+
+/**
+ * @brief  获取系统毫秒级滴答计数
+ * @retval uint32_t 毫秒计数器值
+ */
+uint32_t bsp_tick_get_ms(void);
+
+/**
+ * @brief  毫秒级阻塞延时
+ * @param  ms 延时时长（毫秒）
+ */
+void bsp_tick_delay_ms(uint32_t ms);
+
+/**
+ * @brief  微秒级高精度阻塞延时
+ * @param  us 延时时长（微秒）
+ */
+void bsp_tick_delay_us(uint32_t us);
+
 #ifdef __cplusplus
 }
 #endif
