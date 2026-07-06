@@ -119,8 +119,8 @@ void ymodem_receive_byte(ymodem_ctx_t *ctx, uint8_t ch)
     /* 重置数据接收超时计时器 */
     ctx->timer_ms = 0U;
 
-    /* 检测到 CAN 中断符 */
-    if (ch == YMODEM_CAN)
+    /* 检测到 CAN 中断符 (仅在等待帧起始字符时有效，防止数据载荷中的 0x18 被误判为 CAN 信号) */
+    if (ctx->frame_index == 0U && ch == YMODEM_CAN)
     {
         ctx->cancel_count++;
         if (ctx->cancel_count >= YMODEM_CAN_ABORT_COUNT)
@@ -133,7 +133,7 @@ void ymodem_receive_byte(ymodem_ctx_t *ctx, uint8_t ch)
             return;
         }
     }
-    else
+    else if (ctx->frame_index == 0U)
     {
         ctx->cancel_count = 0U;
     }
