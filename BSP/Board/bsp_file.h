@@ -71,6 +71,20 @@ bsp_status_t bsp_file_close(bsp_file_t *file);
  */
 bsp_status_t bsp_file_sync(bsp_file_t *file);
 
+/**
+ * @brief 创建单个目录
+ * @param path 目录路径（"0:/..." 指向 FatFS，"flash/..." 指向 LittleFS）
+ * @return bsp_status_t 执行结果
+ */
+bsp_status_t bsp_file_mkdir(const char *path);
+
+/**
+ * @brief 递归创建目录（若父目录不存在则自动级联创建）
+ * @param path 完整目录路径
+ * @return bsp_status_t 执行结果
+ */
+bsp_status_t bsp_file_mkdir_rec(const char *path);
+
 #ifdef __cplusplus
 }
 #endif

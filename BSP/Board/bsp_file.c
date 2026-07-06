@@ -195,3 +195,108 @@ bsp_status_t bsp_file_sync(bsp_file_t *file)
 
     return BSP_EINVAL;
 }
+
+/**
+ * @brief 创建单个目录
+ */
+bsp_status_t bsp_file_mkdir(const char *path)
+{
+    if (path == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    if (strncmp(path, "0:", 2) == 0)
+    {
+        FRESULT fr = f_mkdir(path);
+        if (fr == FR_OK || fr == FR_EXIST)
+        {
+            return BSP_OK;
+        }
+        return BSP_ERROR;
+    }
+    else if (strncmp(path, "flash/", 6) == 0)
+    {
+        lfs_t *lfs = bsp_lfs_get_handle();
+        if (lfs == NULL)
+        {
+            return BSP_ENODEV;
+        }
+        const char *lfs_path = path + 6;
+        int err = lfs_mkdir(lfs, lfs_path);
+        if (err >= 0 || err == LFS_ERR_EXIST)
+        {
+            return BSP_OK;
+        }
+        return BSP_ERROR;
+    }
+
+    return BSP_EINVAL;
+}
+
+/**
+ * @brief 递归创建目录（若父目录不存在则自动级联创建）
+ */
+bsp_status_t bsp_file_mkdir_rec(const char *path)
+{
+    if (path == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    char tmp_path[128];
+    uint32_t len = strlen(path);
+    if (len >= sizeof(tmp_path))
+    {
+        return BSP_EINVAL;
+    }
+
+    strncpy(tmp_path, path, sizeof(tmp_path) - 1);
+    tmp_path[sizeof(tmp_path) - 1] = '\0';
+
+    /* 逐层提取目录并创建 */
+    char *p = tmp_path;
+    
+    /* 区分路径类型，跳过根前缀 */
+    if (strncmp(tmp_path, "0:", 2) == 0)
+    {
+        p += 2;
+        /* 跳过可能包含的 "0:/" */
+        if (*p == '/' || *p == '\\')
+        {
+            p++;
+        }
+    }
+    else if (strncmp(tmp_path, "flash/", 6) == 0)
+    {
+        p += 6;
+    }
+    else
+    {
+        return BSP_EINVAL;
+    }
+
+    /* 循环遍历，遇到分隔符就截断并创建目录 */
+    while (*p != '\0')
+    {
+        if (*p == '/' || *p == '\\')
+        {
+            char backup = *p;
+            *p = '\0';  /* 截断字符串得到当前层级路径 */
+            
+            bsp_status_t status = bsp_file_mkdir(tmp_path);
+            (void)status; /* 忽略错误，因为父目录可能已存在 */
+            
+            *p = backup; /* 还原字符 */
+        }
+        p++;
+    }
+
+    /* 最后再创建最深的一层目录（如果路径不是以斜杠结尾的话） */
+    if (len > 0 && tmp_path[len - 1] != '/' && tmp_path[len - 1] != '\\')
+    {
+        (void)bsp_file_mkdir(tmp_path);
+    }
+
+    return BSP_OK;
+}
