@@ -32,6 +32,7 @@ CompileFlags:
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/FATFS/Target"
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/FATFS/App"
     - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middlewares/Third_Party/FatFs/src"
+    - "-ID:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_HAL/Middleware/Ymodem"
     - "-DUSE_HAL_DRIVER"
     - "-DSTM32F407xx"
     - "-DLWRB_DISABLE_ATOMIC"
