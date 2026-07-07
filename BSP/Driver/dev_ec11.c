@@ -64,13 +64,13 @@ bsp_status_t dev_ec11_get_info(dev_ec11_info_t *info)
     uint16_t curr_cnt = (uint16_t)__HAL_TIM_GET_COUNTER(&htim4);
     int16_t diff = (int16_t)(curr_cnt - s_prev_cnt);
     
-    /* 2. 硬件定时器采用 TI1 & TI2 4倍频计数，转动一格计数值改变4 */
-    int16_t steps = diff / 4;
+    /* 2. 在 TIM_ENCODERMODE_TI1 且仅捕获上升沿模式下，旋转一格计数值改变1，采用1:1直通 */
+    int16_t steps = diff;
     if (steps != 0)
     {
         s_ec11_count += steps;
         s_ec11_dir = (steps > 0) ? 1 : -1;
-        s_prev_cnt += (uint16_t)(steps * 4); /* 累加已解析的4倍频计数，保留未转满一格的余数 */
+        s_prev_cnt += (uint16_t)steps; /* 直通累加，无余数保留 */
     }
 
     info->count = s_ec11_count;
