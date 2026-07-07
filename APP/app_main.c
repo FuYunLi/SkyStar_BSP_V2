@@ -45,6 +45,7 @@
 #include "tasks/app_sys_monitor.h"
 #include "demos/app_fatfs_demo.h"
 #include "demos/app_ymodem_demo.h"
+#include "demos/app_lvgl_images_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -52,24 +53,6 @@
 #include "examples/porting/lv_port_indev.h"
 #include "examples/porting/lv_port_fs.h"
 
-/* LVGL 测试按钮回调 */
-static void btn_event_cb(lv_event_t *e)
-{
-    lv_obj_t *btn   = lv_event_get_target(e);
-    lv_obj_t *label = (lv_obj_t *)lv_obj_get_user_data(btn);
-
-    static bool clicked = false;
-    clicked             = !clicked;
-
-    if (clicked)
-    {
-        lv_label_set_text(label, "Clicked!");
-    }
-    else
-    {
-        lv_label_set_text(label, "Not Clicked");
-    }
-}
 
 #if 0
 static MultiTimer s_timer_log;
@@ -144,29 +127,8 @@ void app_main_init(void)
     lv_port_indev_init();
     lv_port_fs_init();
 
-    /* 创建极简测试界面：白色背景 + 蓝色按钮 + 状态提示 */
-    lv_obj_t *scr = lv_screen_active();
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0xFFFFFF), 0);
-
-    /* 创建蓝色按钮 */
-    lv_obj_t *btn = lv_button_create(scr);
-    lv_obj_set_size(btn, 120, 50);
-    lv_obj_align(btn, LV_ALIGN_CENTER, 0, -20);
-    lv_obj_set_style_bg_color(btn, lv_color_hex(0x0000FF), 0);
-    lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, NULL);
-
-    /* 按钮上的文字 */
-    lv_obj_t *btn_label = lv_label_create(btn);
-    lv_label_set_text(btn_label, "Button");
-    lv_obj_center(btn_label);
-
-    /* 状态提示标签 */
-    lv_obj_t *status_label = lv_label_create(scr);
-    lv_label_set_text(status_label, "Not Clicked");
-    lv_obj_align(status_label, LV_ALIGN_CENTER, 0, 40);
-
-    /* 将状态标签保存到按钮的user_data */
-    lv_obj_set_user_data(btn, status_label);
+    /* 初始化 LVGL 相册展示自检演示模块 */
+    (void)app_lvgl_images_demo_init();
 
     //multiTimerStart(&s_timer_log, 500, log_test_callback, NULL);
 
@@ -204,6 +166,7 @@ void app_main_process(void)
     multiTimerYield();
     bsp_shell_process();
     app_ymodem_demo_process();
+    app_lvgl_images_demo_process();
 
     /* LVGL GUI 任务处理 */
     (void)lv_timer_handler();
