@@ -128,6 +128,12 @@ static const struct lfs_config lfs_cfg = {
  */
 bsp_status_t bsp_lfs_mount(void)
 {
+    static bool is_mounted = false;
+    if (is_mounted)
+    {
+        return BSP_OK;
+    }
+
     /* 1. 先进行底层 Flash 驱动初始化检查 */
     bsp_status_t bsp_ret = dev_w25q_init();
     if (bsp_ret != BSP_OK)
@@ -147,7 +153,12 @@ bsp_status_t bsp_lfs_mount(void)
         }
     }
 
-    return (err == LFS_ERR_OK) ? BSP_OK : BSP_ERROR;
+    if (err == LFS_ERR_OK)
+    {
+        is_mounted = true;
+        return BSP_OK;
+    }
+    return BSP_ERROR;
 }
 
 /**

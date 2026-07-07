@@ -5351,6 +5351,16 @@
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_ymodem_demo.h</FilePath>
             </File>
+            <File>
+              <FileName>app_lvgl_images_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_lvgl_images_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_lvgl_images_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_lvgl_images_demo.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
