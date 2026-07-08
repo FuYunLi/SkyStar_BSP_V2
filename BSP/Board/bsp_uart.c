@@ -127,3 +127,14 @@ uint16_t bsp_uart_get_tx_free_space(void)
 {
     return (uint16_t)lwrb_get_free(&s_tx_rb);
 }
+
+/**
+ * @brief 阻塞等待串口 TX 队列彻底发完（含 DMA 完成）
+ * @note  等待条件：TX LwRB 为空 且 DMA 不忙。
+ *        用于协议模式切换（如 Ymodem）前确保所有日志/Shell 提示符已物理发出，
+ *        防止残留字节污染协议数据流。
+ */
+bsp_status_t bsp_uart_wait_tx_done(uint32_t timeout_ms)
+{
+    return port_uart_tx_wait(PORT_UART_1, timeout_ms);
+}

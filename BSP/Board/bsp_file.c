@@ -135,6 +135,49 @@ bsp_status_t bsp_file_write(bsp_file_t *file, const void *buf, uint32_t len, uin
 }
 
 /**
+ * @brief 读取文件数据
+ */
+bsp_status_t bsp_file_read(bsp_file_t *file, void *buf, uint32_t len, uint32_t *read)
+{
+    if (file == NULL || buf == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    if (file->type == BSP_FILE_TYPE_FATFS)
+    {
+        UINT br = 0;
+        FRESULT fr = f_read(&file->handle.fat_file, buf, len, &br);
+        if (read != NULL)
+        {
+            *read = (uint32_t)br;
+        }
+        return (fr == FR_OK) ? BSP_OK : BSP_ERROR;
+    }
+    else if (file->type == BSP_FILE_TYPE_LITTLEFS)
+    {
+        lfs_t *lfs = bsp_lfs_get_handle();
+        if (lfs == NULL)
+        {
+            return BSP_ENODEV;
+        }
+
+        lfs_ssize_t res = lfs_file_read(lfs, &file->handle.lfs_file, buf, len);
+        if (res >= 0)
+        {
+            if (read != NULL)
+            {
+                *read = (uint32_t)res;
+            }
+            return BSP_OK;
+        }
+        return BSP_ERROR;
+    }
+
+    return BSP_EINVAL;
+}
+
+/**
  * @brief 关闭文件并释放资源
  */
 bsp_status_t bsp_file_close(bsp_file_t *file)

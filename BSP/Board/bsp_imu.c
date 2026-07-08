@@ -37,6 +37,7 @@ static bsp_imu_raw_t s_raw_data = {0};
 static bsp_imu_attitude_t s_attitude = {0};
 static bool s_is_init = false;
 static bool s_attitude_inited = false;
+static volatile bool s_suspended = false;
 
 /* ================================================================
  * 公开接口实现
@@ -82,7 +83,7 @@ bsp_status_t bsp_imu_init(void)
  */
 bsp_status_t bsp_imu_update(void)
 {
-    if (!s_is_init)
+    if (!s_is_init || s_suspended)
     {
         return BSP_ERROR;
     }
@@ -176,5 +177,21 @@ bsp_status_t bsp_imu_get_attitude(bsp_imu_attitude_t *att)
     port_exit_critical(primask);
 
     return BSP_OK;
+}
+
+/**
+ * @brief 挂起 IMU 服务周期采样与总线访问
+ */
+void bsp_imu_suspend(void)
+{
+    s_suspended = true;
+}
+
+/**
+ * @brief 恢复 IMU 服务周期采样与总线访问
+ */
+void bsp_imu_resume(void)
+{
+    s_suspended = false;
 }
 

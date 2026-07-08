@@ -46,6 +46,8 @@
 #include "demos/app_fatfs_demo.h"
 #include "demos/app_ymodem_demo.h"
 #include "demos/app_lvgl_images_demo.h"
+#include "bsp_audio.h"
+#include "demos/app_audio_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -152,6 +154,8 @@ void app_main_init(void)
     app_adc_demo_init();
     (void)app_fatfs_demo_init();
     (void)app_ymodem_demo_init();
+    (void)bsp_audio_init();
+    (void)app_audio_demo_init();
 
     multiTimerStart(&s_timer_imu, 10, imu_timer_callback, NULL);
 
@@ -167,6 +171,7 @@ void app_main_process(void)
     bsp_shell_process();
     app_ymodem_demo_process();
     app_lvgl_images_demo_process();
+    bsp_audio_update();
 
     /* LVGL GUI 任务处理 */
     (void)lv_timer_handler();

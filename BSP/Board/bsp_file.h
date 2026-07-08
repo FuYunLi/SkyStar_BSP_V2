@@ -58,6 +58,16 @@ bsp_status_t bsp_file_open(bsp_file_t *file, const char *path, uint8_t flags);
 bsp_status_t bsp_file_write(bsp_file_t *file, const void *buf, uint32_t len, uint32_t *written);
 
 /**
+ * @brief 读取文件数据
+ * @param file 文件结构体指针
+ * @param buf 存储读取数据的缓冲区
+ * @param len 待读取字节数
+ * @param read 实际读取字节数指针
+ * @return bsp_status_t 执行结果
+ */
+bsp_status_t bsp_file_read(bsp_file_t *file, void *buf, uint32_t len, uint32_t *read);
+
+/**
  * @brief 关闭文件并释放资源
  * @param file 文件结构体指针
  * @return bsp_status_t 执行结果

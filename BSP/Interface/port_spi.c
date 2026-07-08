@@ -5,6 +5,7 @@
 
 #include "port_spi.h"
 #include "spi.h"
+#include "bsp_bus.h"
 #include <string.h>
 
 /* SPI 异步传输上下文 */
@@ -32,6 +33,15 @@ static SPI_HandleTypeDef *get_hw(port_spi_id_t id)
     {
         return NULL;
     }
+
+    if (id == PORT_SPI_2)
+    {
+        if (bsp_bus_get_mode(BSP_BUS_SPI2_I2S2) != BSP_BUS_MODE_SPI)
+        {
+            return NULL;
+        }
+    }
+
     return hw_mapping[id];
 }
 

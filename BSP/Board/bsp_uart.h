@@ -36,4 +36,11 @@ bsp_status_t bsp_uart_write(const uint8_t *data, uint16_t len);
  */
 uint16_t bsp_uart_get_tx_free_space(void);
 
+/**
+ * @brief 阻塞等待串口 TX 队列彻底发完（含 DMA 完成）
+ * @param timeout_ms 超时时间 (ms)，0 = 无限等待
+ * @return BSP_OK / BSP_ETIMEOUT
+ */
+bsp_status_t bsp_uart_wait_tx_done(uint32_t timeout_ms);
+
 #endif /* BSP_UART_H */

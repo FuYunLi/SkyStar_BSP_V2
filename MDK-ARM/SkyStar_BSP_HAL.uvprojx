@@ -1603,6 +1603,16 @@
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c</FilePath>
             </File>
+            <File>
+              <FileName>stm32f4xx_hal_i2s.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_i2s.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_hal_i2s_ex.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_i2s_ex.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -4761,6 +4771,26 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\Board\bsp_file.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_bus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Board\bsp_bus.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_bus.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Board\bsp_bus.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_audio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Board\bsp_audio.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_audio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Board\bsp_audio.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -4880,6 +4910,16 @@
               <FileName>port_sdio.h</FileName>
               <FileType>5</FileType>
               <FilePath>../BSP/Interface/port_sdio.h</FilePath>
+            </File>
+            <File>
+              <FileName>port_i2s.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Interface\port_i2s.c</FilePath>
+            </File>
+            <File>
+              <FileName>port_i2s.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Interface\port_i2s.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -5010,6 +5050,16 @@
               <FileName>dev_potentiometer.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\BSP\Driver\dev_potentiometer.h</FilePath>
+            </File>
+            <File>
+              <FileName>dev_es8388.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Driver\dev_es8388.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_es8388.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Driver\dev_es8388.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -5360,6 +5410,16 @@
               <FileName>app_lvgl_images_demo.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_lvgl_images_demo.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_audio_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_audio_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_audio_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_audio_demo.h</FilePath>
             </File>
           </Files>
         </Group>

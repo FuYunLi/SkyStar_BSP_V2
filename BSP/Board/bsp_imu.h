@@ -79,7 +79,15 @@ bsp_status_t bsp_imu_get_raw(bsp_imu_raw_t *raw);
  *         - BSP_EINVAL 参数为空指针
  *         - BSP_ERROR 服务未初始化
  */
-bsp_status_t bsp_imu_get_attitude(bsp_imu_attitude_t *att);
+/**
+ * @brief 挂起 IMU 服务周期采样与总线访问
+ */
+void bsp_imu_suspend(void);
+
+/**
+ * @brief 恢复 IMU 服务周期采样与总线访问
+ */
+void bsp_imu_resume(void);
 
 #endif /* __BSP_IMU_H */
 
