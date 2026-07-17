@@ -1,11 +1,11 @@
 /**
  * @file dev_ec11.c
  * @brief EC11 旋转编码器硬件定时器正交解码设备驱动实现
- * @note 封装 TIM4 硬件编码器接口，实时差分计步，消除 CPU 中断开销。
+ * @note 封装通用编码器接口层，实时差分计步，消除 CPU 中断开销。
  */
 
 #include "dev_ec11.h"
-#include "tim.h"
+#include "port_encoder.h"
 #include "port_critical.h"
 
 /* ================================================================
@@ -26,14 +26,23 @@ static bool s_is_init = false;          /* 初始化状态指示 */
  */
 bsp_status_t dev_ec11_init(void)
 {
-    /* 1. 开启 TIM4 硬件正交解码计数 */
-    if (HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL) != HAL_OK)
+    /* 1. 初始化底层编码器接口 */
+    if (port_encoder_init(PORT_ENCODER_EC11) != BSP_OK)
     {
         return BSP_ERROR;
     }
 
-    /* 2. 读取并记录当前的初始计数值，计数器初始设为0 */
-    __HAL_TIM_SET_COUNTER(&htim4, 0);
+    /* 2. 开启硬件正交解码计数 */
+    if (port_encoder_start(PORT_ENCODER_EC11) != BSP_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    /* 3. 读取并记录当前的初始计数值，计数器初始设为0 */
+    if (port_encoder_set_count(PORT_ENCODER_EC11, 0) != BSP_OK)
+    {
+        return BSP_ERROR;
+    }
     s_prev_cnt = 0;
     
     s_ec11_count = 0;
@@ -61,7 +70,12 @@ bsp_status_t dev_ec11_get_info(dev_ec11_info_t *info)
     uint32_t primask = port_enter_critical();
 
     /* 1. 差分读取硬件计数器，自动处理硬件溢出 */
-    uint16_t curr_cnt = (uint16_t)__HAL_TIM_GET_COUNTER(&htim4);
+    uint16_t curr_cnt = 0;
+    if (port_encoder_get_raw_count(PORT_ENCODER_EC11, &curr_cnt) != BSP_OK)
+    {
+        port_exit_critical(primask);
+        return BSP_ERROR;
+    }
     int16_t diff = (int16_t)(curr_cnt - s_prev_cnt);
     
     /* 2. 在 TIM_ENCODERMODE_TI1 且仅捕获上升沿模式下，旋转一格计数值改变1，采用1:1直通 */
@@ -91,7 +105,7 @@ bsp_status_t dev_ec11_reset_count(void)
 {
     uint32_t primask = port_enter_critical();
 
-    __HAL_TIM_SET_COUNTER(&htim4, 0);
+    (void)port_encoder_set_count(PORT_ENCODER_EC11, 0);
     s_prev_cnt = 0;
     s_ec11_count = 0;
     s_ec11_dir = 0;
@@ -108,3 +122,4 @@ void dev_ec11_irq_handler(uint16_t GPIO_Pin)
 {
     (void)GPIO_Pin;
 }
+

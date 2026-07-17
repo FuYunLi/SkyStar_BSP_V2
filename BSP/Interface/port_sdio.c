@@ -14,11 +14,16 @@ static volatile bool s_sdio_initialized = false;
 
 bsp_status_t port_sdio_init(void)
 {
-    /* 调用 CubeMX 自动生成的 SDIO 及相关 DMA 底座初始化 */
-    MX_SDIO_SD_Init();
+    if (s_sdio_initialized)
+    {
+        return BSP_OK;
+    }
 
-    /* 协议层识别卡前，必须将总线宽度强制重设为 1-bit 模式 */
-    hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
+    /* 校验底层 SDIO 控制句柄是否已初始化 */
+    if (hsd.Instance != SDIO)
+    {
+        return BSP_ERROR;
+    }
     
     /* 防爆预检：如果卡未插入，直接返回不强行初始化 */
     if (!port_sdio_is_present())
@@ -39,13 +44,35 @@ bsp_status_t port_sdio_init(void)
     return BSP_OK;
 }
 
+bsp_status_t port_sdio_deinit(void)
+{
+    if (!s_sdio_initialized)
+    {
+        return BSP_OK;
+    }
+
+    /* 调用 HAL 库 SD 反初始化底层 */
+    if (HAL_SD_DeInit(&hsd) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    s_sdio_initialized = false;
+    return BSP_OK;
+}
+
 bool port_sdio_is_present(void)
 {
     /* 调用 BSP 平台的物理引脚 (PD3) 检测函数 */
-    return (BSP_PlatformIsDetected() == SD_PRESENT);
+    bool present = (BSP_PlatformIsDetected() == SD_PRESENT);
+    if (!present)
+    {
+        s_sdio_initialized = false;
+    }
+    return present;
 }
 
-bsp_status_t port_sdio_get_card_info(HAL_SD_CardInfoTypeDef *card_info)
+bsp_status_t port_sdio_get_card_info(port_sdio_card_info_t *card_info)
 {
     BSP_CHECK_NULL(card_info);
     
@@ -54,6 +81,14 @@ bsp_status_t port_sdio_get_card_info(HAL_SD_CardInfoTypeDef *card_info)
         return BSP_ENODEV;
     }
     
-    BSP_SD_GetCardInfo(card_info);
+    HAL_SD_CardInfoTypeDef hal_info;
+    BSP_SD_GetCardInfo(&hal_info);
+
+    card_info->CardType = hal_info.CardType;
+    card_info->CardVersion = hal_info.CardVersion;
+    card_info->BlockSize = hal_info.BlockSize;
+    card_info->BlockNbr = hal_info.BlockNbr;
+
     return BSP_OK;
 }
+
