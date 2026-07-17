@@ -221,7 +221,7 @@ int shell_fatfs_test(int argc, char *argv[])
         log_i("Free Space:       %d MB", (int)free_mb);
         
         /* 2. 获取底层 SD 卡物理参数 */
-        HAL_SD_CardInfoTypeDef card_info;
+        port_sdio_card_info_t card_info;
         bsp_status_t status = port_sdio_get_card_info(&card_info);
         if (status == BSP_OK)
         {

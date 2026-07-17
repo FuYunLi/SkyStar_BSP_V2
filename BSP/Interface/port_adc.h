@@ -71,6 +71,14 @@ bsp_status_t port_adc_read_raw(port_adc_ch_t ch, uint32_t *raw_value);
  */
 bsp_status_t port_adc_read_voltage(port_adc_ch_t ch, uint32_t *voltage_mv);
 
+/**
+ * @brief 反初始化内置 ADC 接口层
+ * @return bsp_status_t 执行结果
+ *         - BSP_OK 成功
+ *         - BSP_ERROR 配置释放失败
+ */
+bsp_status_t port_adc_deinit(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -16,6 +16,21 @@ extern "C" {
 #endif
 
 /* ================================================================
+ * 类型定义
+ * ================================================================ */
+
+/**
+ * @brief 自定义 SD 卡物理参数结构体（隔离 HAL 库类型）
+ */
+typedef struct
+{
+    uint32_t CardType;      /* 卡类型 */
+    uint32_t CardVersion;   /* 卡版本 */
+    uint32_t BlockSize;     /* 块大小（字节） */
+    uint32_t BlockNbr;      /* 总块数 */
+} port_sdio_card_info_t;
+
+/* ================================================================
  * 初始化与检测 API
  * ================================================================ */
 
@@ -27,6 +42,14 @@ extern "C" {
  *         - BSP_ERROR: 底层驱动或硬件通信错误
  */
 bsp_status_t port_sdio_init(void);
+
+/**
+ * @brief 反初始化 SDIO 接口层
+ * @return bsp_status_t
+ *         - BSP_OK: 成功
+ *         - BSP_ERROR: 底层反初始化失败
+ */
+bsp_status_t port_sdio_deinit(void);
 
 /**
  * @brief 检测 TF 卡是否物理在位
@@ -42,7 +65,7 @@ bool port_sdio_is_present(void);
  *         - BSP_EINVAL: 传入指针为空
  *         - BSP_ENODEV: 卡未在位或未初始化
  */
-bsp_status_t port_sdio_get_card_info(HAL_SD_CardInfoTypeDef *card_info);
+bsp_status_t port_sdio_get_card_info(port_sdio_card_info_t *card_info);
 
 #ifdef __cplusplus
 }

@@ -1,12 +1,13 @@
 /**
  * @file port_adc.c
  * @brief 内置 ADC 接口层实现源文件
- * @note 采用动态重配置通道方式，确保多通道轮询采样时的准确性与通道间隔离。
+ * @note 采用动态重配置通道方式，并在采样临界区进行互斥保护，确保多通道轮询采样时的准确性与线程安全。
  */
 
 #include "port_adc.h"
 #include "stm32f4xx_hal.h"
 #include "adc.h"
+#include "port_critical.h"
 
 /* ================================================================
  * 宏定义与外部变量声明
@@ -20,6 +21,8 @@ static const uint32_t s_adc_ch_map[PORT_ADC_CH_MAX] = {
     [PORT_ADC_CH_POTENTIOMETER] = ADC_CHANNEL_10,
 };
 
+static volatile bool s_adc_initialized = false;
+
 /* ================================================================
  * 公开接口实现
  * ================================================================ */
@@ -29,11 +32,38 @@ static const uint32_t s_adc_ch_map[PORT_ADC_CH_MAX] = {
  */
 bsp_status_t port_adc_init(void)
 {
+    if (s_adc_initialized)
+    {
+        return BSP_OK;
+    }
+
     /* 由于 CubeMX 已在 main.c 中执行 MX_ADC1_Init，此处仅需检查句柄 */
     if (hadc1.Instance != ADC1)
     {
         return BSP_ERROR;
     }
+
+    s_adc_initialized = true;
+    return BSP_OK;
+}
+
+/**
+ * @brief 反初始化内置 ADC 接口层
+ */
+bsp_status_t port_adc_deinit(void)
+{
+    if (!s_adc_initialized)
+    {
+        return BSP_OK;
+    }
+
+    (void)HAL_ADC_Stop(&hadc1);
+    if (HAL_ADC_DeInit(&hadc1) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    s_adc_initialized = false;
     return BSP_OK;
 }
 
@@ -42,6 +72,10 @@ bsp_status_t port_adc_init(void)
  */
 bsp_status_t port_adc_read_raw(port_adc_ch_t ch, uint32_t *raw_value)
 {
+    if (!s_adc_initialized)
+    {
+        return BSP_ERROR;
+    }
     if (ch >= PORT_ADC_CH_MAX)
     {
         return BSP_EINVAL;
@@ -57,14 +91,18 @@ bsp_status_t port_adc_read_raw(port_adc_ch_t ch, uint32_t *raw_value)
     sConfig.Rank = 1;
     sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
     
+    uint32_t primask = port_enter_critical();
+
     if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
     {
+        port_exit_critical(primask);
         return BSP_ERROR;
     }
 
     /* 开启 ADC 转换 */
     if (HAL_ADC_Start(&hadc1) != HAL_OK)
     {
+        port_exit_critical(primask);
         return BSP_ERROR;
     }
 
@@ -73,6 +111,7 @@ bsp_status_t port_adc_read_raw(port_adc_ch_t ch, uint32_t *raw_value)
     if (status != HAL_OK)
     {
         (void)HAL_ADC_Stop(&hadc1);
+        port_exit_critical(primask);
         return (status == HAL_TIMEOUT) ? BSP_ETIMEOUT : BSP_ERROR;
     }
 
@@ -80,6 +119,8 @@ bsp_status_t port_adc_read_raw(port_adc_ch_t ch, uint32_t *raw_value)
 
     /* 停止转换以使通道状态干净 */
     (void)HAL_ADC_Stop(&hadc1);
+
+    port_exit_critical(primask);
 
     return BSP_OK;
 }
@@ -89,6 +130,10 @@ bsp_status_t port_adc_read_raw(port_adc_ch_t ch, uint32_t *raw_value)
  */
 bsp_status_t port_adc_read_voltage(port_adc_ch_t ch, uint32_t *voltage_mv)
 {
+    if (ch >= PORT_ADC_CH_MAX)
+    {
+        return BSP_EINVAL;
+    }
     if (voltage_mv == NULL)
     {
         return BSP_EINVAL;
