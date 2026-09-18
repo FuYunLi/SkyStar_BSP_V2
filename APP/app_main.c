@@ -58,6 +58,9 @@
 #include "demos/app_motor_demo.h"
 #include "demos/app_hcsr04_demo.h"
 #include "demos/app_audio_demo.h"
+#include "demos/app_hx711_demo.h"
+#include "demos/app_ds18b20_demo.h"
+#include "demos/app_rs485_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -174,6 +177,9 @@ void app_main_init(void)
     app_motor_demo_init();
     app_hcsr04_demo_init();
     app_audio_demo_init();
+    app_hx711_demo_init();
+    app_ds18b20_demo_init();
+    app_rs485_demo_init();
     (void)app_fatfs_demo_init();
     (void)app_ymodem_demo_init();
 

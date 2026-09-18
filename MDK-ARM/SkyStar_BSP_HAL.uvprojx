@@ -4786,6 +4786,16 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\Board\bsp_audio.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_rs485.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Board\bsp_rs485.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_rs485.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Board\bsp_rs485.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -4885,6 +4895,16 @@
               <FileName>port_i2s.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\BSP\Interface\port_i2s.h</FilePath>
+            </File>
+            <File>
+              <FileName>soft_onewire.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Interface\soft_onewire.c</FilePath>
+            </File>
+            <File>
+              <FileName>soft_onewire.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Interface\soft_onewire.h</FilePath>
             </File>
             <File>
               <FileName>soft_i2c.c</FileName>
@@ -5025,6 +5045,26 @@
               <FileName>dev_es8388.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\BSP\Driver\dev_es8388.h</FilePath>
+            </File>
+            <File>
+              <FileName>dev_hx711.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Driver\dev_hx711.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_hx711.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Driver\dev_hx711.h</FilePath>
+            </File>
+            <File>
+              <FileName>dev_ds18b20.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Driver\dev_ds18b20.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_ds18b20.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Driver\dev_ds18b20.h</FilePath>
             </File>
             <File>
               <FileName>dev_motor.c</FileName>
@@ -5302,6 +5342,16 @@
               <FilePath>..\APP\demos\app_sd_pic_demo.c</FilePath>
             </File>
             <File>
+              <FileName>app_rs485_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_rs485_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_rs485_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_rs485_demo.h</FilePath>
+            </File>
+            <File>
               <FileName>app_sd_pic_demo.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_sd_pic_demo.h</FilePath>
@@ -5325,6 +5375,16 @@
               <FileName>app_hcsr04_demo.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_hcsr04_demo.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_hx711_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_hx711_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_hx711_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_hx711_demo.h</FilePath>
             </File>
             <File>
               <FileName>app_audio_demo.c</FileName>
@@ -5365,6 +5425,16 @@
               <FileName>app_crc_demo.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_crc_demo.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_ds18b20_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_ds18b20_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_ds18b20_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_ds18b20_demo.h</FilePath>
             </File>
             <File>
               <FileName>app_lcd_demo.c</FileName>
