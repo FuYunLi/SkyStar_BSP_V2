@@ -30,6 +30,7 @@ bsp_status_t dev_buzzer_off(void);
 bsp_status_t dev_buzzer_set_volume(uint8_t volume);
 bsp_status_t dev_buzzer_set_freq(uint16_t freq);
 bsp_status_t dev_buzzer_tone(uint16_t freq, uint8_t volume);
+bsp_status_t dev_buzzer_beep(uint16_t freq, uint8_t volume, uint32_t duration_ms);
 #endif
 
 #ifdef __cplusplus

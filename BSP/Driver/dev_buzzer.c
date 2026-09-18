@@ -166,4 +166,34 @@ bsp_status_t dev_buzzer_tone(uint16_t freq, uint8_t volume)
     return port_pwm_start(PORT_PWM_BUZZER);
 }
 
+/**
+ * @brief 阻塞式单音鸣叫：发声 duration_ms 后自动关闭
+ * @note 本函数内部阻塞等待，仅可在主上下文（如 Shell 指令）中调用，
+ *       严禁在 ISR 与定时器回调中使用；非阻塞播放请使用应用层
+ *       曲目调度器（app_buzzer_demo）。
+ * @param freq 目标发声频率（Hz）
+ * @param volume 音量值 (0 - 100)
+ * @param duration_ms 鸣叫时长（ms），0 视为无效参数
+ * @retval BSP_OK 鸣叫完成并已关闭
+ * @retval BSP_EINVAL 参数无效
+ * @retval 其他 底层发声失败
+ */
+bsp_status_t dev_buzzer_beep(uint16_t freq, uint8_t volume, uint32_t duration_ms)
+{
+    if ((freq == 0) || (duration_ms == 0))
+    {
+        return BSP_EINVAL;
+    }
+
+    bsp_status_t ret = dev_buzzer_tone(freq, volume);
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
+
+    bsp_tick_delay_ms(duration_ms);
+
+    return dev_buzzer_off();
+}
+
 #endif
