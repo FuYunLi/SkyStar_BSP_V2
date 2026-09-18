@@ -138,12 +138,36 @@ bsp_status_t port_gpio_toggle(port_gpio_id_t pin_id)
 }
 
 /**
- * @brief 注册外部中断的回调函数
- * @note 硬件原理：外部中断由 SYSCFG 进行引脚源选择，输入边缘触发器检测输入并提交给 NVIC。本函数仅绑定业务回调。
+ * @brief 由物理引脚号推导所属 EXTI 中断线的中断号
+ * @param pin_num 物理引脚号 (0-15)
+ * @return IRQn_Type 对应的中断号
+ */
+static IRQn_Type s_exti_get_irqn(uint32_t pin_num)
+{
+    if (pin_num <= 4U)
+    {
+        return (IRQn_Type)(EXTI0_IRQn + (IRQn_Type)pin_num);
+    }
+
+    if (pin_num <= 9U)
+    {
+        return EXTI9_5_IRQn;
+    }
+
+    return EXTI15_10_IRQn;
+}
+
+/**
+ * @brief 初始化外部中断：注册业务回调并完成全套硬件配置
+ * @note 硬件原理：SYSCFG_EXTICR 将 EXTI 线路由至对应 GPIO 端口，边沿触发器检测输入
+ *       后经中断屏蔽寄存器 (EXTI_IMR) 提交给 NVIC。本函数独立完成路由、边沿、
+ *       屏蔽与 NVIC 使能，不依赖 CubeMX 预先使能 EXTI。
+ *       注意：若同一 EXTI 线后续在 CubeMX 中使能了其他引脚，重新生成代码后
+ *       须移除本文件末尾对应的中断入口定义，避免重复链接。
  * @param pin_id 逻辑引脚 ID
  * @param trigger 触发方式（上升沿/下降沿/双边沿）
- * @param cb 业务中断回调函数指针
- * @retval BSP_OK 注册成功
+ * @param cb 业务中断回调函数指针，ISR 上下文执行，须保持极短
+ * @retval BSP_OK 初始化成功
  * @retval BSP_EINVAL 参数无效或引脚未映射
  *
  * 示例：
@@ -165,7 +189,68 @@ bsp_status_t port_gpio_exti_init(port_gpio_id_t pin_id, port_exti_trigger_t trig
         return BSP_EINVAL;
     }
 
+    if (cb == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    GPIO_TypeDef *port = gpio_mapping[pin_id].port;
+    uint16_t pin_mask = gpio_mapping[pin_id].pin;
+
+    /* 由 GPIO_PIN_x 位掩码反查物理引脚号 */
+    uint32_t pin_num = 0U;
+    while (((uint32_t)pin_mask >> pin_num) != 1UL)
+    {
+        pin_num++;
+    }
+
+    /* 校验触发方式合法后再动硬件，避免无效参数产生半配置状态 */
+    if ((trigger != PORT_EXTI_TRIGGER_RISING) && (trigger != PORT_EXTI_TRIGGER_FALLING) &&
+        (trigger != PORT_EXTI_TRIGGER_BOTH))
+    {
+        return BSP_EINVAL;
+    }
+
+    /* 使能 SYSCFG 时钟，EXTI 引脚源选择寄存器挂载其下 */
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
+
+    /* 将 EXTI 线路由至引脚所在 GPIO 端口（A=0 B=1 C=2 D=3 E=4，端口间距 0x400） */
+    uint32_t port_idx = ((uint32_t)port - GPIOA_BASE) / 0x0400UL;
+    uint32_t cr_idx = pin_num >> 2U;
+    uint32_t cr_pos = (pin_num & 0x3UL) * 4UL;
+    SYSCFG->EXTICR[cr_idx] = (SYSCFG->EXTICR[cr_idx] & ~(0xFUL << cr_pos)) | (port_idx << cr_pos);
+
+    /* 清除历史挂起标志，防止注册瞬间残留电平误触发 */
+    EXTI->PR = BIT(pin_num);
+
+    /* 按触发方式配置上升/下降沿选择寄存器 */
+    switch (trigger)
+    {
+    case PORT_EXTI_TRIGGER_RISING:
+        EXTI->RTSR |= BIT(pin_num);
+        EXTI->FTSR &= ~BIT(pin_num);
+        break;
+
+    case PORT_EXTI_TRIGGER_FALLING:
+        EXTI->RTSR &= ~BIT(pin_num);
+        EXTI->FTSR |= BIT(pin_num);
+        break;
+
+    case PORT_EXTI_TRIGGER_BOTH:
+        EXTI->RTSR |= BIT(pin_num);
+        EXTI->FTSR |= BIT(pin_num);
+        break;
+
+    default:
+        return BSP_EINVAL;
+    }
+
+    /* 解除中断屏蔽（仅中断不挂事件），并使能 NVIC */
+    EXTI->IMR |= BIT(pin_num);
     exti_callbacks[pin_id] = cb;
+
+    HAL_NVIC_SetPriority(s_exti_get_irqn(pin_num), 5U, 0U);
+    HAL_NVIC_EnableIRQ(s_exti_get_irqn(pin_num));
 
     return BSP_OK;
 }
@@ -184,6 +269,51 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
             {
                 exti_callbacks[i]();
             }
+        }
+    }
+}
+
+/* ================================================================
+ * 中断入口
+ * CubeMX 仅生成了 EXTI2/EXTI3（触摸与 RTC 中断）的入口，
+ * 以下为本模块自行使能线路（按键 KEY1/KEY2/KEY3）补齐的入口。
+ * 若后续在 CubeMX 中使能同线引脚的 EXTI，须移除对应定义避免重复链接。
+ * ================================================================ */
+
+/**
+ * @brief EXTI 线 0 中断入口（KEY1/PA0）
+ */
+void EXTI0_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+}
+
+/**
+ * @brief EXTI 线 5-9 中断入口（KEY2/PE8 使用线 8）
+ * @note 遍历挂起寄存器分发给本组内已使能的引脚，兼容同组多引脚扩展
+ */
+void EXTI9_5_IRQHandler(void)
+{
+    for (uint32_t pin = 5U; pin <= 9U; pin++)
+    {
+        if ((EXTI->PR & BIT(pin)) != 0U)
+        {
+            HAL_GPIO_EXTI_IRQHandler((uint16_t)BIT(pin));
+        }
+    }
+}
+
+/**
+ * @brief EXTI 线 10-15 中断入口（KEY3/PC13 使用线 13）
+ * @note 遍历挂起寄存器分发给本组内已使能的引脚，兼容同组多引脚扩展
+ */
+void EXTI15_10_IRQHandler(void)
+{
+    for (uint32_t pin = 10U; pin <= 15U; pin++)
+    {
+        if ((EXTI->PR & BIT(pin)) != 0U)
+        {
+            HAL_GPIO_EXTI_IRQHandler((uint16_t)BIT(pin));
         }
     }
 }
