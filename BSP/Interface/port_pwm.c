@@ -22,6 +22,40 @@ static const port_pwm_map_t pwm_mapping[PORT_PWM_MAX] =
 };
 
 /**
+ * @brief 获取定时器实例的实际输入时钟频率
+ * @note 硬件原理：TIM1/TIM8/TIM9-TIM11 挂载 APB2，其余定时器挂载 APB1。
+ *       当所在总线分频不为 1 时，定时器时钟为总线时钟的 2 倍（参考手册
+ *       时钟树：APB 分频非 1 时定时器时钟倍频）。
+ *       此前实现写死 APB1 逻辑，导致 APB2 定时器（如 TIM10 背光通道）
+ *       计算频率偏差一倍，本函数按实例地址归属总线动态判定。
+ * @param htim 定时器句柄
+ * @return uint32_t 定时器输入时钟（Hz）
+ */
+static uint32_t s_pwm_get_timer_clk(const TIM_HandleTypeDef *htim)
+{
+    uint32_t tim_clk;
+
+    if ((uint32_t)htim->Instance >= APB2PERIPH_BASE)
+    {
+        tim_clk = HAL_RCC_GetPCLK2Freq();
+        if ((RCC->CFGR & RCC_CFGR_PPRE2) != RCC_CFGR_PPRE2_DIV1)
+        {
+            tim_clk *= 2U;
+        }
+    }
+    else
+    {
+        tim_clk = HAL_RCC_GetPCLK1Freq();
+        if ((RCC->CFGR & RCC_CFGR_PPRE1) != RCC_CFGR_PPRE1_DIV1)
+        {
+            tim_clk *= 2U;
+        }
+    }
+
+    return tim_clk;
+}
+
+/**
  * @brief 初始化检测逻辑通道
  * @param pwm PWM 逻辑通道 ID
  * @retval BSP_OK 检测通过，通道就绪
@@ -157,17 +191,16 @@ bsp_status_t port_pwm_set_freq(port_pwm_id_t pwm, uint32_t freq_hz)
         return BSP_EINVAL;
     }
 
-    /* 动态获取定时器挂载外设的时钟频率 */
-    uint32_t tim_clk = HAL_RCC_GetPCLK1Freq();
-    if ((RCC->CFGR & RCC_CFGR_PPRE1) != RCC_CFGR_PPRE1_DIV1)
-    {
-        tim_clk *= 2;
-    }
+    /* 动态获取定时器挂载总线的时钟频率（APB1/APB2 自动判定） */
+    uint32_t tim_clk = s_pwm_get_timer_clk(pwm_mapping[pwm].htim);
 
-    uint32_t psc = pwm_mapping[pwm].htim->Init.Prescaler + 1;
-    uint32_t arr = (tim_clk / psc / freq_hz) - 1;
+    uint32_t psc = pwm_mapping[pwm].htim->Init.Prescaler + 1U;
+    /* 四舍五入减小整除截断引入的频率偏差 */
+    uint32_t arr = ((tim_clk / psc) + freq_hz / 2U) / freq_hz - 1U;
 
     __HAL_TIM_SET_AUTORELOAD(pwm_mapping[pwm].htim, arr);
+    /* 同步句柄缓存，保持 Init 字段与寄存器实况一致 */
+    pwm_mapping[pwm].htim->Init.Period = arr;
 
     return BSP_OK;
 }
