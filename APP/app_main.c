@@ -50,6 +50,9 @@
 #include "demos/app_cjson_demo.h"
 #include "demos/app_buzzer_demo.h"
 #include "demos/app_mcu_temp_demo.h"
+#include "demos/app_crc_demo.h"
+#include "demos/app_io_check_demo.h"
+#include "demos/app_standby_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -158,6 +161,9 @@ void app_main_init(void)
     app_cjson_demo_init();
     app_buzzer_demo_init();
     app_mcu_temp_demo_init();
+    app_crc_demo_init();
+    app_io_check_demo_init();
+    app_standby_demo_init();
     (void)app_fatfs_demo_init();
     (void)app_ymodem_demo_init();
 
