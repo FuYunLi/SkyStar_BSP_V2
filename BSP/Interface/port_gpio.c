@@ -36,7 +36,9 @@ static const port_gpio_map_t gpio_mapping[] =
     [PORT_GPIO_HCSR04_ECHO] = {GPIOA, GPIO_PIN_8},
     [PORT_GPIO_HX711_DOUT] = {GPIOB, GPIO_PIN_0},
     [PORT_GPIO_HX711_SCK] = {GPIOB, GPIO_PIN_1},
-    [PORT_GPIO_RS485_DE] = {GPIOD, GPIO_PIN_15}
+    [PORT_GPIO_RS485_DE] = {GPIOD, GPIO_PIN_15},
+    [PORT_GPIO_STEPPER_DIR] = {GPIOD, GPIO_PIN_4},
+    [PORT_GPIO_STEPPER_ENN] = {GPIOD, GPIO_PIN_7}
 };
 
 /* 外部中断业务回调函数表 */
@@ -80,8 +82,16 @@ bsp_status_t port_gpio_init(void)
         gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
         (void)HAL_GPIO_Init(gpio_mapping[PORT_GPIO_RS485_DE].port, &gpio_init);
 
+        gpio_init.Pin = gpio_mapping[PORT_GPIO_STEPPER_DIR].pin |
+                        gpio_mapping[PORT_GPIO_STEPPER_ENN].pin;
+        gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
+        (void)HAL_GPIO_Init(gpio_mapping[PORT_GPIO_STEPPER_DIR].port, &gpio_init);
+
         port_gpio_write(PORT_GPIO_HX711_SCK, PORT_GPIO_LOW);
         port_gpio_write(PORT_GPIO_RS485_DE, PORT_GPIO_LOW);
+        /* 步进默认方向正转、使能脚拉高（ENN 低有效 = 初始禁用） */
+        port_gpio_write(PORT_GPIO_STEPPER_DIR, PORT_GPIO_LOW);
+        port_gpio_write(PORT_GPIO_STEPPER_ENN, PORT_GPIO_HIGH);
     }
 
     return BSP_OK;

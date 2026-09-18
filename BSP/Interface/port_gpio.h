@@ -59,6 +59,10 @@ typedef enum
     PORT_GPIO_HX711_SCK,
     /* 隔离 RS485 收发方向控制 (PD15，高=发送 低=接收) */
     PORT_GPIO_RS485_DE,
+    /* 步进电机方向 (PD4，TMC2209 DIR，SW7 BIT8) */
+    PORT_GPIO_STEPPER_DIR,
+    /* 步进电机使能 (PD7，TMC2209 ENN 低有效，SW7 BIT8) */
+    PORT_GPIO_STEPPER_ENN,
     /* 逻辑引脚最大值 */
     PORT_GPIO_MAX
 } port_gpio_id_t;

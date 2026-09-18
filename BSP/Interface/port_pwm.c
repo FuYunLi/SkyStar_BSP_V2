@@ -34,6 +34,13 @@ static TIM_HandleTypeDef s_tim9_handle;
 #define PWM_TIM9_PSC (0U)
 #define PWM_TIM9_ARR (8399U)
 
+/* 步进通道自持定时器句柄：TIM2 未在 CubeMX 使能，由本模块自行初始化 */
+static TIM_HandleTypeDef s_tim2_handle;
+
+/* 步进脉冲时基：TIM2 输入 84MHz（APB1 定时器时钟），PSC=0，
+ * ARR 由 dev_stepper 经 port_pwm_set_freq 按步进频率动态重算 */
+#define PWM_TIM2_PSC (0U)
+
 /* PWM 映射表，对于暂未在 CubeMX 中使能的通道，其句柄置 NULL */
 static const port_pwm_map_t pwm_mapping[PORT_PWM_MAX] =
 {
@@ -43,7 +50,8 @@ static const port_pwm_map_t pwm_mapping[PORT_PWM_MAX] =
     [PORT_PWM_SERVO1] = {&s_tim12_handle, TIM_CHANNEL_1},
     [PORT_PWM_SERVO2] = {&s_tim12_handle, TIM_CHANNEL_2},
     [PORT_PWM_MOTOR1_IN1] = {&s_tim9_handle, TIM_CHANNEL_1},
-    [PORT_PWM_MOTOR1_IN2] = {&s_tim9_handle, TIM_CHANNEL_2}
+    [PORT_PWM_MOTOR1_IN2] = {&s_tim9_handle, TIM_CHANNEL_2},
+    [PORT_PWM_STEPPER_STEP] = {&s_tim2_handle, TIM_CHANNEL_1}
 };
 
 /* ================================================================
@@ -201,6 +209,60 @@ static bsp_status_t s_pwm_tim9_init(void)
 }
 
 /**
+ * @brief 初始化步进脉冲通道定时器 TIM2（等效 CubeMX 生成代码）
+ * @note 硬件连接：PA15=TIM2_CH1（TMC2209 STEP 脉冲），复用 AF1；
+ *       DIR=PD4、ENN=PD7 由 port_gpio 托管；SW7 BIT8 需拨至
+ *       板载步进驱动位。
+ * @retval BSP_OK 初始化成功
+ */
+static bsp_status_t s_pwm_tim2_init(void)
+{
+    GPIO_InitTypeDef gpio_init = {0};
+    TIM_MasterConfigTypeDef master_config = {0};
+    TIM_OC_InitTypeDef oc_config = {0};
+
+    __HAL_RCC_TIM2_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    gpio_init.Pin = GPIO_PIN_15;
+    gpio_init.Mode = GPIO_MODE_AF_PP;
+    gpio_init.Pull = GPIO_NOPULL;
+    gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
+    gpio_init.Alternate = GPIO_AF1_TIM2;
+    (void)HAL_GPIO_Init(GPIOA, &gpio_init);
+
+    s_tim2_handle.Instance = TIM2;
+    s_tim2_handle.Init.Prescaler = PWM_TIM2_PSC;
+    s_tim2_handle.Init.CounterMode = TIM_COUNTERMODE_UP;
+    s_tim2_handle.Init.Period = 999U; /* 初始 84kHz，实际频率由 set_freq 重算 */
+    s_tim2_handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    s_tim2_handle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+
+    if (HAL_TIM_PWM_Init(&s_tim2_handle) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    master_config.MasterOutputTrigger = TIM_TRGO_RESET;
+    master_config.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(&s_tim2_handle, &master_config) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    oc_config.OCMode = TIM_OCMODE_PWM1;
+    oc_config.Pulse = 0U;
+    oc_config.OCPolarity = TIM_OCPOLARITY_HIGH;
+    oc_config.OCFastMode = TIM_OCFAST_DISABLE;
+    if (HAL_TIM_PWM_ConfigChannel(&s_tim2_handle, &oc_config, TIM_CHANNEL_1) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    return BSP_OK;
+}
+
+/**
  * @brief 初始化检测逻辑通道
  * @param pwm PWM 逻辑通道 ID
  * @retval BSP_OK 检测通过，通道就绪
@@ -234,6 +296,15 @@ bsp_status_t port_pwm_init(port_pwm_id_t pwm)
         (s_tim9_handle.Instance != TIM9))
     {
         bsp_status_t ret = s_pwm_tim9_init();
+        if (ret != BSP_OK)
+        {
+            return ret;
+        }
+    }
+
+    if ((pwm == PORT_PWM_STEPPER_STEP) && (s_tim2_handle.Instance != TIM2))
+    {
+        bsp_status_t ret = s_pwm_tim2_init();
         if (ret != BSP_OK)
         {
             return ret;

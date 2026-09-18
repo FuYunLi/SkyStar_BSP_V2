@@ -30,6 +30,8 @@ typedef enum
     PORT_PWM_MOTOR1_IN1,
     /* 直流电机1 驱动 IN2（TIM9_CH2/PE6，AT8236） */
     PORT_PWM_MOTOR1_IN2,
+    /* 步进电机脉冲（TIM2_CH1/PA15，TMC2209，SW7 BIT8） */
+    PORT_PWM_STEPPER_STEP,
     /* PWM 逻辑通道最大值 */
     PORT_PWM_MAX
 } port_pwm_id_t;
