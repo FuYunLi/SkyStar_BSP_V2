@@ -109,7 +109,7 @@ Core (CubeMX 生成) + HAL
 | 批次 | 例程 | 状态 |
 |---|---|---|
 | 已覆盖（≈20） | led / key_scan / key_multi_button / delay_us / uart_printf / uart_echo / uart_easylogger / uart_shell_microrl / uart_ymodem / adc_joystick / i2c_aht30 / i2c_at24cxx / w25qxx(_littlefs) / sdio_card(_fatfs) / spi_lcd_speedtest / spi_lcd_bitmap / spi_lcd_lvgl / ws2812b | ✅ 已有对应能力 |
-| 批次1（8，零 CubeMX 改动） | pwm_passive_buzzer / adc_mcu_temperature / key_irq / crc / extern_io_check(PCA9555版) / standby_wkup / uart_control_led / uart_control_led_cjson | ⏳ 待移植 |
+| 批次1（8，零 CubeMX 改动） | pwm_passive_buzzer / adc_mcu_temperature / key_irq / crc / extern_io_check(PCA9555版) / standby_wkup / uart_control_led_cjson ✅；uart_control_led 由 letter-shell 命令等价覆盖 | ✅ 已移植（zcode） |
 | 批次2（6，需扩展） | pwm_sg90(TIM12) / pwm_motor(AT8236) / sd_pic_to_lcd / usb_cdc / usb_msc / mbedtls | ⏳ |
 | 批次3（5，外部模块） | hcsr04 / esp8266 / esp8266_tcp / irda / uart_radar | ⏳ |
 | 批次4（2，板载音频） | i2s(ES8388) / sd_audio_to_i2s | ⏳ |
@@ -117,9 +117,10 @@ Core (CubeMX 生成) + HAL
 
 ## 9. 已知问题清单（修一个删一行）
 
-- [ ] `port_pwm.c` `port_pwm_set_freq`：定时器时钟域写死 APB1 逻辑，TIM10（APB2）通道设频将偏差一倍；应按通道携带时钟域或用 `HAL_RCC_GetClockConfig` 推算
+- [x] `port_pwm.c` `port_pwm_set_freq`：定时器时钟域写死 APB1 逻辑——已修复（zcode `2dc4ee4`），按实例地址归属总线动态判定
 - [ ] `port_uart.c` RX 依赖纯 IDLE 快照：两次 IDLE 间连流超过 DMA 缓冲会静默覆写；ISR 内 `lwrb_write` 溢出无统计。修复方向：保留传输完成中断兜底 + 溢出计数
 - [ ] `bsp_uart.c` `uart_rx_data_cb` 为空：推送通知链路已建未用，上层为拉模式
+- [ ] `port_gpio.c` `HAL_GPIO_EXTI_Callback` 路由仅比对引脚号不比对端口（PE8 按键与 PB8 LED 同为 pin 8），现靠回调 NULL 检查兜底；根治方案是从 SYSCFG_EXTICR 反查端口归属
 
 ## 10. 维护约定
 
