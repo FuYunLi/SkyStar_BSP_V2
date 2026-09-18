@@ -55,6 +55,8 @@
 #include "demos/app_standby_demo.h"
 #include "demos/app_sg90_demo.h"
 #include "demos/app_sd_pic_demo.h"
+#include "demos/app_motor_demo.h"
+#include "demos/app_hcsr04_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -168,6 +170,8 @@ void app_main_init(void)
     app_standby_demo_init();
     app_sg90_demo_init();
     app_sd_pic_demo_init();
+    app_motor_demo_init();
+    app_hcsr04_demo_init();
     (void)app_fatfs_demo_init();
     (void)app_ymodem_demo_init();
 
