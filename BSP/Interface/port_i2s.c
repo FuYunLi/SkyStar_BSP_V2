@@ -21,9 +21,17 @@ static I2S_HandleTypeDef s_i2s2_handle;
 /* 发送 DMA 描述：SPI2_TX 固定挂 DMA1_Stream4 通道 0（参考手册 DMA 映射表） */
 static DMA_HandleTypeDef s_i2s2_dma_tx;
 
+/* 接收 DMA 描述：SPI2_RX 固定挂 DMA1_Stream3 通道 0（录音方向） */
+static DMA_HandleTypeDef s_i2s2_dma_rx;
+
 /* 发送完成回调注册表（单实例单回调足够） */
 static port_async_cb_t s_tx_cb;
 static void *s_tx_ctx;
+
+/* 接收侧回调与忙标志（录音方向） */
+static port_async_cb_t s_rx_cb;
+static void *s_rx_ctx;
+static volatile bool s_rx_busy;
 
 /* 发送忙标志，ISR 与主上下文共享 */
 static volatile bool s_tx_busy;
@@ -82,6 +90,24 @@ void HAL_I2S_MspInit(I2S_HandleTypeDef *hi2s)
 
     HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 5U, 0U);
     HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+
+    /* 接收 DMA：SPI2_RX 固定挂 DMA1_Stream3 通道 0（录音方向预留） */
+    s_i2s2_dma_rx.Instance = DMA1_Stream3;
+    s_i2s2_dma_rx.Init.Channel = DMA_CHANNEL_0;
+    s_i2s2_dma_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    s_i2s2_dma_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+    s_i2s2_dma_rx.Init.MemInc = DMA_MINC_ENABLE;
+    s_i2s2_dma_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    s_i2s2_dma_rx.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+    s_i2s2_dma_rx.Init.Mode = DMA_NORMAL;
+    s_i2s2_dma_rx.Init.Priority = DMA_PRIORITY_HIGH;
+    s_i2s2_dma_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    (void)HAL_DMA_Init(&s_i2s2_dma_rx);
+
+    __HAL_LINKDMA(hi2s, hdmarx, s_i2s2_dma_rx);
+
+    HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 5U, 0U);
+    HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
 }
 
 /**
@@ -103,6 +129,24 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 }
 
 /**
+ * @brief 重写 HAL 库 I2S 接收完成回调入口，分发至注册的业务回调
+ */
+void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
+{
+    if (hi2s != &s_i2s2_handle)
+    {
+        return;
+    }
+
+    s_rx_busy = false;
+
+    if (s_rx_cb != NULL)
+    {
+        s_rx_cb((uint8_t)PORT_I2S_2, BSP_OK, s_rx_ctx);
+    }
+}
+
+/**
  * @brief 重写 HAL 库 I2S 错误回调入口
  */
 void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
@@ -113,10 +157,16 @@ void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
     }
 
     s_tx_busy = false;
+    s_rx_busy = false;
 
     if (s_tx_cb != NULL)
     {
         s_tx_cb((uint8_t)PORT_I2S_2, BSP_ERROR, s_tx_ctx);
+    }
+
+    if (s_rx_cb != NULL)
+    {
+        s_rx_cb((uint8_t)PORT_I2S_2, BSP_ERROR, s_rx_ctx);
     }
 }
 
@@ -132,6 +182,14 @@ void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
 void DMA1_Stream4_IRQHandler(void)
 {
     (void)HAL_DMA_IRQHandler(s_i2s2_handle.hdmatx);
+}
+
+/**
+ * @brief DMA1 Stream3 中断入口（I2S2 接收 DMA）
+ */
+void DMA1_Stream3_IRQHandler(void)
+{
+    (void)HAL_DMA_IRQHandler(s_i2s2_handle.hdmarx);
 }
 
 /* ================================================================
@@ -161,20 +219,11 @@ static I2S_HandleTypeDef *s_i2s_get_ctx(port_i2s_id_t id)
  * ================================================================ */
 
 /**
- * @brief 初始化 I2S 接口（主发送、飞利浦 16 位、MCLK 输出）
+ * @brief I2S 硬件公共初始化（发送/接收方向共用）
+ * @param mode I2S_MODE_MASTER_TX 或 I2S_MODE_MASTER_RX
  */
-bsp_status_t port_i2s_init(port_i2s_id_t id, uint32_t sample_rate_hz)
+static bsp_status_t s_i2s_hw_setup(uint32_t mode, uint32_t sample_rate_hz)
 {
-    if (id >= PORT_I2S_MAX)
-    {
-        return BSP_EINVAL;
-    }
-
-    if ((sample_rate_hz < 8000U) || (sample_rate_hz > 48000U))
-    {
-        return BSP_EINVAL;
-    }
-
     RCC_PeriphCLKInitTypeDef periph_clk = {0};
 
     /* I2S 内核时钟走 PLLI2S：VCO 输入 = HSE/PLLM = 8/4 = 2MHz（与主 PLL
@@ -189,7 +238,7 @@ bsp_status_t port_i2s_init(port_i2s_id_t id, uint32_t sample_rate_hz)
     }
 
     s_i2s2_handle.Instance = SPI2;
-    s_i2s2_handle.Init.Mode = I2S_MODE_MASTER_TX;
+    s_i2s2_handle.Init.Mode = mode;
     s_i2s2_handle.Init.Standard = I2S_STANDARD_PHILIPS;
     s_i2s2_handle.Init.DataFormat = I2S_DATAFORMAT_16B;
     s_i2s2_handle.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
@@ -203,10 +252,49 @@ bsp_status_t port_i2s_init(port_i2s_id_t id, uint32_t sample_rate_hz)
     }
 
     s_tx_busy = false;
+    s_rx_busy = false;
     s_tx_cb = NULL;
     s_tx_ctx = NULL;
+    s_rx_cb = NULL;
+    s_rx_ctx = NULL;
 
     return BSP_OK;
+}
+
+/**
+ * @brief 初始化 I2S 接口（主发送、飞利浦 16 位、MCLK 输出）
+ */
+bsp_status_t port_i2s_init(port_i2s_id_t id, uint32_t sample_rate_hz)
+{
+    if (id >= PORT_I2S_MAX)
+    {
+        return BSP_EINVAL;
+    }
+
+    if ((sample_rate_hz < 8000U) || (sample_rate_hz > 48000U))
+    {
+        return BSP_EINVAL;
+    }
+
+    return s_i2s_hw_setup(I2S_MODE_MASTER_TX, sample_rate_hz);
+}
+
+/**
+ * @brief 初始化 I2S 接口（主接收、录音方向）
+ */
+bsp_status_t port_i2s_init_rx(port_i2s_id_t id, uint32_t sample_rate_hz)
+{
+    if (id >= PORT_I2S_MAX)
+    {
+        return BSP_EINVAL;
+    }
+
+    if ((sample_rate_hz < 8000U) || (sample_rate_hz > 48000U))
+    {
+        return BSP_EINVAL;
+    }
+
+    return s_i2s_hw_setup(I2S_MODE_MASTER_RX, sample_rate_hz);
 }
 
 /**
@@ -226,8 +314,11 @@ bsp_status_t port_i2s_deinit(port_i2s_id_t id)
 
     (void)HAL_I2S_DMAStop(&s_i2s2_handle);
     s_tx_busy = false;
+    s_rx_busy = false;
     s_tx_cb = NULL;
     s_tx_ctx = NULL;
+    s_rx_cb = NULL;
+    s_rx_ctx = NULL;
 
     if (HAL_I2S_DeInit(&s_i2s2_handle) != HAL_OK)
     {
@@ -307,8 +398,42 @@ bsp_status_t port_i2s_stop(port_i2s_id_t id)
 
     (void)HAL_I2S_DMAStop(hi2s);
     s_tx_busy = false;
+    s_rx_busy = false;
     s_tx_cb = NULL;
     s_tx_ctx = NULL;
+    s_rx_cb = NULL;
+    s_rx_ctx = NULL;
+
+    return BSP_OK;
+}
+
+/**
+ * @brief 以 DMA 方式异步接收一组采样（录音方向）
+ */
+bsp_status_t port_i2s_read_dma(port_i2s_id_t id, uint16_t *samples, uint16_t count,
+                               port_async_cb_t cb, void *user_ctx)
+{
+    I2S_HandleTypeDef *hi2s = s_i2s_get_ctx(id);
+
+    if ((hi2s == NULL) || (samples == NULL) || (count == 0U))
+    {
+        return BSP_EINVAL;
+    }
+
+    if (s_rx_busy)
+    {
+        return BSP_BUSY;
+    }
+
+    s_rx_cb = cb;
+    s_rx_ctx = user_ctx;
+    s_rx_busy = true;
+
+    if (HAL_I2S_Receive_DMA(hi2s, samples, count) != HAL_OK)
+    {
+        s_rx_busy = false;
+        return BSP_ERROR;
+    }
 
     return BSP_OK;
 }

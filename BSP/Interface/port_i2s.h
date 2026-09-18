@@ -46,6 +46,12 @@ typedef enum
 bsp_status_t port_i2s_init(port_i2s_id_t id, uint32_t sample_rate_hz);
 
 /**
+ * @brief 初始化 I2S 接口（主接收模式，录音方向）
+ * @note 参数语义与 port_i2s_init 一致；录音来自 ES8388 ADC。
+ */
+bsp_status_t port_i2s_init_rx(port_i2s_id_t id, uint32_t sample_rate_hz);
+
+/**
  * @brief 反初始化 I2S 并将外设恢复为 SPI2 模式（W25Q/IMU 可用）
  */
 bsp_status_t port_i2s_deinit(port_i2s_id_t id);
@@ -65,6 +71,13 @@ bsp_status_t port_i2s_deinit(port_i2s_id_t id);
  */
 bsp_status_t port_i2s_write_dma(port_i2s_id_t id, const uint16_t *samples, uint16_t count,
                                 port_async_cb_t cb, void *user_ctx);
+
+/**
+ * @brief 以 DMA 方式接收一组 16 位交错采样（异步，完成时回调）
+ * @note 录音方向专用；init_rx 之后可用。
+ */
+bsp_status_t port_i2s_read_dma(port_i2s_id_t id, uint16_t *samples, uint16_t count,
+                               port_async_cb_t cb, void *user_ctx);
 
 /**
  * @brief 查询发送通道是否忙碌

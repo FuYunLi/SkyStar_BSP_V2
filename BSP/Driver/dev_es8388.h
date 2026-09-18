@@ -42,6 +42,16 @@ bsp_status_t dev_es8388_start(void);
 bsp_status_t dev_es8388_stop(void);
 
 /**
+ * @brief 启动 ADC 录音路径（板载差分麦克风，需 I2S 时钟已输出）
+ */
+bsp_status_t dev_es8388_start_adc(void);
+
+/**
+ * @brief 停止 ADC 录音路径
+ */
+bsp_status_t dev_es8388_stop_adc(void);
+
+/**
  * @brief 设置 DAC 音量
  * @param volume 音量 (0-100)，越界自动钳位
  * @retval BSP_OK 设置成功

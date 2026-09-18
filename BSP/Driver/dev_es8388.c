@@ -26,6 +26,8 @@
 #define ES8388_CONTROL2     (0x01U)  /* 模拟偏置与 LP 相关 */
 #define ES8388_CHIPPOWER    (0x02U)  /* 数字核电源 */
 #define ES8388_ADCPOWER     (0x03U)  /* ADC 模拟块电源 */
+#define ES8388_ADCCONTROL1  (0x09U)  /* MIC 放大器 PGA 增益 */
+#define ES8388_ADCCONTROL2  (0x0AU)  /* 输入通道选择与差分配置 */
 #define ES8388_DACPOWER     (0x04U)  /* DAC 与输出级电源 */
 #define ES8388_MASTERMODE   (0x08U)  /* 主从模式选择 */
 #define ES8388_DACCONTROL1  (0x17U)  /* DAC 串口格式（I2S/位宽） */
@@ -175,6 +177,40 @@ bsp_status_t dev_es8388_start(void)
     mute_reg &= (uint8_t)~0x04U;
 
     return s_es8388_write(ES8388_DACCONTROL3, mute_reg);
+}
+
+/**
+ * @brief 启动 ADC 录音路径
+ */
+bsp_status_t dev_es8388_start_adc(void)
+{
+    /* 复位数字核电源确保时钟锁存（与 start 一致） */
+    bsp_status_t ret = s_es8388_write(ES8388_CHIPPOWER, 0xF0U);
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
+
+    ret = s_es8388_write(ES8388_CHIPPOWER, 0x00U);
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
+
+    /* 板载麦克风为差分输入（对照官方例程注释），中档 PGA */
+    (void)s_es8388_write(ES8388_ADCCONTROL1, 0x88U);
+    (void)s_es8388_write(ES8388_ADCCONTROL2, 0xF0U);
+
+    /* ADC 模拟块整体上电（含 MICBIAS） */
+    return s_es8388_write(ES8388_ADCPOWER, 0x00U);
+}
+
+/**
+ * @brief 停止 ADC 录音路径
+ */
+bsp_status_t dev_es8388_stop_adc(void)
+{
+    return s_es8388_write(ES8388_ADCPOWER, 0xFFU);
 }
 
 /**
