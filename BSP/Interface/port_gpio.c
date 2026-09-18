@@ -33,7 +33,10 @@ static const port_gpio_map_t gpio_mapping[] =
     [PORT_GPIO_EC11_A] = {GPIOD, GPIO_PIN_12},
     [PORT_GPIO_EC11_B] = {GPIOD, GPIO_PIN_13},
     [PORT_GPIO_HCSR04_TRIG] = {GPIOD, GPIO_PIN_11},
-    [PORT_GPIO_HCSR04_ECHO] = {GPIOA, GPIO_PIN_8}
+    [PORT_GPIO_HCSR04_ECHO] = {GPIOA, GPIO_PIN_8},
+    [PORT_GPIO_HX711_DOUT] = {GPIOB, GPIO_PIN_0},
+    [PORT_GPIO_HX711_SCK] = {GPIOB, GPIO_PIN_1},
+    [PORT_GPIO_RS485_DE] = {GPIOD, GPIO_PIN_15}
 };
 
 /* 外部中断业务回调函数表 */
@@ -55,6 +58,31 @@ bsp_status_t port_gpio_init(void)
 
     /* 初始化输出引脚的安全默认电平 */
     port_gpio_write(PORT_GPIO_LED_CORE, PORT_GPIO_LOW);
+
+    /* 位操作类外设的引脚模式初始化（CubeMX 未配置的引脚在此集中托管）：
+     * HX711 时钟为推挽输出且默认低（数据手册要求空闲低电平），
+     * DOUT 为浮空输入，RS485 方向脚默认接收态 */
+    {
+        GPIO_InitTypeDef gpio_init = {0};
+
+        gpio_init.Pin = gpio_mapping[PORT_GPIO_HX711_SCK].pin;
+        gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
+        gpio_init.Pull = GPIO_NOPULL;
+        gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
+        (void)HAL_GPIO_Init(gpio_mapping[PORT_GPIO_HX711_SCK].port, &gpio_init);
+
+        gpio_init.Pin = gpio_mapping[PORT_GPIO_HX711_DOUT].pin;
+        gpio_init.Mode = GPIO_MODE_INPUT;
+        gpio_init.Pull = GPIO_NOPULL;
+        (void)HAL_GPIO_Init(gpio_mapping[PORT_GPIO_HX711_DOUT].port, &gpio_init);
+
+        gpio_init.Pin = gpio_mapping[PORT_GPIO_RS485_DE].pin;
+        gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
+        (void)HAL_GPIO_Init(gpio_mapping[PORT_GPIO_RS485_DE].port, &gpio_init);
+
+        port_gpio_write(PORT_GPIO_HX711_SCK, PORT_GPIO_LOW);
+        port_gpio_write(PORT_GPIO_RS485_DE, PORT_GPIO_LOW);
+    }
 
     return BSP_OK;
 }

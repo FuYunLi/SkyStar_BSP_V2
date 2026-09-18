@@ -53,6 +53,12 @@ typedef enum
     PORT_GPIO_HCSR04_TRIG,
     /* HC-SR04 超声波回波脚 (PA8，外部模块示例接线) */
     PORT_GPIO_HCSR04_ECHO,
+    /* HX711 称重数据输出 (PB0，SW7 BIT2 与 ADC 复用) */
+    PORT_GPIO_HX711_DOUT,
+    /* HX711 称重时钟 (PB1，SW7 BIT2 与 ADC 复用) */
+    PORT_GPIO_HX711_SCK,
+    /* 隔离 RS485 收发方向控制 (PD15，高=发送 低=接收) */
+    PORT_GPIO_RS485_DE,
     /* 逻辑引脚最大值 */
     PORT_GPIO_MAX
 } port_gpio_id_t;
