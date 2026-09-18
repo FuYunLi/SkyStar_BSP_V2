@@ -110,7 +110,7 @@ Core (CubeMX 生成) + HAL
 |---|---|---|
 | 已覆盖（≈20） | led / key_scan / key_multi_button / delay_us / uart_printf / uart_echo / uart_easylogger / uart_shell_microrl / uart_ymodem / adc_joystick / i2c_aht30 / i2c_at24cxx / w25qxx(_littlefs) / sdio_card(_fatfs) / spi_lcd_speedtest / spi_lcd_bitmap / spi_lcd_lvgl / ws2812b | ✅ 已有对应能力 |
 | 批次1（8，零 CubeMX 改动） | pwm_passive_buzzer / adc_mcu_temperature / key_irq / crc / extern_io_check(PCA9555版) / standby_wkup / uart_control_led_cjson ✅；uart_control_led 由 letter-shell 命令等价覆盖 | ✅ 已移植（zcode） |
-| 批次2（6，需扩展） | pwm_sg90(TIM12) / pwm_motor(AT8236) / sd_pic_to_lcd / usb_cdc / usb_msc / mbedtls | ⏳ |
+| 批次2（6，需扩展） | pwm_sg90 ✅ / sd_pic_to_lcd ✅（zcode，自持 TIM12 初始化）；pwm_motor ⏸ 待补 AT8236 控制引脚资料；usb_cdc / usb_msc / mbedtls ⏳ 工作量大建议单独排期 | ◐ 部分完成 |
 | 批次3（5，外部模块） | hcsr04 / esp8266 / esp8266_tcp / irda / uart_radar | ⏳ |
 | 批次4（2，板载音频） | i2s(ES8388) / sd_audio_to_i2s | ⏳ |
 | 变体（1） | flash_littlefs（内部 Flash 版，对比外部 W25Q） | ⏳ |
