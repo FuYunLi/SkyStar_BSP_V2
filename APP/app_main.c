@@ -49,6 +49,7 @@
 #include "demos/app_key_irq_demo.h"
 #include "demos/app_cjson_demo.h"
 #include "demos/app_buzzer_demo.h"
+#include "demos/app_mcu_temp_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -156,6 +157,7 @@ void app_main_init(void)
     app_key_irq_demo_init();
     app_cjson_demo_init();
     app_buzzer_demo_init();
+    app_mcu_temp_demo_init();
     (void)app_fatfs_demo_init();
     (void)app_ymodem_demo_init();
 
