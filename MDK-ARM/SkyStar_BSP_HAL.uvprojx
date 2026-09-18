@@ -5172,6 +5172,16 @@
               <FilePath>..\APP\demos\app_flash_demo.h</FilePath>
             </File>
             <File>
+              <FileName>app_key_irq_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_key_irq_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_key_irq_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_key_irq_demo.h</FilePath>
+            </File>
+            <File>
               <FileName>app_lcd_demo.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\APP\demos\app_lcd_demo.c</FilePath>
