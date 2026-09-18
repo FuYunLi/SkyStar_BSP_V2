@@ -4907,6 +4907,16 @@
               <FilePath>..\BSP\Interface\soft_onewire.h</FilePath>
             </File>
             <File>
+              <FileName>port_can.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Interface\port_can.c</FilePath>
+            </File>
+            <File>
+              <FileName>port_can.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Interface\port_can.h</FilePath>
+            </File>
+            <File>
               <FileName>soft_i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\Interface\soft_i2c.c</FilePath>
@@ -5065,6 +5075,16 @@
               <FileName>dev_ds18b20.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\BSP\Driver\dev_ds18b20.h</FilePath>
+            </File>
+            <File>
+              <FileName>dev_stepper.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Driver\dev_stepper.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_stepper.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Driver\dev_stepper.h</FilePath>
             </File>
             <File>
               <FileName>dev_motor.c</FileName>
@@ -5352,6 +5372,16 @@
               <FilePath>..\APP\demos\app_rs485_demo.h</FilePath>
             </File>
             <File>
+              <FileName>app_stepper_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_stepper_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_stepper_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_stepper_demo.h</FilePath>
+            </File>
+            <File>
               <FileName>app_sd_pic_demo.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_sd_pic_demo.h</FilePath>
@@ -5410,6 +5440,16 @@
               <FileName>app_cjson_demo.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\APP\demos\app_cjson_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_can_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_can_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_can_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_can_demo.h</FilePath>
             </File>
             <File>
               <FileName>app_cjson_demo.h</FileName>

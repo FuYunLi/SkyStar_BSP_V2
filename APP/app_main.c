@@ -61,6 +61,8 @@
 #include "demos/app_hx711_demo.h"
 #include "demos/app_ds18b20_demo.h"
 #include "demos/app_rs485_demo.h"
+#include "demos/app_can_demo.h"
+#include "demos/app_stepper_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -180,6 +182,8 @@ void app_main_init(void)
     app_hx711_demo_init();
     app_ds18b20_demo_init();
     app_rs485_demo_init();
+    app_can_demo_init();
+    app_stepper_demo_init();
     (void)app_fatfs_demo_init();
     (void)app_ymodem_demo_init();
 
