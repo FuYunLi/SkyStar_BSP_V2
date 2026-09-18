@@ -13,13 +13,91 @@ typedef struct
     uint32_t channel;
 } port_pwm_map_t;
 
+/* ================================================================
+ * 私有变量
+ * ================================================================ */
+
+/* 舵机通道自持定时器句柄：TIM12 未在 CubeMX 使能，由本模块自行初始化，
+ * 等效于 CubeMX 生成代码（时钟/GPIO AF9/时基/双通道 PWM1） */
+static TIM_HandleTypeDef s_tim12_handle;
+
+/* 舵机时基：TIM12 输入 84MHz（APB1 定时器时钟），PSC=83 → 1MHz 计数，
+ * ARR=19999 → 20ms 周期（50Hz），CCR 值即脉冲宽度微秒数 */
+#define PWM_TIM12_PSC (83U)
+#define PWM_TIM12_ARR (19999U)
+
 /* PWM 映射表，对于暂未在 CubeMX 中使能的通道，其句柄置 NULL */
 static const port_pwm_map_t pwm_mapping[PORT_PWM_MAX] =
 {
     [PORT_PWM_BUZZER] = {&htim13, TIM_CHANNEL_1},
     [PORT_PWM_WS2812] = {&htim5, TIM_CHANNEL_4},
-    [PORT_PWM_LCD_BL] = {&htim10, TIM_CHANNEL_1}
+    [PORT_PWM_LCD_BL] = {&htim10, TIM_CHANNEL_1},
+    [PORT_PWM_SERVO1] = {&s_tim12_handle, TIM_CHANNEL_1},
+    [PORT_PWM_SERVO2] = {&s_tim12_handle, TIM_CHANNEL_2}
 };
+
+/* ================================================================
+ * 私有函数
+ * ================================================================ */
+
+/**
+ * @brief 初始化舵机通道定时器 TIM12（等效 CubeMX 生成代码）
+ * @note 硬件连接：PB14=TIM12_CH1（舵机1），PB15=TIM12_CH2（舵机2），
+ *       复用功能 AF9；SW7 拨码 BIT5 需置于"双舵机"位。
+ * @retval BSP_OK 初始化成功
+ */
+static bsp_status_t s_pwm_tim12_init(void)
+{
+    GPIO_InitTypeDef gpio_init = {0};
+    TIM_MasterConfigTypeDef master_config = {0};
+    TIM_OC_InitTypeDef oc_config = {0};
+
+    __HAL_RCC_TIM12_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+
+    /* CH1/CH2 引脚复用推挽，PWM 输出无外部上拉需求 */
+    gpio_init.Pin = GPIO_PIN_14 | GPIO_PIN_15;
+    gpio_init.Mode = GPIO_MODE_AF_PP;
+    gpio_init.Pull = GPIO_NOPULL;
+    gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
+    gpio_init.Alternate = GPIO_AF9_TIM12;
+    (void)HAL_GPIO_Init(GPIOB, &gpio_init);
+
+    s_tim12_handle.Instance = TIM12;
+    s_tim12_handle.Init.Prescaler = PWM_TIM12_PSC;
+    s_tim12_handle.Init.CounterMode = TIM_COUNTERMODE_UP;
+    s_tim12_handle.Init.Period = PWM_TIM12_ARR;
+    s_tim12_handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    s_tim12_handle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+
+    if (HAL_TIM_PWM_Init(&s_tim12_handle) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    master_config.MasterOutputTrigger = TIM_TRGO_RESET;
+    master_config.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(&s_tim12_handle, &master_config) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    /* 两通道同配置：PWM1 模式，比较值 0（初始无脉冲输出） */
+    oc_config.OCMode = TIM_OCMODE_PWM1;
+    oc_config.Pulse = 0U;
+    oc_config.OCPolarity = TIM_OCPOLARITY_HIGH;
+    oc_config.OCFastMode = TIM_OCFAST_DISABLE;
+    if (HAL_TIM_PWM_ConfigChannel(&s_tim12_handle, &oc_config, TIM_CHANNEL_1) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+    if (HAL_TIM_PWM_ConfigChannel(&s_tim12_handle, &oc_config, TIM_CHANNEL_2) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    return BSP_OK;
+}
 
 /**
  * @brief 获取定时器实例的实际输入时钟频率
@@ -72,6 +150,19 @@ bsp_status_t port_pwm_init(port_pwm_id_t pwm)
     if (pwm_mapping[pwm].htim == NULL)
     {
         return BSP_ERROR;
+    }
+
+    /* 舵机通道使用未经 CubeMX 初始化的 TIM12，首次调用时自持初始化 */
+    if ((pwm == PORT_PWM_SERVO1) || (pwm == PORT_PWM_SERVO2))
+    {
+        if (s_tim12_handle.Instance != TIM12)
+        {
+            bsp_status_t ret = s_pwm_tim12_init();
+            if (ret != BSP_OK)
+            {
+                return ret;
+            }
+        }
     }
 
     return BSP_OK;
@@ -276,4 +367,43 @@ bsp_status_t port_pwm_dma_stop(port_pwm_id_t pwm)
 
     HAL_StatusTypeDef ret = HAL_TIM_PWM_Stop_DMA(pwm_mapping[pwm].htim, pwm_mapping[pwm].channel);
     return hal_to_bsp_status(ret);
+}
+
+/**
+ * @brief 直接设置 PWM 通道比较值（脉冲宽度）
+ * @note 舵机通道专用便捷接口：TIM12 时基为 1MHz 计数（见 s_pwm_tim12_init），
+ *       比较值即脉冲宽度微秒数，典型范围 500-2500µs 对应 0-180°。
+ *       其他通道的时基并非 1µs，勿混用本接口。
+ * @param pwm PWM 逻辑通道 ID（限 PORT_PWM_SERVO1/SERVO2）
+ * @param pulse_us 脉冲宽度（微秒）
+ * @retval BSP_OK 设置成功
+ * @retval BSP_EINVAL 参数无效
+ * @retval BSP_ERROR 底层句柄未初始化
+ */
+bsp_status_t port_pwm_set_pulse_us(port_pwm_id_t pwm, uint16_t pulse_us)
+{
+    if (pwm >= PORT_PWM_MAX)
+    {
+        return BSP_EINVAL;
+    }
+
+    if ((pwm != PORT_PWM_SERVO1) && (pwm != PORT_PWM_SERVO2))
+    {
+        return BSP_EINVAL;
+    }
+
+    if (pwm_mapping[pwm].htim == NULL)
+    {
+        return BSP_ERROR;
+    }
+
+    /* 脉冲宽度不得超出 ARR 周期 */
+    if (pulse_us > (uint16_t)PWM_TIM12_ARR)
+    {
+        pulse_us = (uint16_t)PWM_TIM12_ARR;
+    }
+
+    __HAL_TIM_SET_COMPARE(pwm_mapping[pwm].htim, pwm_mapping[pwm].channel, pulse_us);
+
+    return BSP_OK;
 }

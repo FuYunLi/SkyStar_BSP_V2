@@ -22,6 +22,10 @@ typedef enum
     PORT_PWM_WS2812,
     /* LCD 背光 PWM 通道 */
     PORT_PWM_LCD_BL,
+    /* 舵机 PWM 通道（TIM12_CH1/PB14，SW7 拨码需置于双舵机位） */
+    PORT_PWM_SERVO1,
+    /* 舵机 PWM 通道（TIM12_CH2/PB15） */
+    PORT_PWM_SERVO2,
     /* PWM 逻辑通道最大值 */
     PORT_PWM_MAX
 } port_pwm_id_t;
@@ -34,6 +38,7 @@ bsp_status_t port_pwm_set_freq(port_pwm_id_t pwm, uint32_t freq_hz);
 uint32_t port_pwm_get_arr(port_pwm_id_t pwm);
 bsp_status_t port_pwm_dma_start(port_pwm_id_t pwm, void *data, uint16_t len);
 bsp_status_t port_pwm_dma_stop(port_pwm_id_t pwm);
+bsp_status_t port_pwm_set_pulse_us(port_pwm_id_t pwm, uint16_t pulse_us);
 
 #ifdef __cplusplus
 }
