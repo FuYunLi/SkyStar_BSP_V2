@@ -19,7 +19,12 @@ extern ADC_HandleTypeDef hadc1;
 /* 内部逻辑通道到 STM32 物理通道的映射表 */
 static const uint32_t s_adc_ch_map[PORT_ADC_CH_MAX] = {
     [PORT_ADC_CH_POTENTIOMETER] = ADC_CHANNEL_10,
+    [PORT_ADC_CH_MCU_TEMP] = ADC_CHANNEL_TEMPSENSOR,
 };
+
+/* 片内温度传感器数据手册参数（STM32F40x） */
+#define TEMP_V25_MV        (760)  /* 25°C 时的 Vsense 电压 (mV) */
+#define TEMP_SLOPE_MV      (25)   /* 平均斜率 (mV/10°C)，2.5mV/°C */
 
 static volatile bool s_adc_initialized = false;
 
@@ -42,6 +47,10 @@ bsp_status_t port_adc_init(void)
     {
         return BSP_ERROR;
     }
+
+    /* 使能温度传感器与 Vrefint 通道（ADC 公共控制寄存器 TSVREFE 位），
+     * 该位上电默认关闭，须显式开启后 IN16/IN17 才有输入 */
+    SET_BIT(ADC123_COMMON->CCR, ADC_CCR_TSVREFE);
 
     s_adc_initialized = true;
     return BSP_OK;
@@ -89,7 +98,11 @@ bsp_status_t port_adc_read_raw(port_adc_ch_t ch, uint32_t *raw_value)
     ADC_ChannelConfTypeDef sConfig = {0};
     sConfig.Channel = s_adc_ch_map[ch];
     sConfig.Rank = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+
+    /* 温度传感器源阻抗高，采样时间须足够长（≥10µs），取 480 周期；
+     * 普通外部通道取 15 周期即可 */
+    sConfig.SamplingTime = (ch == PORT_ADC_CH_MCU_TEMP) ? ADC_SAMPLETIME_480CYCLES
+                                                        : ADC_SAMPLETIME_15CYCLES;
     
     uint32_t primask = port_enter_critical();
 
@@ -148,6 +161,31 @@ bsp_status_t port_adc_read_voltage(port_adc_ch_t ch, uint32_t *voltage_mv)
 
     /* 电压换算公式：V = (raw * VREF) / MAX_LSB */
     *voltage_mv = (raw * PORT_ADC_VREF_MV) / PORT_ADC_MAX_LSB;
+
+    return BSP_OK;
+}
+
+/**
+ * @brief 读取片内温度传感器换算后的温度值
+ */
+bsp_status_t port_adc_read_temperature(int16_t *temp_deci_c)
+{
+    if (temp_deci_c == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    uint32_t raw = 0;
+    bsp_status_t status = port_adc_read_raw(PORT_ADC_CH_MCU_TEMP, &raw);
+    if (status != BSP_OK)
+    {
+        return status;
+    }
+
+    uint32_t vsense_mv = (raw * PORT_ADC_VREF_MV) / PORT_ADC_MAX_LSB;
+
+    /* T(0.1°C) = ((Vsense - V25) / Slope) × 10 + 250 */
+    *temp_deci_c = (int16_t)((((int32_t)vsense_mv - TEMP_V25_MV) * 10) / TEMP_SLOPE_MV + 250);
 
     return BSP_OK;
 }

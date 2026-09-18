@@ -33,6 +33,7 @@ extern "C" {
 typedef enum
 {
     PORT_ADC_CH_POTENTIOMETER = 0,  /* PC0 / ADC1_IN10 旋转电位器 */
+    PORT_ADC_CH_MCU_TEMP,           /* ADC1_IN16 片内温度传感器 */
     PORT_ADC_CH_MAX
 } port_adc_ch_t;
 
@@ -70,6 +71,18 @@ bsp_status_t port_adc_read_raw(port_adc_ch_t ch, uint32_t *raw_value);
  *         - BSP_ERROR 采样失败
  */
 bsp_status_t port_adc_read_voltage(port_adc_ch_t ch, uint32_t *voltage_mv);
+
+/**
+ * @brief 读取片内温度传感器换算后的温度值
+ * @note 数据手册参数：V25 = 0.76V，平均斜率 2.5mV/°C。
+ *       温度 = ((Vsense - V25) / Slope) + 25。
+ * @param[out] temp_deci_c 存储温度的指针，单位 0.1°C（如 253 表示 25.3°C）
+ * @return bsp_status_t 执行结果
+ *         - BSP_OK 成功
+ *         - BSP_EINVAL 参数无效
+ *         - BSP_ERROR 采样失败
+ */
+bsp_status_t port_adc_read_temperature(int16_t *temp_deci_c);
 
 /**
  * @brief 反初始化内置 ADC 接口层
