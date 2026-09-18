@@ -26,6 +26,10 @@ typedef enum
     PORT_PWM_SERVO1,
     /* 舵机 PWM 通道（TIM12_CH2/PB15） */
     PORT_PWM_SERVO2,
+    /* 直流电机1 驱动 IN1（TIM9_CH1/PE5，AT8236） */
+    PORT_PWM_MOTOR1_IN1,
+    /* 直流电机1 驱动 IN2（TIM9_CH2/PE6，AT8236） */
+    PORT_PWM_MOTOR1_IN2,
     /* PWM 逻辑通道最大值 */
     PORT_PWM_MAX
 } port_pwm_id_t;

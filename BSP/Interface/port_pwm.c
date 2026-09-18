@@ -26,6 +26,14 @@ static TIM_HandleTypeDef s_tim12_handle;
 #define PWM_TIM12_PSC (83U)
 #define PWM_TIM12_ARR (19999U)
 
+/* 电机1 通道自持定时器句柄：TIM9 未在 CubeMX 使能，由本模块自行初始化 */
+static TIM_HandleTypeDef s_tim9_handle;
+
+/* 电机时基：TIM9 输入 168MHz（APB2 定时器时钟），PSC=0、ARR=8399
+ * → 20kHz PWM（超出人耳频段），满占空比分辨率 8400 级 */
+#define PWM_TIM9_PSC (0U)
+#define PWM_TIM9_ARR (8399U)
+
 /* PWM 映射表，对于暂未在 CubeMX 中使能的通道，其句柄置 NULL */
 static const port_pwm_map_t pwm_mapping[PORT_PWM_MAX] =
 {
@@ -33,7 +41,9 @@ static const port_pwm_map_t pwm_mapping[PORT_PWM_MAX] =
     [PORT_PWM_WS2812] = {&htim5, TIM_CHANNEL_4},
     [PORT_PWM_LCD_BL] = {&htim10, TIM_CHANNEL_1},
     [PORT_PWM_SERVO1] = {&s_tim12_handle, TIM_CHANNEL_1},
-    [PORT_PWM_SERVO2] = {&s_tim12_handle, TIM_CHANNEL_2}
+    [PORT_PWM_SERVO2] = {&s_tim12_handle, TIM_CHANNEL_2},
+    [PORT_PWM_MOTOR1_IN1] = {&s_tim9_handle, TIM_CHANNEL_1},
+    [PORT_PWM_MOTOR1_IN2] = {&s_tim9_handle, TIM_CHANNEL_2}
 };
 
 /* ================================================================
@@ -134,6 +144,63 @@ static uint32_t s_pwm_get_timer_clk(const TIM_HandleTypeDef *htim)
 }
 
 /**
+ * @brief 初始化电机1通道定时器 TIM9（等效 CubeMX 生成代码）
+ * @note 硬件连接：PE5=TIM9_CH1（AT8236 IN1），PE6=TIM9_CH2（IN2），
+ *       复用功能 AF9；编码器 PB4/PC7 挂 TIM3，本模块暂未启用。
+ * @retval BSP_OK 初始化成功
+ */
+static bsp_status_t s_pwm_tim9_init(void)
+{
+    GPIO_InitTypeDef gpio_init = {0};
+    TIM_MasterConfigTypeDef master_config = {0};
+    TIM_OC_InitTypeDef oc_config = {0};
+
+    __HAL_RCC_TIM9_CLK_ENABLE();
+    __HAL_RCC_GPIOE_CLK_ENABLE();
+
+    gpio_init.Pin = GPIO_PIN_5 | GPIO_PIN_6;
+    gpio_init.Mode = GPIO_MODE_AF_PP;
+    gpio_init.Pull = GPIO_NOPULL;
+    gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
+    gpio_init.Alternate = GPIO_AF3_TIM9;
+    (void)HAL_GPIO_Init(GPIOE, &gpio_init);
+
+    s_tim9_handle.Instance = TIM9;
+    s_tim9_handle.Init.Prescaler = PWM_TIM9_PSC;
+    s_tim9_handle.Init.CounterMode = TIM_COUNTERMODE_UP;
+    s_tim9_handle.Init.Period = PWM_TIM9_ARR;
+    s_tim9_handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    s_tim9_handle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+
+    if (HAL_TIM_PWM_Init(&s_tim9_handle) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    master_config.MasterOutputTrigger = TIM_TRGO_RESET;
+    master_config.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+    if (HAL_TIMEx_MasterConfigSynchronization(&s_tim9_handle, &master_config) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    oc_config.OCMode = TIM_OCMODE_PWM1;
+    oc_config.Pulse = 0U;
+    oc_config.OCPolarity = TIM_OCPOLARITY_HIGH;
+    oc_config.OCFastMode = TIM_OCFAST_DISABLE;
+    if (HAL_TIM_PWM_ConfigChannel(&s_tim9_handle, &oc_config, TIM_CHANNEL_1) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+    if (HAL_TIM_PWM_ConfigChannel(&s_tim9_handle, &oc_config, TIM_CHANNEL_2) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    return BSP_OK;
+}
+
+/**
  * @brief 初始化检测逻辑通道
  * @param pwm PWM 逻辑通道 ID
  * @retval BSP_OK 检测通过，通道就绪
@@ -152,16 +219,24 @@ bsp_status_t port_pwm_init(port_pwm_id_t pwm)
         return BSP_ERROR;
     }
 
-    /* 舵机通道使用未经 CubeMX 初始化的 TIM12，首次调用时自持初始化 */
-    if ((pwm == PORT_PWM_SERVO1) || (pwm == PORT_PWM_SERVO2))
+    /* 舵机/电机通道使用未经 CubeMX 初始化的定时器，首次调用时自持初始化 */
+    if (((pwm == PORT_PWM_SERVO1) || (pwm == PORT_PWM_SERVO2)) &&
+        (s_tim12_handle.Instance != TIM12))
     {
-        if (s_tim12_handle.Instance != TIM12)
+        bsp_status_t ret = s_pwm_tim12_init();
+        if (ret != BSP_OK)
         {
-            bsp_status_t ret = s_pwm_tim12_init();
-            if (ret != BSP_OK)
-            {
-                return ret;
-            }
+            return ret;
+        }
+    }
+
+    if (((pwm == PORT_PWM_MOTOR1_IN1) || (pwm == PORT_PWM_MOTOR1_IN2)) &&
+        (s_tim9_handle.Instance != TIM9))
+    {
+        bsp_status_t ret = s_pwm_tim9_init();
+        if (ret != BSP_OK)
+        {
+            return ret;
         }
     }
 
