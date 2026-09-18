@@ -63,6 +63,7 @@
 #include "demos/app_rs485_demo.h"
 #include "demos/app_can_demo.h"
 #include "demos/app_stepper_demo.h"
+#include "demos/app_mic_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -184,6 +185,7 @@ void app_main_init(void)
     app_rs485_demo_init();
     app_can_demo_init();
     app_stepper_demo_init();
+    app_mic_demo_init();
     (void)app_fatfs_demo_init();
     (void)app_ymodem_demo_init();
 
@@ -202,6 +204,7 @@ void app_main_process(void)
     app_ymodem_demo_process();
     app_lvgl_images_demo_process();
     bsp_audio_process();
+    bsp_mic_process();
 
     /* LVGL GUI 任务处理 */
     (void)lv_timer_handler();

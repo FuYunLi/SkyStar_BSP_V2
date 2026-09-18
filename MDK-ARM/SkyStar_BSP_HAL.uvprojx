@@ -4796,6 +4796,16 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\Board\bsp_rs485.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_mic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Board\bsp_mic.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_mic.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Board\bsp_mic.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -5315,6 +5325,16 @@
               <FileName>app_key_irq_demo.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_key_irq_demo.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_mic_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\demos\app_mic_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_mic_demo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\demos\app_mic_demo.h</FilePath>
             </File>
             <File>
               <FileName>app_mcu_temp_demo.c</FileName>
