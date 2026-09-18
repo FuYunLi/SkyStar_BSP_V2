@@ -47,6 +47,7 @@
 #include "demos/app_ymodem_demo.h"
 #include "demos/app_lvgl_images_demo.h"
 #include "demos/app_key_irq_demo.h"
+#include "demos/app_cjson_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -152,6 +153,7 @@ void app_main_init(void)
     app_ec11_demo_init();
     app_adc_demo_init();
     app_key_irq_demo_init();
+    app_cjson_demo_init();
     (void)app_fatfs_demo_init();
     (void)app_ymodem_demo_init();
 
