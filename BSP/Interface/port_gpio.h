@@ -45,10 +45,14 @@ typedef enum
     PORT_GPIO_SD3078_INT,
     /* IMU CS (PE7) */
     PORT_GPIO_IMU_CS,
-    /* EC11 编码器 A相 (PB0) */
+    /* EC11 编码器 A相 (PD12) */
     PORT_GPIO_EC11_A,
-    /* EC11 编码器 B相 (PB1) */
+    /* EC11 编码器 B相 (PD13) */
     PORT_GPIO_EC11_B,
+    /* HC-SR04 超声波触发脚 (PD11，外部模块示例接线) */
+    PORT_GPIO_HCSR04_TRIG,
+    /* HC-SR04 超声波回波脚 (PA8，外部模块示例接线) */
+    PORT_GPIO_HCSR04_ECHO,
     /* 逻辑引脚最大值 */
     PORT_GPIO_MAX
 } port_gpio_id_t;

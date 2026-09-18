@@ -31,7 +31,9 @@ static const port_gpio_map_t gpio_mapping[] =
     [PORT_GPIO_SD3078_INT] = {GPIOE, GPIO_PIN_3},
     [PORT_GPIO_IMU_CS] = {GPIOE, GPIO_PIN_7},
     [PORT_GPIO_EC11_A] = {GPIOD, GPIO_PIN_12},
-    [PORT_GPIO_EC11_B] = {GPIOD, GPIO_PIN_13}
+    [PORT_GPIO_EC11_B] = {GPIOD, GPIO_PIN_13},
+    [PORT_GPIO_HCSR04_TRIG] = {GPIOD, GPIO_PIN_11},
+    [PORT_GPIO_HCSR04_ECHO] = {GPIOA, GPIO_PIN_8}
 };
 
 /* 外部中断业务回调函数表 */
