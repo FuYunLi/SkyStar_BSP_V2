@@ -57,6 +57,7 @@
 #include "demos/app_sd_pic_demo.h"
 #include "demos/app_motor_demo.h"
 #include "demos/app_hcsr04_demo.h"
+#include "demos/app_audio_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -172,6 +173,7 @@ void app_main_init(void)
     app_sd_pic_demo_init();
     app_motor_demo_init();
     app_hcsr04_demo_init();
+    app_audio_demo_init();
     (void)app_fatfs_demo_init();
     (void)app_ymodem_demo_init();
 
@@ -189,6 +191,7 @@ void app_main_process(void)
     bsp_shell_process();
     app_ymodem_demo_process();
     app_lvgl_images_demo_process();
+    bsp_audio_process();
 
     /* LVGL GUI 任务处理 */
     (void)lv_timer_handler();
