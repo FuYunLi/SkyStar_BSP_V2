@@ -21,7 +21,9 @@ typedef enum
 {
     /* 调试 / Shell 串口 */
     PORT_UART_1 = 0,
-    
+    /* RS485 独立串口（USART3，轮询模式，无 DMA/环形缓冲） */
+    PORT_UART_3,
+
     PORT_UART_MAX
 } port_uart_id_t;
 
@@ -170,6 +172,19 @@ bsp_status_t port_uart_enable_rx(port_uart_id_t uart);
  * @param uart 目标串口 ID
  */
 bsp_status_t port_uart_disable_rx(port_uart_id_t uart);
+
+/**
+ * @brief 轮询式接收（RS485 等半双工场景专用）
+ * @note 仅 PORT_UART_3 支持：该通道未配置 DMA，收发均为阻塞轮询。
+ * @param uart 目标串口 ID
+ * @param buf 存储接收数据的缓冲区
+ * @param len 期望接收字节数
+ * @param timeout_ms 超时时间（ms）
+ * @retval BSP_OK 接收完成
+ * @retval BSP_EINVAL 参数无效或通道不支持
+ * @retval BSP_ETIMEOUT 超时
+ */
+bsp_status_t port_uart_read_poll(port_uart_id_t uart, uint8_t *buf, uint16_t len, uint32_t timeout_ms);
 
 /* ================================================================
  * 错误查询 API

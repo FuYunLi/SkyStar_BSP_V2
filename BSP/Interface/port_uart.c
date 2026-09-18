@@ -67,7 +67,15 @@ typedef struct
 static UART_HandleTypeDef *s_uart_map[PORT_UART_MAX] =
 {
     [PORT_UART_1] = &huart1,
+    [PORT_UART_3] = &s_usart3_handle,
 };
+
+/* USART3 自持句柄：CubeMX 未使能该外设，由本模块自行初始化。
+ * RS485 半双工场景采用轮询收发，不占用 DMA 与环形缓冲。 */
+static UART_HandleTypeDef s_usart3_handle;
+
+/* USART3 自持初始化标志 */
+static bool s_usart3_ready;
 
 static uart_context_t s_ctx[PORT_UART_MAX];
 
@@ -136,6 +144,44 @@ static void s_tx_start_dma(uart_context_t *ctx)
  * ================================================================ */
 
 /**
+ * @brief 自持初始化 USART3（等效 CubeMX 生成代码）
+ * @note PD8=USART3_TX、PD9=USART3_RX（AF7），115200-8-N-1，
+ *       隔离 RS485 总线的数据通道。
+ * @retval BSP_OK 初始化成功
+ */
+static bsp_status_t s_uart3_self_init(void)
+{
+    GPIO_InitTypeDef gpio_init = {0};
+
+    __HAL_RCC_USART3_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+
+    gpio_init.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+    gpio_init.Mode = GPIO_MODE_AF_PP;
+    gpio_init.Pull = GPIO_PULLUP;
+    gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
+    gpio_init.Alternate = GPIO_AF7_USART3;
+    (void)HAL_GPIO_Init(GPIOD, &gpio_init);
+
+    s_usart3_handle.Instance = USART3;
+    s_usart3_handle.Init.BaudRate = 115200U;
+    s_usart3_handle.Init.WordLength = UART_WORDLENGTH_8B;
+    s_usart3_handle.Init.StopBits = UART_STOPBITS_1;
+    s_usart3_handle.Init.Parity = UART_PARITY_NONE;
+    s_usart3_handle.Init.Mode = UART_MODE_TX_RX;
+    s_usart3_handle.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    s_usart3_handle.Init.OverSampling = UART_OVERSAMPLING_16;
+
+    if (HAL_UART_Init(&s_usart3_handle) != HAL_OK)
+    {
+        return BSP_ERROR;
+    }
+
+    s_usart3_ready = true;
+    return BSP_OK;
+}
+
+/**
  * @brief 初始化指定串口
  *
  * 示例（队列模式）：
@@ -153,10 +199,44 @@ bsp_status_t port_uart_init(port_uart_id_t uart, const port_uart_config_t *cfg)
 {
     if (uart >= PORT_UART_MAX || cfg == NULL)
         return BSP_EINVAL;
-    if (cfg->rx_dma_buf == NULL || cfg->rx_dma_buf_size == 0 || cfg->rx_rb == NULL)
-        return BSP_EINVAL;
 
     uart_context_t *ctx = &s_ctx[uart];
+
+    ctx->id = uart;
+
+    if (uart == PORT_UART_3)
+    {
+        /* RS485 轮询模式：无 DMA/环形缓冲，收发走阻塞接口 */
+        if (!s_usart3_ready)
+        {
+            bsp_status_t ret = s_uart3_self_init();
+            if (ret != BSP_OK)
+            {
+                return ret;
+            }
+        }
+
+        ctx->huart        = &s_usart3_handle;
+        ctx->rx_dma_buf   = NULL;
+        ctx->rx_dma_size  = 0U;
+        ctx->rx_rb        = NULL;
+        ctx->tx_rb        = NULL;
+        ctx->on_tx_complete = NULL;
+        ctx->on_error     = NULL;
+        ctx->on_rx_data   = NULL;
+        ctx->user_ctx     = NULL;
+        ctx->tx_busy      = false;
+        ctx->tx_dma_len   = 0U;
+        ctx->one_shot_cb  = NULL;
+        ctx->one_shot_ctx = NULL;
+        ctx->rx_enabled   = false;
+        ctx->initialized  = true;
+
+        return BSP_OK;
+    }
+
+    if (cfg->rx_dma_buf == NULL || cfg->rx_dma_buf_size == 0 || cfg->rx_rb == NULL)
+        return BSP_EINVAL;
 
     ctx->huart = s_uart_map[uart];
     ctx->id    = uart;
@@ -323,6 +403,26 @@ bsp_status_t port_uart_tx_wait(port_uart_id_t uart, uint32_t timeout_ms)
     }
 
     return BSP_OK;
+}
+
+/**
+ * @brief 轮询式接收（RS485 等半双工场景专用）
+ */
+bsp_status_t port_uart_read_poll(port_uart_id_t uart, uint8_t *buf, uint16_t len, uint32_t timeout_ms)
+{
+    uart_context_t *ctx = get_ctx(uart);
+    if (ctx == NULL)
+        return BSP_EINVAL;
+
+    if (buf == NULL || len == 0)
+        return BSP_EINVAL;
+
+    if (uart != PORT_UART_3)
+        return BSP_EINVAL;
+
+    HAL_StatusTypeDef ret = HAL_UART_Receive(ctx->huart, buf, len, timeout_ms);
+
+    return hal_to_bsp_status(ret);
 }
 
 /* ================================================================
