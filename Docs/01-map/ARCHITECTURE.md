@@ -65,12 +65,14 @@ Core (CubeMX 生成) + HAL
 | `port_gpio` | 逻辑引脚读写/翻转 + EXTI 注册 | 触发沿 + 回调注册，key_irq 的基础 |
 | `port_uart` | 串口抽象 | RX：循环 DMA + IDLE 搬运 LwRB；TX：队列/直连双模式；错误恢复 |
 | `port_spi` | SPI1/2 阻塞 + DMA 异步 | 异步走 `port_async_cb_t` |
+| `port_i2s` | I2S2 循环 DMA 流式发送 | 运行时自建句柄（SPI2/I2S2 同外设实例），半/全传输回调路由 |
 | `port_i2c` | 硬/软 I2C 统一编址 | 软件通道以 `0x80` 偏置进同一 ID 空间 |
 | `port_pwm` | PWM 逻辑通道（蜂鸣器/WS2812/背光） | 占空比千分比制；**已知缺陷：set_freq 时钟域写死 APB1** |
 | `port_encoder` | TIM4 正交编码器计数 | `s_tim_map` 解耦范本 |
 | `port_adc` | 片上 ADC（电位器 PC0） | LSB / mV 双粒度 |
 | `port_tick` / `port_dwt` | 毫秒时基 / DWT 微秒延时 | 高精度时序的基础 |
 | `port_critical` | 临界区 | PRIMASK 保存恢复，RTOS 可替换 |
+| `bsp_bus`（Board） | SPI2/I2S2 复用总线仲裁 | PCA9555 软件切换模拟开关（BIT3），acquire/release + 挂起 IMU |
 | `soft_i2c` | GPIO 位操作软件 I2C | 触摸屏 FT6336 使用 |
 
 ## 5. APP 层组织
@@ -102,16 +104,26 @@ Core (CubeMX 生成) + HAL
 - 外设变更：改 `SkyStar_BSP_HAL.ioc` → CubeMX 重新生成 → 目检 Core/ 增量
 - 代码风格：`.clang-format`；验收惯例：Shell 命令实测
 
-## 8. 开发任务台账（待填）
+## 8. 开发任务台账
 
-> 本节留空。当前开发方向由用户在会话中提出，新任务确定后在此登记：任务名 / 涉及模块 / 状态。
+> 当前开发方向由用户在会话中提出，新任务确定后在此登记：任务名 / 涉及模块 / 状态。
 > 已知问题见第 9 节；历史批次记录（zcode 分支 RocketPi 实验）随 zcode 分支留存，不在本分支维护。
+
+当前批次：**阶段八 音频子系统**（方案见 `Docs/20-planning/阶段八音频子系统实施方案.md`，分支 `feature/M30-i2s-audio`）
+
+| 任务 | 里程碑 | 涉及模块 | 状态 |
+|---|---|---|---|
+| I2S2 接口层 + SPI2/I2S2 总线仲裁 | M30 | `port_i2s`、`bsp_bus`（新建）；`bsp_imu`、`Core/Src/stm32f4xx_it.c`（修改） | 代码完成，编译通过，待上板验收 |
+| ES8388 编解码驱动 + HT6872 功放使能 | M31 | `dev_es8388`、`dev_ht6872`（新建）；`dev_pca9555`、`port_i2c`（复用） | 未开工 |
+| WAV 音乐播放器 Demo | M32 | `app_audio_demo`、`bsp_audio`（新建）；`bsp_file`/FatFS、`bsp_shell`（复用） | 未开工 |
 
 ## 9. 已知问题清单（在 develop 基点代码中核实过，修一个删一行）
 
 - [ ] `port_uart.c` RX 依赖纯 IDLE 快照：两次 IDLE 间连流超过 DMA 缓冲会静默覆写；ISR 内 `lwrb_write` 溢出无统计。修复方向：保留传输完成中断兜底 + 溢出计数
 - [ ] `bsp_uart.c` `uart_rx_data_cb` 为空：推送通知链路已建未用，上层为拉模式
 - [ ] `port_gpio.c` `HAL_GPIO_EXTI_Callback` 路由仅比对引脚号不比对端口（PE8 按键与 PB8 LED 同为 pin 8），现靠回调 NULL 检查兜底；根治方案是从 SYSCFG_EXTICR 反查端口归属
+
+- [ ] `dev_w25q.c` 全链路使用 `BSP_WAIT_FOREVER` 且忽略 `port_spi` 返回值（get_id/write_enable/wait_busy 等）：SPI2 总线被 I2S2 仲裁走后，HAL 标志轮询永不满足，`flash_id` 等 Shell 命令永久阻塞导致系统假死。修复方向：校验返回值 + 有限超时，或将 W25Q/LittleFS 路径接入 bsp_bus 仲裁器（M32 播放器落地时一并收口）
 
 （zcode 分支的 `port_pwm_set_freq` APB1 时钟域问题系 zcode 自引入自修复，develop 无此代码，不列。重写 port_pwm 时直接按"按实例地址归属总线动态判定"实现。）
 
