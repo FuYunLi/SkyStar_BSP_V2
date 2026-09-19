@@ -73,6 +73,7 @@ Core (CubeMX 生成) + HAL
 | `port_tick` / `port_dwt` | 毫秒时基 / DWT 微秒延时 | 高精度时序的基础 |
 | `port_critical` | 临界区 | PRIMASK 保存恢复，RTOS 可替换 |
 | `bsp_bus`（Board） | SPI2/I2S2 复用总线仲裁 | PCA9555 软件切换模拟开关（BIT3），acquire/release + 挂起 IMU |
+| `bsp_audio`（Board） | WAV 播放业务封装 | 双缓冲 + MultiTimer 填充，编排仲裁/I2S/codec/功放 |
 | `soft_i2c` | GPIO 位操作软件 I2C | 触摸屏 FT6336 使用 |
 
 ## 5. APP 层组织
@@ -114,8 +115,8 @@ Core (CubeMX 生成) + HAL
 | 任务 | 里程碑 | 涉及模块 | 状态 |
 |---|---|---|---|
 | I2S2 接口层 + SPI2/I2S2 总线仲裁 | M30 | `port_i2s`、`bsp_bus`（新建）；`bsp_imu`、`Core/Src/stm32f4xx_it.c`（修改） | 代码完成，编译通过，待上板验收 |
-| ES8388 编解码驱动 + HT6872 功放使能 | M31 | `dev_es8388`、`dev_ht6872`（新建）；`dev_pca9555`、`port_i2c`（复用） | 未开工 |
-| WAV 音乐播放器 Demo | M32 | `app_audio_demo`、`bsp_audio`（新建）；`bsp_file`/FatFS、`bsp_shell`（复用） | 未开工 |
+| ES8388 编解码驱动 + HT6872 功放使能 | M31 | `dev_es8388`、`dev_ht6872`（新建）；`dev_pca9555`、`port_i2c`（复用） | 上板验收通过，已合入 zcode_bsp |
+| WAV 音乐播放器 Demo | M32 | `bsp_audio`、`app_audio_demo`（新建/扩充）；`bsp_file` 补 read/size 接口 | 代码完成，编译通过，待上板验收 |
 
 ## 9. 已知问题清单（在 develop 基点代码中核实过，修一个删一行）
 
