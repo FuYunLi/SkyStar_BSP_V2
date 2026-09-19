@@ -81,5 +81,18 @@ bsp_status_t bsp_imu_get_raw(bsp_imu_raw_t *raw);
  */
 bsp_status_t bsp_imu_get_attitude(bsp_imu_attitude_t *att);
 
+/**
+ * @brief 挂起 IMU 采样（内部仅供 bsp_bus 总线仲裁器在切换至 I2S2 时调用）
+ * @note  挂起期间 bsp_imu_update 返回 BSP_BUSY，不访问 SPI2 总线。
+ * @return bsp_status_t 执行结果
+ */
+bsp_status_t bsp_imu_suspend(void);
+
+/**
+ * @brief 恢复 IMU 采样（内部仅供 bsp_bus 总线仲裁器切回 SPI2 后调用）
+ * @return bsp_status_t 执行结果
+ */
+bsp_status_t bsp_imu_resume(void);
+
 #endif /* __BSP_IMU_H */
 
