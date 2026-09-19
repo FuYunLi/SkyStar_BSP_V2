@@ -29,8 +29,7 @@ extern dev_pca9555_t g_pca_led;
 
 bsp_status_t dev_ht6872_init(void)
 {
-    bsp_status_t status = dev_pca9555_set_pin_dir(&g_pca_led, HT6872_PCA_PORT,
-                                                  HT6872_PCA_PIN, 0);
+    bsp_status_t status = dev_pca9555_set_pin_dir(&g_pca_led, HT6872_PCA_PORT, HT6872_PCA_PIN, 0);
     if (status != BSP_OK)
     {
         log_e("PCA9555 amp pin dir config failed");

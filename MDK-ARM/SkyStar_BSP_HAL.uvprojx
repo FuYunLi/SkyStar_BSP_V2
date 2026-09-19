@@ -5051,6 +5051,26 @@
               <FileType>5</FileType>
               <FilePath>..\BSP\Driver\dev_potentiometer.h</FilePath>
             </File>
+            <File>
+              <FileName>dev_es8388.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/dev_es8388.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_es8388.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/dev_es8388.h</FilePath>
+            </File>
+            <File>
+              <FileName>dev_ht6872.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Driver/dev_ht6872.c</FilePath>
+            </File>
+            <File>
+              <FileName>dev_ht6872.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Driver/dev_ht6872.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

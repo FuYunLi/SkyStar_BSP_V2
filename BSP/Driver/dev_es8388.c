@@ -1,7 +1,7 @@
 /**
  * @file dev_es8388.c
  * @brief ES8388 音频编解码器驱动实现源文件
- * @note  经 port_i2c（PORT_I2C_1，器件地址 0x10，CE=0）配置寄存器。
+ * @note  经 port_i2c（PORT_I2C_1，7-bit 地址 0x10 即 8-bit 0x20，CE=0）配置寄存器。
  *        初始化/启停/音量序列参照 RT-Thread 官方 stm32f407-rt-spark
  *        drv_es8388（Zero-Free，Apache-2.0），codec 为 I2S 从机模式。
  */
@@ -16,9 +16,10 @@
  * 宏定义与常量
  * ================================================================ */
 
-/* 器件地址：CE 引脚接地（CE=0）时为 0x10 */
+/* 器件地址：CE 引脚接地（CE=0）时 7-bit 地址为 0x10；
+ * port_i2c 约定传 8-bit 地址（7-bit 左移一位），故为 0x20 */
 #define ES8388_I2C_ID       (PORT_I2C_1)
-#define ES8388_DEV_ADDR     (0x10U)
+#define ES8388_DEV_ADDR     (0x10U << 1)
 #define ES8388_I2C_TIMEOUT  (100U)
 
 /* 寄存器地址合法性哨兵 */
@@ -36,9 +37,7 @@
  */
 static bsp_status_t es8388_reg_write(uint8_t reg, uint8_t val)
 {
-    return port_i2c_mem_write(ES8388_I2C_ID, ES8388_DEV_ADDR, reg,
-                              1, &val, 1,
-                              ES8388_I2C_TIMEOUT);
+    return port_i2c_mem_write(ES8388_I2C_ID, ES8388_DEV_ADDR, reg, 1, &val, 1, ES8388_I2C_TIMEOUT);
 }
 
 /**
@@ -46,9 +45,7 @@ static bsp_status_t es8388_reg_write(uint8_t reg, uint8_t val)
  */
 static bsp_status_t es8388_reg_read(uint8_t reg, uint8_t *val)
 {
-    return port_i2c_mem_read(ES8388_I2C_ID, ES8388_DEV_ADDR, reg,
-                             1, val, 1,
-                             ES8388_I2C_TIMEOUT);
+    return port_i2c_mem_read(ES8388_I2C_ID, ES8388_DEV_ADDR, reg, 1, val, 1, ES8388_I2C_TIMEOUT);
 }
 
 /* ================================================================
