@@ -1,13 +1,14 @@
 /**
  * @file bsp_imu.c
  * @brief 板级姿态传感器 (ICM-42688-P) 服务实现源文件
- * @note 封装 SPI2 与 I2S2 的模拟选通状态机，维护姿态数据，设计带初值快速校准的一阶互补滤波。
+ * @note  封装 SPI2 选通（经 bsp_bus 总线仲裁器）、轮询更新及互补滤波计算。
  */
 
 #define LOG_TAG "IMU_SRV"
+
 #include "bsp_imu.h"
+#include "bsp_bus.h"
 #include "dev_icm42688.h"
-#include "dev_pca9555.h"
 #include "port_critical.h"
 #include "bsp_logger.h"
 #include <math.h>
@@ -18,17 +19,6 @@
 
 #define M_PI_F           (3.1415926f)
 
-/* 模拟开关引脚配置：Port 0 Pin 2 (对应拨码开关第3位) */
-#define SWITCH_PCA_PORT  (0U)
-#define SWITCH_PCA_PIN   (2U)
-
-/* ================================================================
- * 外部实例声明
- * ================================================================ */
-
-/* 外部 PCA9555 全局唯一物理芯片实例 (定义在 bsp_led.c 中) */
-extern dev_pca9555_t g_pca_led;
-
 /* ================================================================
  * 私有静态变量
  * ================================================================ */
@@ -37,6 +27,8 @@ static bsp_imu_raw_t s_raw_data = {0};
 static bsp_imu_attitude_t s_attitude = {0};
 static bool s_is_init = false;
 static bool s_attitude_inited = false;
+/* 总线被 I2S2 占用期间挂起 SPI 采样，恢复后无需重配 ICM-42688 寄存器 */
+static volatile bool s_suspended = false;
 
 /* ================================================================
  * 公开接口实现
@@ -47,21 +39,18 @@ static bool s_attitude_inited = false;
  */
 bsp_status_t bsp_imu_init(void)
 {
-    /* 1. 调用 PCA9555 将模拟开关 Port 0 Pin 2 配置为输出并拉低 (RESET)，保证 SPI2 物理总线接通 */
-    bsp_status_t status = dev_pca9555_set_pin_dir(&g_pca_led, SWITCH_PCA_PORT, SWITCH_PCA_PIN, 0);
+    /* 1. 经总线仲裁器申请 SPI2 归属（含 PCA9555 模拟开关选通） */
+    bsp_status_t status = bsp_bus_acquire(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_SPI2);
     if (status != BSP_OK)
     {
-        log_e("PCA9555 config switch direction failed");
+        log_e("SPI2 bus acquire failed");
         return status;
     }
+    log_i("SPI2 bus channel locked via bus arbiter");
 
-    status = dev_pca9555_write_pin(&g_pca_led, SWITCH_PCA_PORT, SWITCH_PCA_PIN, DEV_PCA9555_RESET);
-    if (status != BSP_OK)
-    {
-        log_e("PCA9555 write switch low failed");
-        return status;
-    }
-    log_i("SPI2 bus channel locked via PCA9555 switch");
+    /* 物理侧已就绪，立即释放占用权：IMU 采样通过挂起标志参与仲裁，
+     * 不长期持有 claim，避免阻塞 I2S2 侧的音频接管 */
+    (void)bsp_bus_release(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_SPI2);
 
     /* 2. 调用底层驱动进行设备初始化与检查 */
     status = icm42688_init();
@@ -85,6 +74,12 @@ bsp_status_t bsp_imu_update(void)
     if (!s_is_init)
     {
         return BSP_ERROR;
+    }
+
+    /* 总线被 I2S2 归属期间 SPI2 不可用，静默挂起本轮采样 */
+    if (s_suspended)
+    {
+        return BSP_BUSY;
     }
 
     icm42688_data_t dev_data = {0};
@@ -175,6 +170,34 @@ bsp_status_t bsp_imu_get_attitude(bsp_imu_attitude_t *att)
     *att = s_attitude;
     port_exit_critical(primask);
 
+    return BSP_OK;
+}
+
+/**
+ * @brief 挂起 IMU 采样（供 bsp_bus 仲裁器切换至 I2S2 侧时调用）
+ */
+bsp_status_t bsp_imu_suspend(void)
+{
+    if (!s_is_init)
+    {
+        return BSP_ERROR;
+    }
+    s_suspended = true;
+    log_i("IMU sampling suspended for bus handover");
+    return BSP_OK;
+}
+
+/**
+ * @brief 恢复 IMU 采样（供 bsp_bus 仲裁器切回 SPI2 侧时调用）
+ */
+bsp_status_t bsp_imu_resume(void)
+{
+    if (!s_is_init)
+    {
+        return BSP_ERROR;
+    }
+    s_suspended = false;
+    log_i("IMU sampling resumed");
     return BSP_OK;
 }
 

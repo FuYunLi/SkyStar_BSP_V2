@@ -352,4 +352,26 @@ void DMA2_Stream7_IRQHandler(void)
 
 /* USER CODE BEGIN 1 */
 
+/* I2S2 运行时句柄（port_i2s.c 定义，与 SPI2 共用外设实例） */
+extern I2S_HandleTypeDef hi2s2;
+extern DMA_HandleTypeDef hdma_i2s2_tx;
+
+/**
+  * @brief This function handles DMA1 stream4 global interrupt (I2S2 TX).
+  * @note  I2S2 与 SPI2 共用外设实例，DMA1 Stream4/Ch0 由 port_i2s 运行时配置，
+  *        CubeMX 未生成对应 IRQHandler，此处显式挂载（铁律：中断必须显式绑定）。
+  */
+void DMA1_Stream4_IRQHandler(void)
+{
+  HAL_DMA_IRQHandler(&hdma_i2s2_tx);
+}
+
+/**
+  * @brief This function handles SPI2 global interrupt (I2S2 error channel).
+  */
+void SPI2_IRQHandler(void)
+{
+  HAL_I2S_IRQHandler(&hi2s2);
+}
+
 /* USER CODE END 1 */
