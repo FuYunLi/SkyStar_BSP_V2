@@ -8,6 +8,7 @@
 #define LOG_TAG "APP_AUDIO"
 
 #include "app_audio_demo.h"
+#include "bsp_audio.h"
 #include "bsp_bus.h"
 #include "bsp_logger.h"
 #include "dev_es8388.h"
@@ -157,6 +158,35 @@ static void shell_audio_pa(int argc, char *argv[])
     printf("PA %s OK\r\n", en ? "enabled" : "disabled");
 }
 
+/**
+ * @brief 播放 TF 卡中的 WAV 文件（16-bit PCM / 44.1kHz / 单或立体声）
+ * @note  用法：play_wav <path>，如 play_wav 0:/music/test.wav
+ */
+static void shell_play_wav(int argc, char *argv[])
+{
+    if (argc < 2)
+    {
+        printf("Usage: play_wav <path>\r\n");
+        return;
+    }
+    bsp_status_t status = bsp_audio_play(argv[1]);
+    if (status != BSP_OK)
+    {
+        printf("Play failed, ret = %d\r\n", status);
+        return;
+    }
+    printf("Playing %s\r\n", argv[1]);
+}
+
+/**
+ * @brief 停止播放
+ */
+static void shell_play_stop(void)
+{
+    bsp_status_t status = bsp_audio_stop();
+    printf("Stop %s\r\n", (status == BSP_OK) ? "OK" : "failed");
+}
+
 /* ================================================================
  * 公开接口实现
  * ================================================================ */
@@ -182,3 +212,9 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) |
 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN,
                  audio_pa, shell_audio_pa, Enable/disable HT6872 amp [on|off]);
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN,
+                 play_wav, shell_play_wav, Play WAV file from TF card);
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC) | SHELL_CMD_DISABLE_RETURN,
+                 play_stop, shell_play_stop, Stop WAV playback);
