@@ -383,7 +383,7 @@ master (受保护)
 ### 4.1 代码检查
 
 ```
-□ 代码符合 Docs/代码规范.md
+□ 代码符合 Docs/10-standards/代码规范.md
 □ 命名规范正确（snake_case / PascalCase）
 □ 注释完整（Doxygen格式）
 □ 无硬编码常量（使用宏定义）

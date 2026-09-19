@@ -6,22 +6,23 @@
 
 - STM32F407VET6,立创天空星核心板 + 筑基底板,裸机分层 BSP(无 RTOS),Keil MDK 工程 `MDK-ARM/SkyStar_BSP_HAL.uvprojx`
 - 三层架构铁律:APP → Board(`bsp_`) → Driver(`dev_`) → Interface(`port_`),依赖只许自上而下;HAL 类型/句柄只许出现在 Interface 层;上层只认逻辑 ID 与 `bsp_status_t`
-- 换板 = 改 Interface 层静态映射表;契约细节见 `Docs/ARCHITECTURE.md` 第 4 节
+- 换板 = 改 Interface 层静态映射表;契约细节见 `Docs/01-map/ARCHITECTURE.md` 第 4 节
 - CubeMX 配置 `SkyStar_BSP_HAL.ioc`:重新生成会覆盖 `Core/`,改动前须知悉
 
 ## 启动链(按任务读取,禁止全工程通读)
 
 | 本次任务 | 必读 | 说明 |
 |---|---|---|
-| 任何任务第一步 | `Docs/ARCHITECTURE.md` | 工程地图:目录/契约/进度/已知问题,130 行 |
+| 任何任务第一步 | `Docs/01-map/ARCHITECTURE.md` | 工程地图:目录/契约/进度/已知问题,130 行 |
 | 硬件引脚/外设分配 | `Docs/00-board_info/` | 引脚总表与外设描述,勿凭记忆猜 |
 | 写/改代码 | `.trae/rules/工程规范.md` 对应章节 + 目标模块头文件 | 命名/注释/头文件规范;只读要改的模块,不通读实现 |
-| 提交代码 | `.trae/rules/git规范.md` | Conventional Commits(中文)+ 分支策略 |
-| 新一轮开发规划 | `Docs/开发规划.md` + ARCHITECTURE.md 第 8 节进度表 | 规划是历史文档,当前进度以后者为准 |
+| 提交代码 | `.trae/rules/git规范.md`(同 `Docs/10-standards/Git规范.md`) | Conventional Commits(中文)+ 分支策略 |
+| 新一轮开发规划 | `Docs/20-planning/开发规划.md` 第 0 节"当前状态" + `Docs/01-map/ARCHITECTURE.md` 第 8 节进度表 | 规划正文是历史存档,进度冲突以 ARCHITECTURE.md 为准 |
 | 编译/烧录/调试/内存分析/串口 | 直接用 `.agents/skills/` 对应技能 | 技能自带流程,无需读文档 |
-| 新增外设驱动 | `Docs/LibDriver引入与适配规范.md`、`Docs/Keil虚拟文件夹规范.md` | |
-| 排查历史问题 | `Docs/` 下按文件名匹配 `*记录.md`/`*报告.md` | 按需读,不预读 |
-| GUI 相关 | `Docs/LVGL*移植报告.md` | |
+| 新增外设驱动 | `Docs/10-standards/LibDriver引入与适配规范.md`、`Docs/10-standards/Keil虚拟文件夹规范.md` | |
+| 移植对照上游/查参考仓库 | `Docs/01-map/参考仓库索引.md` | 上游地址速查,不必联网搜索 |
+| 排查历史问题 | `Docs/30-porting/`、`Docs/40-records/` 按文件名匹配 | 按需读,不预读 |
+| GUI 相关 | `Docs/30-porting/LVGL*移植报告.md` | |
 
 定位改动点:先看目标模块接口头文件确认调用关系,再进实现;禁止逐目录浏览全仓库。
 
@@ -43,5 +44,6 @@
 
 ## 维护约定
 
-- 新增 port/dev/demo 模块、修复已知问题、移植批次状态变化:同步更新 `Docs/ARCHITECTURE.md` 对应清单(第 4/8/9 节)
+- 新增 port/dev/demo 模块、修复已知问题、移植批次状态变化:同步更新 `Docs/01-map/ARCHITECTURE.md` 对应清单(第 4/8/9 节)
+- 里程碑/待办状态变化时同步更新 `Docs/20-planning/开发规划.md` 第 0 节"当前状态"
 - 可复用工作流优先沉淀为 `.agents/skills/` 技能,而非写进本文件

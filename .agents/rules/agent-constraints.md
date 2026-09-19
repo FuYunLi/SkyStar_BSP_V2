@@ -185,9 +185,9 @@ git merge <branch>
 ### 4.1 Agent可访问的文档
 
 ```
-✅ Docs/代码规范.md
-✅ Docs/Git规范.md
-✅ Docs/SkyStar_BSP_V2开发路径规划.md
+✅ Docs/10-standards/代码规范.md
+✅ Docs/10-standards/Git规范.md
+✅ Docs/20-planning/开发规划.md
 ✅ README.md
 ✅ .agents/rules/（本目录）
 ```
@@ -267,7 +267,7 @@ git merge <branch>
 ```
 1. 立即停止所有操作
 2. 向用户说明污染情况
-3. 提供恢复方案（见 Docs/Git规范.md）
+3. 提供恢复方案（见 Docs/10-standards/Git规范.md）
 4. 等待用户决策
 5. 禁止自行执行恢复操作
 ```
@@ -303,7 +303,7 @@ git merge <branch>
 
 1. **权限约束**：默认本地开发权限，禁止直接推送
 2. **确认约束**：涉及提交/推送/分支操作必须用户确认
-3. **规范约束**：遵循 Docs/代码规范.md 和 Docs/Git规范.md
+3. **规范约束**：遵循 Docs/10-standards/代码规范.md 和 Docs/10-standards/Git规范.md
 4. **停止约束**：遇到不确定情况立即停止并询问
 5. **语言约束**：提交日志（Git commit message）、开发日志以及修订历史必须使用**中文**编写。
 

@@ -57,11 +57,11 @@ SkyStar_BSP_HAL/
 
 ## 开发规范
 
-详见 [代码规范.md](Docs/代码规范.md)
+详见 [代码规范.md](Docs/10-standards/代码规范.md)
 
 ## 开发路径
 
-详见 [SkyStar_BSP_V2开发路径规划.md](Docs/SkyStar_BSP_V2开发路径规划.md)
+详见 [SkyStar_BSP_V2开发路径规划.md](Docs/20-planning/开发规划.md)
 
 ## 依赖
 
