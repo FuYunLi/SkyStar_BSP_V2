@@ -104,23 +104,26 @@ Core (CubeMX 生成) + HAL
 
 ## 8. RocketPi 42 例移植进度
 
-学习工程 `stm32f401re_rocketpi`（STM32F401RE），目标：可实现的例程全部基于本 BSP 重写。**所有移植工作在 `zcode` 分支进行**。
+学习工程 `stm32f401re_rocketpi`（STM32F401RE），目标：可实现的例程全部基于本 BSP 重写。
 
-| 批次 | 例程 | 状态 |
+> **注意**：下表 ✅ 状态指 **zcode 分支的实验性移植**（未经规范化验证），**不代表本分支（zcode_bsp）已具备该能力**。本分支以 develop 为基点重写移植，每完成一例才可把状态改为 ✅；zcode 分支对应实现（参考 `SkyStar_BSP_zcode_ref` 工作树或 `git show zcode:<path>`）可作为逻辑参考，但代码须按本分支规范重写。
+
+| 批次 | 例程 | 本分支状态 |
 |---|---|---|
-| 已覆盖（≈20） | led / key_scan / key_multi_button / delay_us / uart_printf / uart_echo / uart_easylogger / uart_shell_microrl / uart_ymodem / adc_joystick / i2c_aht30 / i2c_at24cxx / w25qxx(_littlefs) / sdio_card(_fatfs) / spi_lcd_speedtest / spi_lcd_bitmap / spi_lcd_lvgl / ws2812b | ✅ 已有对应能力 |
-| 批次1（8，零 CubeMX 改动） | pwm_passive_buzzer / adc_mcu_temperature / key_irq / crc / extern_io_check(PCA9555版) / standby_wkup / uart_control_led_cjson ✅；uart_control_led 由 letter-shell 命令等价覆盖 | ✅ 已移植（zcode） |
-| 批次2（6，需扩展） | pwm_sg90 ✅ / sd_pic_to_lcd ✅（zcode，自持 TIM12 初始化）；pwm_motor ⏸ 待补 AT8236 控制引脚资料；usb_cdc / usb_msc / mbedtls ⏳ 工作量大建议单独排期 | ◐ 部分完成 |
+| 基础能力（≈20，develop 已验证） | led / key_scan / key_multi_button / delay_us / uart_printf / uart_echo / uart_easylogger / uart_shell_microrl / uart_ymodem / adc_joystick / i2c_aht30 / i2c_at24cxx / w25qxx(_littlefs) / sdio_card(_fatfs) / spi_lcd_speedtest / spi_lcd_bitmap / spi_lcd_lvgl / ws2812b | ✅ 已验证 |
+| 批次1（8，零 CubeMX 改动） | pwm_passive_buzzer / adc_mcu_temperature / key_irq / crc / extern_io_check(PCA9555版) / standby_wkup / uart_control_led_cjson / uart_control_led(shell 命令等价) | ⏳ 待重做（zcode 有实验实现可参考） |
+| 批次2（6，需扩展） | pwm_sg90 / sd_pic_to_lcd / pwm_motor（⏸ 待补 AT8236 资料）/ usb_cdc / usb_msc / mbedtls | ⏳ 待重做 |
 | 批次3（5，外部模块） | hcsr04 / esp8266 / esp8266_tcp / irda / uart_radar | ⏳ |
-| 批次4（2，板载音频） | i2s(ES8388) / sd_audio_to_i2s | ⏳ |
+| 批次4（2，板载音频） | i2s(ES8388) / sd_audio_to_i2s（需新增 port_i2s） | ⏳ |
 | 变体（1） | flash_littlefs（内部 Flash 版，对比外部 W25Q） | ⏳ |
 
-## 9. 已知问题清单（修一个删一行）
+## 9. 已知问题清单（在 develop 基点代码中核实过，修一个删一行）
 
-- [x] `port_pwm.c` `port_pwm_set_freq`：定时器时钟域写死 APB1 逻辑——已修复（zcode `2dc4ee4`），按实例地址归属总线动态判定
 - [ ] `port_uart.c` RX 依赖纯 IDLE 快照：两次 IDLE 间连流超过 DMA 缓冲会静默覆写；ISR 内 `lwrb_write` 溢出无统计。修复方向：保留传输完成中断兜底 + 溢出计数
 - [ ] `bsp_uart.c` `uart_rx_data_cb` 为空：推送通知链路已建未用，上层为拉模式
 - [ ] `port_gpio.c` `HAL_GPIO_EXTI_Callback` 路由仅比对引脚号不比对端口（PE8 按键与 PB8 LED 同为 pin 8），现靠回调 NULL 检查兜底；根治方案是从 SYSCFG_EXTICR 反查端口归属
+
+（zcode 分支的 `port_pwm_set_freq` APB1 时钟域问题系 zcode 自引入自修复，develop 无此代码，不列。重写 port_pwm 时直接按"按实例地址归属总线动态判定"实现。）
 
 ## 10. 维护约定
 
