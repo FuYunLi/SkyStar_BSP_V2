@@ -226,8 +226,7 @@ bsp_status_t port_i2s_start_dma(port_i2s_id_t id, const uint16_t *buf,
     s_i2s_contexts[id].user_ctx     = user_ctx;
     s_i2s_contexts[id].is_streaming = true;
 
-    return hal_to_bsp_status(HAL_I2S_Transmit_DMA(hi2s, (uint16_t *)buf,
-                                                  (uint16_t)samples));
+    return hal_to_bsp_status(HAL_I2S_Transmit_DMA(hi2s, (uint16_t *)buf, (uint16_t)samples));
 }
 
 bsp_status_t port_i2s_stop(port_i2s_id_t id)

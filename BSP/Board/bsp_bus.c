@@ -61,16 +61,14 @@ static bsp_status_t bus_switch_physical(bsp_bus_owner_t target)
                                     ? BUS_SWITCH_LEVEL_I2S2
                                     : BUS_SWITCH_LEVEL_SPI2;
 
-    bsp_status_t status = dev_pca9555_set_pin_dir(&g_pca_led, BUS_SWITCH_PCA_PORT,
-                                                  BUS_SWITCH_PCA_PIN, 0);
+    bsp_status_t status = dev_pca9555_set_pin_dir(&g_pca_led, BUS_SWITCH_PCA_PORT, BUS_SWITCH_PCA_PIN, 0);
     if (status != BSP_OK)
     {
         log_e("PCA9555 switch dir config failed");
         return status;
     }
 
-    status = dev_pca9555_write_pin(&g_pca_led, BUS_SWITCH_PCA_PORT,
-                                   BUS_SWITCH_PCA_PIN, level);
+    status = dev_pca9555_write_pin(&g_pca_led, BUS_SWITCH_PCA_PORT, BUS_SWITCH_PCA_PIN, level);
     if (status != BSP_OK)
     {
         log_e("PCA9555 switch level write failed");
