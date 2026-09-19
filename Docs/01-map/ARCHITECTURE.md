@@ -102,20 +102,10 @@ Core (CubeMX 生成) + HAL
 - 外设变更：改 `SkyStar_BSP_HAL.ioc` → CubeMX 重新生成 → 目检 Core/ 增量
 - 代码风格：`.clang-format`；验收惯例：Shell 命令实测
 
-## 8. RocketPi 42 例移植进度
+## 8. 开发任务台账（待填）
 
-学习工程 `stm32f401re_rocketpi`（STM32F401RE），目标：可实现的例程全部基于本 BSP 重写。
-
-> **注意**：下表 ✅ 状态指 **zcode 分支的实验性移植**（未经规范化验证），**不代表本分支（zcode_bsp）已具备该能力**。本分支以 develop 为基点重写移植，每完成一例才可把状态改为 ✅；zcode 分支对应实现（参考 `SkyStar_BSP_zcode_ref` 工作树或 `git show zcode:<path>`）可作为逻辑参考，但代码须按本分支规范重写。
-
-| 批次 | 例程 | 本分支状态 |
-|---|---|---|
-| 基础能力（≈20，develop 已验证） | led / key_scan / key_multi_button / delay_us / uart_printf / uart_echo / uart_easylogger / uart_shell_microrl / uart_ymodem / adc_joystick / i2c_aht30 / i2c_at24cxx / w25qxx(_littlefs) / sdio_card(_fatfs) / spi_lcd_speedtest / spi_lcd_bitmap / spi_lcd_lvgl / ws2812b | ✅ 已验证 |
-| 批次1（8，零 CubeMX 改动） | pwm_passive_buzzer / adc_mcu_temperature / key_irq / crc / extern_io_check(PCA9555版) / standby_wkup / uart_control_led_cjson / uart_control_led(shell 命令等价) | ⏳ 待重做（zcode 有实验实现可参考） |
-| 批次2（6，需扩展） | pwm_sg90 / sd_pic_to_lcd / pwm_motor（⏸ 待补 AT8236 资料）/ usb_cdc / usb_msc / mbedtls | ⏳ 待重做 |
-| 批次3（5，外部模块） | hcsr04 / esp8266 / esp8266_tcp / irda / uart_radar | ⏳ |
-| 批次4（2，板载音频） | i2s(ES8388) / sd_audio_to_i2s（需新增 port_i2s） | ⏳ |
-| 变体（1） | flash_littlefs（内部 Flash 版，对比外部 W25Q） | ⏳ |
+> 本节留空。当前开发方向由用户在会话中提出，新任务确定后在此登记：任务名 / 涉及模块 / 状态。
+> 已知问题见第 9 节；历史批次记录（zcode 分支 RocketPi 实验）随 zcode 分支留存，不在本分支维护。
 
 ## 9. 已知问题清单（在 develop 基点代码中核实过，修一个删一行）
 
