@@ -46,6 +46,7 @@
 #include "demos/app_fatfs_demo.h"
 #include "demos/app_ymodem_demo.h"
 #include "demos/app_lvgl_images_demo.h"
+#include "demos/app_audio_demo.h"
 
 /* LVGL 头文件 */
 #include "lvgl.h"
@@ -129,6 +130,9 @@ void app_main_init(void)
 
     /* 初始化 LVGL 相册展示自检演示模块 */
     (void)app_lvgl_images_demo_init();
+
+    /* 初始化音频子系统演示模块 */
+    (void)app_audio_demo_init();
 
     //multiTimerStart(&s_timer_log, 500, log_test_callback, NULL);
 
