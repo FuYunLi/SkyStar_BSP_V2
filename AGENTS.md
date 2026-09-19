@@ -5,8 +5,21 @@
 ## 工程摘要(必知)
 
 - STM32F407VET6,立创天空星核心板 + 筑基底板,裸机分层 BSP(无 RTOS),Keil MDK 工程 `MDK-ARM/SkyStar_BSP_HAL.uvprojx`
-- 三层架构铁律:APP → Board(`bsp_`) → Driver(`dev_`) → Interface(`port_`),依赖只许自上而下;HAL 类型/句柄只许出现在 Interface 层;上层只认逻辑 ID 与 `bsp_status_t`
-- 换板 = 改 Interface 层静态映射表;契约细节见 `Docs/01-map/ARCHITECTURE.md` 第 4 节
+
+### 设计理念(agent 须先理解再动手)
+
+本工程是**分层 BSP 架构**:Interface(`port_`)→ Driver(`dev_`)→ Board(`bsp_`)三层,与 Middleware、APP 共同构成四个抽象级。核心目的:
+
+1. **底层隔离**:HAL/标准库的类型、句柄、错误码止步于 Interface 层,经 `hal_to_bsp_status()` 翻译为全工程统一的 `bsp_status_t`;上层只见逻辑 ID 与统一错误语义,硬件与底层问题被隔离在应用层之下。
+2. **跨芯片兼容的机制**:每支 port 用"逻辑 ID + 静态映射表"对接物理外设,换板/换芯片 = 改 Interface 映射表,上层代码不动。
+3. **三层协作向上构建功能框架**:Interface 只做硬件抽象(含统一异步回调 `port_async_cb_t`),Driver 实现具体器件驱动,Board 是契约中枢(`bsp_board.h`)与板级业务封装;功能化 API 是三层共同向上搭出的,不是 Interface 一层包办。
+4. **积极集成开源中间件**(MultiTimer/LwRB/EasyLogger/letter-shell/LVGL 等):接口层的规范抽象为中间件接入提供便捷与性能保证;BSP + Middleware 一起支撑 APP 层实现复杂应用。
+5. **为 agent 而设计**:底层被隔离后,APP 层可被 AI 工具安全、高效地参与开发;验收惯例是 Demo 导出 shell 命令(`SHELL_EXPORT_CMD`)实测。
+
+### 铁律(细则见 Docs/01-map/ARCHITECTURE.md 第 3-4 节)
+
+- 依赖只许自上而下;HAL 类型/句柄只许出现在 Interface 层;上层只认逻辑 ID 与 `bsp_status_t`
+- 换板 = 改 Interface 层静态映射表;契约变更属架构决策,须在 commit 正文说明原因
 - CubeMX 配置 `SkyStar_BSP_HAL.ioc`:重新生成会覆盖 `Core/`,改动前须知悉
 
 ## 启动链(按任务读取,禁止全工程通读)
@@ -15,8 +28,8 @@
 |---|---|---|
 | 任何任务第一步 | `Docs/01-map/ARCHITECTURE.md` | 工程地图:目录/契约/进度/已知问题,130 行 |
 | 硬件引脚/外设分配 | `Docs/00-board_info/` | 引脚总表与外设描述,勿凭记忆猜 |
-| 写/改代码 | `.trae/rules/工程规范.md` 对应章节 + 目标模块头文件 | 命名/注释/头文件规范;只读要改的模块,不通读实现 |
-| 提交代码 | `.trae/rules/git规范.md`(同 `Docs/10-standards/Git规范.md`) | Conventional Commits(中文)+ 分支策略 |
+| 写/改代码 | `Docs/10-standards/工程规范.md` 对应章节 + 目标模块头文件 | 命名/注释/头文件规范;只读要改的模块,不通读实现 |
+| 提交代码 | `Docs/10-standards/Git规范.md` | Conventional Commits(中文)+ 分支策略 |
 | 新一轮开发规划 | `Docs/20-planning/开发规划.md` 第 0 节"当前状态" + `Docs/01-map/ARCHITECTURE.md` 第 8 节进度表 | 规划正文是历史存档,进度冲突以 ARCHITECTURE.md 为准 |
 | 编译/烧录/调试/内存分析/串口 | 直接用 `.agents/skills/` 对应技能 | 技能自带流程,无需读文档 |
 | 新增外设驱动 | `Docs/10-standards/LibDriver引入与适配规范.md`、`Docs/10-standards/Keil虚拟文件夹规范.md` | |
