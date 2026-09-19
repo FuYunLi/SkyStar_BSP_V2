@@ -45,9 +45,10 @@
 2. **Git 禁令**:禁止 push 受保护分支(master/develop)、force push、删远程分支、`git clean -fdx`、`reset --hard origin/*`。
 3. **提交**:必须由用户主动发起,Agent 严禁自主 commit;提交日志用中文 Conventional Commits,须体现代码设计意图、总线/外设与技术栈细节;合入 develop 用 `--no-ff`。
 4. **编译结果必须报告**:成功报 Flash/RAM/产物/耗时;失败报文件:行号与错误摘要后**停止**——禁止自动改代码循环重试、禁止静默跳过、禁止假设原因;修复方案须用户确认。
-5. **最小修改原则**:只改与当前任务直接相关的最少代码;严禁未经要求擅自优化/重构/蔓延改动;修改前明确回滚路径。
-6. **例外(允许自动做)**:新增文件时自动维护 Keil 虚拟工程、包含路径、clangd/compile_commands 配置。
-7. **文档**:禁止擅自修改 `Docs/00-board_info/`(需确认);架构契约变更属重大决策,须在 commit 正文说明原因。
+5. **硬件操作硬拦截**:烧录/擦除类命令(openocd/pyocd/UV4 -f/esptool/JLink 等)被 `zcode.json` 的 PreToolUse hook 硬性阻止(exit 2),不要尝试重试或绕过;向用户说明意图,由用户手动执行或明确授权后改用白名单方式。
+6. **最小修改原则**:只改与当前任务直接相关的最少代码;严禁未经要求擅自优化/重构/蔓延改动;修改前明确回滚路径。
+7. **例外(允许自动做)**:新增文件时自动维护 Keil 虚拟工程、包含路径、clangd/compile_commands 配置;`.c/.h` 编辑后由 PostToolUse hook 自动 clang-format,无需手工格式化。
+8. **文档**:禁止擅自修改 `Docs/00-board_info/`(需确认);架构契约变更属重大决策,须在 commit 正文说明原因。
 
 ## 嵌软硬约束(防"硬件死锁/静默无输出"类低级错误)
 

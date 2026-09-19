@@ -1,0 +1,35 @@
+{
+  "hooks": {
+    "enabled": true,
+    "events": {
+      "PreToolUse": [
+        {
+          "matcher": "Bash",
+          "hooks": [
+            {
+              "type": "process",
+              "command": "C:/Users/liyun/AppData/Local/Programs/Python/Python314/python.exe",
+              "args": ["${ZCODE_PROJECT_DIR}/.agents/hooks/guard.py"],
+              "timeoutMs": 5000,
+              "statusMessage": "检查命令是否涉及烧录/擦除"
+            }
+          ]
+        }
+      ],
+      "PostToolUse": [
+        {
+          "matcher": "Edit|Write|ApplyPatch",
+          "hooks": [
+            {
+              "type": "process",
+              "command": "C:/Users/liyun/AppData/Local/Programs/Python/Python314/python.exe",
+              "args": ["${ZCODE_PROJECT_DIR}/.agents/hooks/format.py"],
+              "timeoutMs": 15000,
+              "statusMessage": "clang-format 刚编辑的源文件"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
