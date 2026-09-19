@@ -45,4 +45,10 @@ def main() -> int:
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception:
+        # 任何意外异常一律放行: hook 自身故障绝不能阻断工作流。
+        # 教训: 退出码 2 = 阻止, 而 python 找不到脚本文件时退出码也是 2,
+        # 曾导致全部 Bash 调用被误拦。路径已在 zcode.json 写绝对路径, 此处再兜底。
+        sys.exit(0)

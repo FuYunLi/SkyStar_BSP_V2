@@ -9,7 +9,7 @@
             {
               "type": "process",
               "command": "C:/Users/liyun/AppData/Local/Programs/Python/Python314/python.exe",
-              "args": ["${ZCODE_PROJECT_DIR}/.agents/hooks/guard.py"],
+              "args": ["D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_zcode_bsp/.agents/hooks/guard.py"],
               "timeoutMs": 5000,
               "statusMessage": "检查命令是否涉及烧录/擦除"
             }
@@ -23,7 +23,7 @@
             {
               "type": "process",
               "command": "C:/Users/liyun/AppData/Local/Programs/Python/Python314/python.exe",
-              "args": ["${ZCODE_PROJECT_DIR}/.agents/hooks/format.py"],
+              "args": ["D:/Keil5/STM32Projects/SkyStar/BSP/V2/SkyStar_BSP_zcode_bsp/.agents/hooks/format.py"],
               "timeoutMs": 15000,
               "statusMessage": "clang-format 刚编辑的源文件"
             }
