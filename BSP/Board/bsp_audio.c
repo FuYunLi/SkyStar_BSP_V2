@@ -246,10 +246,12 @@ bsp_status_t bsp_audio_play(const char *path)
     bool fmt_ok = false;
     uint32_t data_size = 0;
 
-    if (bsp_file_read(&s_audio_file, hdr, sizeof(hdr), &got) != BSP_OK ||
-        got != sizeof(hdr) ||
+    if (bsp_file_read(&s_audio_file, hdr, sizeof(hdr), &got) != BSP_OK || got != sizeof(hdr) ||
         memcmp(hdr, "RIFF", 4) != 0 || memcmp(hdr + 8, "WAVE", 4) != 0)
     {
+        log_e("WAV header mismatch: got=%lu [%02X %02X %02X %02X | %02X %02X %02X %02X | %02X %02X %02X %02X]",
+              (unsigned long)got, hdr[0], hdr[1], hdr[2], hdr[3], hdr[4], hdr[5], hdr[6], hdr[7], hdr[8], hdr[9],
+              hdr[10], hdr[11]);
         bsp_file_close(&s_audio_file);
         (void)bsp_bus_release(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_I2S2);
         return BSP_EINVAL;
@@ -258,8 +260,7 @@ bsp_status_t bsp_audio_play(const char *path)
     for (;;)
     {
         uint8_t chunk_hdr[8];
-        if (bsp_file_read(&s_audio_file, chunk_hdr, sizeof(chunk_hdr), &got) != BSP_OK ||
-            got != sizeof(chunk_hdr))
+        if (bsp_file_read(&s_audio_file, chunk_hdr, sizeof(chunk_hdr), &got) != BSP_OK || got != sizeof(chunk_hdr))
         {
             break;      /* 文件尾未找到 data 块 */
         }
@@ -308,15 +309,12 @@ bsp_status_t bsp_audio_play(const char *path)
         }
     }
 
-    if (!fmt_ok || data_size == 0U ||
-        fmt.format != 1U || fmt.bits_per_sample != WAV_BITS_PER_SAMPLE ||
-        fmt.sample_rate != WAV_SAMPLE_RATE ||
-        (fmt.channels != 1U && fmt.channels != 2U))
+    if (!fmt_ok || data_size == 0U || fmt.format != 1U || fmt.bits_per_sample != WAV_BITS_PER_SAMPLE ||
+        fmt.sample_rate != WAV_SAMPLE_RATE || (fmt.channels != 1U && fmt.channels != 2U))
     {
         bsp_file_close(&s_audio_file);
         (void)bsp_bus_release(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_I2S2);
-        log_e("Unsupported WAV: rate=%u bits=%u ch=%u",
-              fmt.sample_rate, fmt.bits_per_sample, fmt.channels);
+        log_e("Unsupported WAV: rate=%u bits=%u ch=%u", fmt.sample_rate, fmt.bits_per_sample, fmt.channels);
         return BSP_EINVAL;
     }
 
@@ -338,8 +336,7 @@ bsp_status_t bsp_audio_play(const char *path)
     (void)dev_es8388_start_dac();
     (void)dev_ht6872_enable(true);
 
-    status = port_i2s_start_dma(PORT_I2S_1, s_audio_buf[0], AUDIO_BUF_SAMPLES,
-                                audio_half_cb, audio_full_cb, NULL);
+    status = port_i2s_start_dma(PORT_I2S_1, s_audio_buf[0], AUDIO_BUF_SAMPLES, audio_half_cb, audio_full_cb, NULL);
     if (status != BSP_OK)
     {
         audio_cleanup();
