@@ -1,14 +1,14 @@
 # SkyStar BSP V2 架构地图
 
-> 版本：1.0.0
-> 更新日期：2026-09-19
+> 版本：1.0.1
+> 更新日期：2026-09-20
 > 说明：面向开发者（含 AI 助手）的工程全局索引。新会话/新成员先读本文即可建立总体认知，细节再按图索骥。每合并一批功能须同步更新。
 
 ---
 
 ## 1. 工程定位
 
-基于 **STM32F407VET6**（立创天空星核心板 + 自研筑基底板）的裸机分层 BSP 框架。设计目标：**接口抽象实现跨平台适配与中间件快速集成**。当前状态：基础框架与主流外设驱动已落地，正在按 RocketPi 教程工程逐例补齐应用层。
+基于 **STM32F407VET6**（立创天空星核心板 + 自研筑基底板）的裸机分层 BSP 框架。设计目标：**接口抽象实现跨平台适配与中间件快速集成**。当前状态：基础框架与主流外设驱动已落地，阶段八音频子系统（I2S + ES8388 + WAV 播放）已上板跑通，正在收口串口文件传输通路。
 
 ## 2. 目录地图
 
@@ -70,9 +70,11 @@ Core (CubeMX 生成) + HAL
 | `port_pwm` | PWM 逻辑通道（蜂鸣器/WS2812/背光） | 占空比千分比制；**已知缺陷：set_freq 时钟域写死 APB1** |
 | `port_encoder` | TIM4 正交编码器计数 | `s_tim_map` 解耦范本 |
 | `port_adc` | 片上 ADC（电位器 PC0） | LSB / mV 双粒度 |
+| `port_sdio` | SDIO/TF 卡抽象 | 在位预检（PD3）+ 容量查询；卡识别须 `MX_SDIO_SD_Init()` + 强制 1-bit 总线宽度，勿删 |
 | `port_tick` / `port_dwt` | 毫秒时基 / DWT 微秒延时 | 高精度时序的基础 |
 | `port_critical` | 临界区 | PRIMASK 保存恢复，RTOS 可替换 |
 | `bsp_bus`（Board） | SPI2/I2S2 复用总线仲裁 | PCA9555 软件切换模拟开关（BIT3），acquire/release + 挂起 IMU |
+| `bsp_audio`（Board） | WAV 播放业务封装 | 双缓冲 + MultiTimer 填充，编排仲裁/I2S/codec/功放 |
 | `soft_i2c` | GPIO 位操作软件 I2C | 触摸屏 FT6336 使用 |
 
 ## 5. APP 层组织
@@ -109,13 +111,16 @@ Core (CubeMX 生成) + HAL
 > 当前开发方向由用户在会话中提出，新任务确定后在此登记：任务名 / 涉及模块 / 状态。
 > 已知问题见第 9 节；历史批次记录（zcode 分支 RocketPi 实验）随 zcode 分支留存，不在本分支维护。
 
-当前批次：**阶段八 音频子系统**（方案见 `Docs/20-planning/阶段八音频子系统实施方案.md`，分支 `feature/M30-i2s-audio`）
+当前批次：**阶段八 音频子系统**（方案见 `Docs/20-planning/阶段八音频子系统实施方案.md`，调试记录见 `Docs/40-records/阶段八音频调试记录-20260920.md`，分支 `feature/M32-wav-player`）
 
 | 任务 | 里程碑 | 涉及模块 | 状态 |
 |---|---|---|---|
-| I2S2 接口层 + SPI2/I2S2 总线仲裁 | M30 | `port_i2s`、`bsp_bus`（新建）；`bsp_imu`、`Core/Src/stm32f4xx_it.c`（修改） | 代码完成，编译通过，待上板验收 |
-| ES8388 编解码驱动 + HT6872 功放使能 | M31 | `dev_es8388`、`dev_ht6872`（新建）；`dev_pca9555`、`port_i2c`（复用） | 未开工 |
-| WAV 音乐播放器 Demo | M32 | `app_audio_demo`、`bsp_audio`（新建）；`bsp_file`/FatFS、`bsp_shell`（复用） | 未开工 |
+| I2S2 接口层 + SPI2/I2S2 总线仲裁 | M30 | `port_i2s`、`bsp_bus`（新建）；`bsp_imu`、`Core/Src/stm32f4xx_it.c`（修改） | 上板验收通过，已合入 zcode_bsp |
+| ES8388 编解码驱动 + HT6872 功放使能 | M31 | `dev_es8388`、`dev_ht6872`（新建）；`dev_pca9555`、`port_i2c`（复用） | 上板验收通过，已合入 zcode_bsp |
+| WAV 音乐播放器 Demo | M32 | `bsp_audio`、`app_audio_demo`（新建/扩充）；`bsp_file` 补 read/size 接口 | 上板验收通过（读卡器导入 WAV 正常出声），待提交 |
+| SDIO 卡识别回归修复（M30 调试副产） | M32 | `port_sdio`（修复）；`app_fatfs_demo`、`bsp_audio`（诊断日志） | 上板验证通过，工作区未提交；诊断代码待收口 |
+
+待办：Ymodem 写入损坏、FatFS LFN 开启、`dev_w25q` 接入总线仲裁，详见第 9 节。
 
 ## 9. 已知问题清单（在 develop 基点代码中核实过，修一个删一行）
 
@@ -123,9 +128,13 @@ Core (CubeMX 生成) + HAL
 - [ ] `bsp_uart.c` `uart_rx_data_cb` 为空：推送通知链路已建未用，上层为拉模式
 - [ ] `port_gpio.c` `HAL_GPIO_EXTI_Callback` 路由仅比对引脚号不比对端口（PE8 按键与 PB8 LED 同为 pin 8），现靠回调 NULL 检查兜底；根治方案是从 SYSCFG_EXTICR 反查端口归属
 
-- [ ] `dev_w25q.c` 全链路使用 `BSP_WAIT_FOREVER` 且忽略 `port_spi` 返回值（get_id/write_enable/wait_busy 等）：SPI2 总线被 I2S2 仲裁走后，HAL 标志轮询永不满足，`flash_id` 等 Shell 命令永久阻塞导致系统假死。修复方向：校验返回值 + 有限超时，或将 W25Q/LittleFS 路径接入 bsp_bus 仲裁器（M32 播放器落地时一并收口）
+- [ ] `dev_w25q.c` 全链路使用 `BSP_WAIT_FOREVER` 且忽略 `port_spi` 返回值（get_id/write_enable/wait_busy 等）：SPI2 总线被 I2S2 仲裁走后，HAL 标志轮询永不满足，`flash_id` 等 Shell 命令永久阻塞导致系统假死。修复方向：校验返回值 + 有限超时，或将 W25Q/LittleFS 路径接入 bsp_bus 仲裁器（M32 已落地，此项仍未收口，待单独批次处理）
+- [ ] Ymodem 写文件内容损坏：传输 100% 完成、逐包 CRC 全对，但卡内文件头 offset 8-11（`WAVE` 字段）为垃圾 `B2 BB BB BB`，前 8 字节完好。**已排除 `port_uart` RX 丢字节**（Ymodem 对整 1024 字节 payload 算 CRC，丢字节必致失配重传），疑点在 CRC 之后的写路径：`bsp_file_write` → `f_write` → diskio → `BSP_SD_WriteBlocks`。待查：需先给 `fatfs_test` 补文件 hexdump 子命令，比对损坏分布（仅头部 or 随机）。详见 `Docs/40-records/阶段八音频调试记录-20260920.md` §2.7
+- [ ] FatFs 未开启长文件名：`ffconf.h` `_USE_LFN = 0`，文件名超 8.3 格式时 `f_open` 直接失败（Ymodem 接收报 Code 5）。修复方向：`_USE_LFN = 1` + 静态工作缓冲，需评估 RAM 开销
+- [ ] `port_pwm.c` `port_pwm_set_freq()` 定时器时钟域写死 APB1（`HAL_RCC_GetPCLK1Freq()` + `PPRE1` 判 ×2，恒得 84MHz），而 `pwm_mapping` 混挂了 APB2 的 `htim10`（LCD 背光，实际 168MHz）：ARR 算少一半，输出频率为目标的 2 倍。当前潜伏——全工程仅 `dev_buzzer`(TIM13/APB1) 与 `dev_ws2812`(TIM5/APB1) 调该函数，背光只走 `set_duty`（CCR/ARR 比值，与时钟无关）。修复方向：`port_pwm_map_t` 增加总线归属字段，`set_freq` 查表取时钟，禁止运行时猜 `RCC->CFGR`（换板只改表）
+- [ ] `bsp_backlight.c` 亮度语义与板级极性相反：`LCD_BLK_PWM` 网络硬件为低电平点亮（依据 `Docs/00-board_info/EC11_LCD_KEY描述.md`），而 TIM10 CH1 配为 PWM1 + `OCPOLARITY_HIGH`、上层按高电平占比等于亮度写 CCR，导致 `backlight 0` 最亮、`backlight 100` 熄灭。修复方向：`port_pwm_map_t` 增加有效电平标记，由 `set_duty` 统一反相，使 Board 层对上维持 0=灭、100=最亮的直觉语义。连带隐患：`bsp_backlight_init()` 是先 `port_pwm_start()` 再 `bsp_backlight_set()`，而 CubeMX 初始 `Pulse=0` 在低有效硬件上等于全亮，定时器启动到设亮度之间可能短暂闪一下最亮（未实测，修反相时应改成先写 CCR 再 start）
 
-（zcode 分支的 `port_pwm_set_freq` APB1 时钟域问题系 zcode 自引入自修复，develop 无此代码，不列。重写 port_pwm 时直接按"按实例地址归属总线动态判定"实现。）
+（注：本项早先以 zcode 分支自引入自修复、develop 无此代码为由不列入清单；经核实本分支基点 zcode_bsp 的 `pwm_mapping` 已含 APB2 通道 `htim10`，问题真实存在，已上移为上方正式待修项。重写 port_pwm 时直接按"按实例地址归属总线动态判定"实现。）
 
 ## 10. 维护约定
 

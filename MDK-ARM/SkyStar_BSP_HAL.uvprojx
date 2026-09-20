@@ -4781,6 +4781,16 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Board/bsp_bus.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_audio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/Board/bsp_audio.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_audio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../BSP/Board/bsp_audio.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

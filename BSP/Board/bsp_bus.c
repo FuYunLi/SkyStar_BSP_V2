@@ -57,9 +57,7 @@ static bool s_switch_inited = false;
  */
 static bsp_status_t bus_switch_physical(bsp_bus_owner_t target)
 {
-    dev_pca9555_state_t level = (target == BSP_BUS_OWNER_I2S2)
-                                    ? BUS_SWITCH_LEVEL_I2S2
-                                    : BUS_SWITCH_LEVEL_SPI2;
+    dev_pca9555_state_t level = (target == BSP_BUS_OWNER_I2S2) ? BUS_SWITCH_LEVEL_I2S2 : BUS_SWITCH_LEVEL_SPI2;
 
     bsp_status_t status = dev_pca9555_set_pin_dir(&g_pca_led, BUS_SWITCH_PCA_PORT, BUS_SWITCH_PCA_PIN, 0);
     if (status != BSP_OK)
@@ -146,8 +144,7 @@ static bsp_status_t bus_do_switch(bsp_bus_owner_t target)
 
 bsp_status_t bsp_bus_acquire(bsp_bus_id_t bus, bsp_bus_owner_t owner)
 {
-    if (bus >= BSP_BUS_MAX || owner == BSP_BUS_OWNER_NONE ||
-        owner >= BSP_BUS_OWNER_MAX)
+    if (bus >= BSP_BUS_MAX || owner == BSP_BUS_OWNER_NONE || owner >= BSP_BUS_OWNER_MAX)
     {
         return BSP_EINVAL;
     }

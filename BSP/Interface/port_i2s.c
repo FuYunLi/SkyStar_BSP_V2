@@ -205,10 +205,8 @@ bsp_status_t port_i2s_deinit(port_i2s_id_t id)
     return BSP_OK;
 }
 
-bsp_status_t port_i2s_start_dma(port_i2s_id_t id, const uint16_t *buf,
-                                size_t samples,
-                                port_i2s_cb_t half_cb, port_i2s_cb_t full_cb,
-                                void *user_ctx)
+bsp_status_t port_i2s_start_dma(port_i2s_id_t id, const uint16_t *buf, size_t samples, port_i2s_cb_t half_cb,
+                                port_i2s_cb_t full_cb, void *user_ctx)
 {
     I2S_HandleTypeDef *hi2s = get_hw(id);
     if (hi2s == NULL || buf == NULL || samples == 0U || (samples & 1U) != 0U)
