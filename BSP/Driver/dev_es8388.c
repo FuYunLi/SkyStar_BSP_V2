@@ -118,8 +118,7 @@ bsp_status_t dev_es8388_start_dac(void)
     }
     if (prev != cur)
     {
-        if (es8388_reg_write(ES8388_CHIPPOWER, 0xF0) != BSP_OK ||
-            es8388_reg_write(ES8388_CHIPPOWER, 0x00) != BSP_OK)
+        if (es8388_reg_write(ES8388_CHIPPOWER, 0xF0) != BSP_OK || es8388_reg_write(ES8388_CHIPPOWER, 0x00) != BSP_OK)
         {
             return BSP_EIO;
         }

@@ -64,10 +64,8 @@ bsp_status_t port_i2s_deinit(port_i2s_id_t id);
  * @param user_ctx  透传给回调的用户指针
  * @return bsp_status_t 执行结果
  */
-bsp_status_t port_i2s_start_dma(port_i2s_id_t id, const uint16_t *buf,
-                                size_t samples,
-                                port_i2s_cb_t half_cb, port_i2s_cb_t full_cb,
-                                void *user_ctx);
+bsp_status_t port_i2s_start_dma(port_i2s_id_t id, const uint16_t *buf, size_t samples, port_i2s_cb_t half_cb,
+                                port_i2s_cb_t full_cb, void *user_ctx);
 
 /**
  * @brief 停止 DMA 流式发送
