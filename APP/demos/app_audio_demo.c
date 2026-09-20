@@ -40,11 +40,17 @@ static void shell_audio_bus_switch(int argc, char *argv[])
     }
     else
     {
+        /* 归属方名称查表：与 bsp_bus_owner_t 枚举一一对应，新增归属方时同步补一行 */
+        static const char *const s_owner_names[] =
+        {
+            [BSP_BUS_OWNER_NONE] = "NONE",
+            [BSP_BUS_OWNER_SPI2] = "SPI2",
+            [BSP_BUS_OWNER_I2S2] = "I2S2",
+        };
+        bsp_bus_owner_t owner = bsp_bus_current(BSP_BUS_SPI2_I2S2);
+
         printf("Usage: audio_bus_switch [i2s|spi]\r\n");
-        printf("Current owner: %s\r\n",
-               (bsp_bus_current(BSP_BUS_SPI2_I2S2) == BSP_BUS_OWNER_I2S2) ? "I2S2"
-               : (bsp_bus_current(BSP_BUS_SPI2_I2S2) == BSP_BUS_OWNER_SPI2) ? "SPI2"
-                                                                            : "NONE");
+        printf("Current owner: %s\r\n", (owner < BSP_BUS_OWNER_MAX) ? s_owner_names[owner] : "INVALID");
         return;
     }
 

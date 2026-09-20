@@ -46,7 +46,9 @@ bsp_status_t app_fatfs_demo_init(void)
     }
     else if (status != BSP_OK)
     {
-        log_e("SDIO physical initialization failed, status: %d", (int)status);
+        /* 诊断：取接口层翻译后的逻辑错误码，各位含义见 port_sdio.h 的 PORT_SDIO_ERR_* */
+        log_e("SDIO physical initialization failed, status: %d, SDIO error: 0x%08lX",
+              (int)status, (unsigned long)port_sdio_get_error());
         s_fs_mounted = false;
         return BSP_ERROR;
     }
