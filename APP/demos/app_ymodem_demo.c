@@ -8,6 +8,7 @@
 #include "bsp_uart.h"
 #include "bsp_file.h"
 #include "shell.h"
+#include <string.h>
 
 #define LOG_TAG "YMODEM_DEMO"
 #include "elog.h"
@@ -27,11 +28,15 @@ static uint32_t s_last_tick = 0U;
 /* 存储目标前缀，默认为 0:/ (FatFS/SD卡) */
 static char s_filepath_prefix[64] = "0:/";
 
-/* 异步写入错误记录变量，避免在传输过程中打印日志干扰通信 */
-static bsp_status_t s_last_write_status = BSP_OK;
-static uint32_t s_last_write_bytes = 0;
-static uint32_t s_last_write_expected = 0;
-static bool s_has_write_error = false;
+/* 异步记录区：会话期间绝对禁止打印日志，详见 s_ymodem_on_transfer_end 注释
+ * （发送端 wait_for_char('C') 逐字节扫 0x43，日志文本里的大写 C 会造成伪握手） */
+static char s_ymodem_filename[128];               /* 本会话最后一个文件名，会话结束后才打印 */
+static uint32_t s_ymodem_next_offset = 0U;        /* 期望写入偏移，用于连续性守卫 */
+static uint32_t s_ymodem_bytes = 0U;              /* 本会话累计已写入字节 */
+static uint32_t s_ymodem_filesize = 0U;
+static bsp_status_t s_ymodem_last_status = BSP_OK; /* 最后一次失败的底层状态码 */
+static bool s_ymodem_close_failed = false;
+static uint32_t s_ymodem_tx_drop = 0U;            /* 发送队列满导致丢弃的协议字节数 */
 
 /* ================================================================
  * Ymodem 底层操作回调函数实现
@@ -39,26 +44,38 @@ static bool s_has_write_error = false;
 
 /**
  * @brief 发送字符回调
+ * @note  队列式发送，入队即返回，符合 V3 “必须尽快返回”约束；
+ *        队列满时丢一个协议字节的后果由对端超时重传兜底，但必须计数上报，
+ *        绝不静默吞掉
  */
 static void s_ymodem_send_char(ymodem_ctx_t *ctx, uint8_t ch)
 {
     (void)ctx;
-    (void)bsp_uart_write(&ch, 1U);
+
+    if (bsp_uart_write(&ch, 1U) != BSP_OK)
+    {
+        s_ymodem_tx_drop++;
+    }
 }
 
 /**
- * @brief 解析到文件头回调
+ * @brief 解析到文件头回调（V3 名：on_file_open）
+ * @note  会话期间不打日志，只记录名称与长度，留待会话结束时一次性报告
  */
-static int s_ymodem_on_file_header(ymodem_ctx_t *ctx, const char *filename, uint32_t filesize)
+static int s_ymodem_on_file_open(ymodem_ctx_t *ctx, const char *filename, uint32_t filesize)
 {
-    (void)ctx;
-    char filepath[128];
+    char filepath[160];
     bsp_status_t status;
 
-    /* 如果之前有文件处于打开状态（例如批量传输中的上一个文件），必须先关闭它 */
+    (void)ctx;
+
+    /* 如果之前有文件处于打开状态（批量传输中上一个文件的异常兜底），先关闭它 */
     if (s_ymodem_file_opened)
     {
-        (void)bsp_file_close(&s_ymodem_file);
+        if (bsp_file_close(&s_ymodem_file) != BSP_OK)
+        {
+            s_ymodem_close_failed = true;
+        }
         s_ymodem_file_opened = false;
     }
 
@@ -76,7 +93,8 @@ static int s_ymodem_on_file_header(ymodem_ctx_t *ctx, const char *filename, uint
 
     /* 动态拼接存储前缀与纯文件名 */
     snprintf(filepath, sizeof(filepath), "%s%s", s_filepath_prefix, basename);
-    // log_i("Ymodem: Creating destination file: %s (%u bytes)", filepath, (unsigned int)filesize);
+    snprintf(s_ymodem_filename, sizeof(s_ymodem_filename), "%s", basename);
+    s_ymodem_filesize = filesize;
 
     /* 递归创建目标目录，防止因路径目录不存在导致打开失败 */
     (void)bsp_file_mkdir_rec(s_filepath_prefix);
@@ -84,72 +102,123 @@ static int s_ymodem_on_file_header(ymodem_ctx_t *ctx, const char *filename, uint
     status = bsp_file_open(&s_ymodem_file, filepath, BSP_FILE_CREATE | BSP_FILE_TRUNC | BSP_FILE_WRITE);
     if (status != BSP_OK)
     {
-        // log_e("Ymodem: Failed to create file: %s (Error code: %d)", filepath, (int)status);
+        s_ymodem_last_status = status;
         s_ymodem_file_opened = false;
         return -1;
     }
 
     s_ymodem_file_opened = true;
+    s_ymodem_next_offset = 0U;
+    s_ymodem_bytes = 0U;
     return 0;
 }
 
+/* 落盘中转缓冲：以 uint32_t 为底保证 4 字节对齐，容量等于最大载荷 1024 字节 */
+#define YMODEM_STAGE_SIZE (1024U)
+static uint32_t s_ymodem_stage[YMODEM_STAGE_SIZE / 4U];
+
 /**
- * @brief 数据块接收回调
+ * @brief 数据块写入回调（V3 名：on_write，注意参数顺序为 offset 在前）
+ * @note  两道防线：
+ *       1) 偏移连续性守卫：协议错位/重写当场失败上报，不事后靠 CRC 对账发现；
+ *       2) 非 4 字节对齐源经对齐中转缓冲再落盘：FatFS 对整扇区写是把用户指针直达
+ *          SDIO IDMA(ff.c direct-write)，而 IDMA 会丢弃地址低 2 位，导致整块位移
+ *          ——V3 的 ctx 布局下 frame_buf+3 恰为 4n+3，必现静默数据损坏
  */
-static int s_ymodem_on_data_block(ymodem_ctx_t *ctx, const uint8_t *data, uint32_t offset, uint32_t size)
+static int s_ymodem_on_write(ymodem_ctx_t *ctx, uint32_t offset, const uint8_t *data, uint32_t len)
 {
-    (void)ctx;
-    (void)offset;
     uint32_t bw = 0;
     bsp_status_t status;
 
+    (void)ctx;
+
     if (!s_ymodem_file_opened)
     {
-        // log_e("Ymodem: Data received but write file is not open!");
+        s_ymodem_last_status = BSP_EINVAL;
         return -1;
     }
 
-    status = bsp_file_write(&s_ymodem_file, data, size, &bw);
-    if (status != BSP_OK || bw != size)
+    if (offset != s_ymodem_next_offset)
     {
-        s_last_write_status = status;
-        s_last_write_bytes = bw;
-        s_last_write_expected = size;
-        s_has_write_error = true;
+        s_ymodem_last_status = BSP_EINVAL;
         return -1;
     }
 
+    if (len > YMODEM_STAGE_SIZE)
+    {
+        s_ymodem_last_status = BSP_EINVAL;
+        return -1;
+    }
+
+    if (((uint32_t)(uintptr_t)data & 0x3U) != 0U)
+    {
+        memcpy(s_ymodem_stage, data, len);
+        data = (const uint8_t *)s_ymodem_stage;
+    }
+
+    status = bsp_file_write(&s_ymodem_file, data, len, &bw);
+    if (status != BSP_OK || bw != len)
+    {
+        s_ymodem_last_status = status;
+        return -1;
+    }
+
+    s_ymodem_next_offset += len;
+    s_ymodem_bytes += len;
     return 0;
 }
 
 /**
- * @brief 传输结束回调
+ * @brief 单文件结束回调（V3 新增）：真正的落盘时刻在这里，不得吞掉 close 失败
+ */
+static void s_ymodem_on_file_close(ymodem_ctx_t *ctx, ymodem_result_t result)
+{
+    (void)ctx;
+    (void)result;
+
+    if (!s_ymodem_file_opened)
+    {
+        return;
+    }
+
+    if (bsp_file_close(&s_ymodem_file) != BSP_OK)
+    {
+        s_ymodem_close_failed = true;
+    }
+    s_ymodem_file_opened = false;
+}
+
+/**
+ * @brief 会话结束回调：一次性报告全部结果
+ * @note  之所以把日志集中在会话结束才打：传输期间 ACK/NAK/'C' 与日志共用同一条
+ *       TX 队列，对端逐字节扫 'C'，日志里的字母会干扰握手
  */
 static void s_ymodem_on_transfer_end(ymodem_ctx_t *ctx, ymodem_result_t result)
 {
     (void)ctx;
-    
+
     if (s_ymodem_file_opened)
     {
-        (void)bsp_file_close(&s_ymodem_file);
+        if (bsp_file_close(&s_ymodem_file) != BSP_OK)
+        {
+            s_ymodem_close_failed = true;
+        }
         s_ymodem_file_opened = false;
     }
 
     g_ymodem_active = false;
 
-    if (result == YMODEM_OK)
+    if (result == YMODEM_OK && !s_ymodem_close_failed && s_ymodem_bytes == s_ymodem_filesize)
     {
-        log_i("Ymodem: File received successfully.");
+        log_i("Ymodem: OK  file=%s  bytes=%lu/%lu  tx_drop=%lu",
+              s_ymodem_filename, (unsigned long)s_ymodem_bytes, (unsigned long)s_ymodem_filesize,
+              (unsigned long)s_ymodem_tx_drop);
     }
     else
     {
-        log_e("Ymodem: File transfer failed or aborted (Code: %d).", (int)result);
-        if (s_has_write_error)
-        {
-            log_e("Ymodem: Last write error: status=%d, written=%u/%u",
-                  (int)s_last_write_status, (unsigned int)s_last_write_bytes, (unsigned int)s_last_write_expected);
-            s_has_write_error = false; /* 重置 */
-        }
+        log_e("Ymodem: FAILED result=%d  bytes=%lu/%lu  close_failed=%d  last_status=%d  tx_drop=%lu",
+              (int)result, (unsigned long)s_ymodem_bytes, (unsigned long)s_ymodem_filesize,
+              (int)s_ymodem_close_failed, (int)s_ymodem_last_status, (unsigned long)s_ymodem_tx_drop);
     }
 }
 
@@ -158,9 +227,10 @@ static void s_ymodem_on_transfer_end(ymodem_ctx_t *ctx, ymodem_result_t result)
  * ================================================================ */
 static const ymodem_ops_t s_ymodem_ops =
 {
-    .send_char = s_ymodem_send_char,
-    .on_file_header = s_ymodem_on_file_header,
-    .on_data_block = s_ymodem_on_data_block,
+    .send_char      = s_ymodem_send_char,
+    .on_file_open   = s_ymodem_on_file_open,
+    .on_write       = s_ymodem_on_write,
+    .on_file_close  = s_ymodem_on_file_close,
     .on_transfer_end = s_ymodem_on_transfer_end
 };
 
@@ -169,13 +239,51 @@ static const ymodem_ops_t s_ymodem_ops =
  * ================================================================ */
 
 /**
- * @brief 初始化 Ymodem 演示应用
+ * @brief 初始化 Ymodem 演示应用（仅初始化上下文，不启动会话）
  */
 bsp_status_t app_ymodem_demo_init(void)
 {
     g_ymodem_active = false;
     s_last_tick = bsp_tick_get_ms();
-    return ymodem_init(&s_ymodem_ctx, &s_ymodem_ops) == 0 ? BSP_OK : BSP_ERROR;
+
+    if (ymodem_init(&s_ymodem_ctx, YMODEM_MODE_RECEIVER, &s_ymodem_ops) != 0)
+    {
+        return BSP_EINVAL;
+    }
+    return BSP_OK;
+}
+
+/**
+ * @brief 启动一次接收会话：清会话计数、排空旧字节、交给协议栈自己发首个 'C'
+ * @return bsp_status_t BSP_OK 已启动；BSP_ERROR 上下文未初始化
+ */
+static bsp_status_t s_ymodem_begin(void)
+{
+    s_ymodem_filename[0] = '\0';
+    s_ymodem_next_offset = 0U;
+    s_ymodem_bytes = 0U;
+    s_ymodem_filesize = 0U;
+    s_ymodem_last_status = BSP_OK;
+    s_ymodem_close_failed = false;
+    s_ymodem_tx_drop = 0U;
+
+    if (ymodem_init(&s_ymodem_ctx, YMODEM_MODE_RECEIVER, &s_ymodem_ops) != 0)
+    {
+        log_e("Ymodem: init failed (ops incomplete)");
+        return BSP_ERROR;
+    }
+
+    /* 先排空残留字节（上一条命令的回显/换行），再启动，避免噪声喂进状态机 */
+    uint8_t dummy;
+    while (bsp_uart_read(&dummy, 1U) > 0U)
+    {
+        /* 丢弃 */
+    }
+
+    s_last_tick = bsp_tick_get_ms();
+    g_ymodem_active = true;
+    ymodem_start(&s_ymodem_ctx);
+    return BSP_OK;
 }
 
 /**
@@ -201,6 +309,19 @@ void app_ymodem_demo_process(void)
     {
         ymodem_receive_byte(&s_ymodem_ctx, rx_byte);
     }
+
+    /* 3. 会话结束后排空残留字节，并把串口还给 shell
+     *    （否则尾随字节会被 shell 误当作命令执行） */
+    ymodem_state_t st = ymodem_get_state(&s_ymodem_ctx);
+    if (st == YMODEM_STATE_IDLE || st == YMODEM_STATE_DONE || st == YMODEM_STATE_ERROR)
+    {
+        uint8_t tail;
+        while (bsp_uart_read(&tail, 1U) > 0U)
+        {
+            /* 丢弃会话尾部残留 */
+        }
+        g_ymodem_active = false;
+    }
 }
 
 /* ================================================================
@@ -225,8 +346,14 @@ static int shell_ymodem_recv(int argc, char *argv[])
         s_filepath_prefix[sizeof(s_filepath_prefix) - 1] = '\0';
         log_i("Ymodem: Target storage set to Board SPI Flash (LittleFS)");
     }
-    else if (argc >= 3 && strcmp(argv[1], "-d") == 0)
+    else if (argc >= 2 && strcmp(argv[1], "-d") == 0)
     {
+        if (argc < 3)
+        {
+            log_w("Ymodem: -d needs a directory argument");
+            return -1;
+        }
+
         strncpy(s_filepath_prefix, argv[2], sizeof(s_filepath_prefix) - 1);
         s_filepath_prefix[sizeof(s_filepath_prefix) - 1] = '\0';
         
@@ -252,23 +379,6 @@ static int shell_ymodem_recv(int argc, char *argv[])
     log_i("Ymodem: Starting transfer listener...");
     log_i("Ymodem: Please send file via Ymodem protocol from your terminal now.");
 
-    (void)app_ymodem_demo_init();
-
-    /* 启动监听前，清空串口接收环形缓冲区，防止指令本身的回显或换行符干扰状态机 */
-    uint8_t dummy;
-    while (bsp_uart_read(&dummy, 1U) > 0)
-    {
-        /* 丢弃残留字符 */
-    }
-
-    g_ymodem_active = true;
-    s_ymodem_ctx.state = YMODEM_STATE_INIT;
-    s_ymodem_ctx.timer_ms = 0U;
-    s_ymodem_ctx.init_retry_count = 0U;
-
-    /* 发送初始 'C' 开始接收 */
-    s_ymodem_ctx.ops->send_char(&s_ymodem_ctx, YMODEM_C);
-
-    return 0;
+    return (s_ymodem_begin() == BSP_OK) ? 0 : -1;
 }
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, ymodem_recv, shell_ymodem_recv, "Start Ymodem receiver. Usage: ymodem_recv [-flash] [-d <dir>]");

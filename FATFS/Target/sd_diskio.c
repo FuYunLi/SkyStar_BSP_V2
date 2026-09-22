@@ -68,6 +68,11 @@
 * transfer data
 */
 /* USER CODE BEGIN enableScratchBuffer */
+/* 保持关闭：实测（2026-09-22）开启后 Ymodem 传输在 packet 0 即被 CAN 中止——
+ * 其非对齐慢路径逐扇区写后只等 WriteStatus(DMA完成)，不等 BSP_SD_GetCardState()，
+ * 多扇区场景下下一笔写提前发出而失败。
+ * 非对齐问题改由调用方保证 4 字节对齐（见 app_ymodem_demo.c 的中转缓冲）。
+ * 详见 Docs/40-records/串口框架与Ymodem移植记录-20260922.md */
 /* #define ENABLE_SCRATCH_BUFFER */
 /* USER CODE END enableScratchBuffer */
 

@@ -57,6 +57,8 @@ Core (CubeMX 生成) + HAL
    所有异步操作（SPI DMA、UART TX/Error 等）共用此签名；`user_ctx` 透明指针原样回传。
 3. **逻辑 ID + 静态映射表**
    每支 port 用枚举逻辑通道 + 指定初始化器映射表（如 `port_pwm.c` 的 `pwm_mapping`、`port_uart.c` 的 `s_uart_map`、`port_encoder.c` 的 `s_tim_map`）对接物理外设；未使能通道句柄置 NULL 做运行时守卫。换板 = 改表。
+4. **交给 DMA 后端的缓冲必须 4 字节对齐（硬约束，违反则静默位移）**
+   SDIO IDMA 与 SPI DMA 只按 32 位取指，会丢弃地址低 2 位；而 FatFS 对整扇区读写是把用户指针直达 `disk_write/disk_read`（`ff.c` direct-write 路径，无中间拷贝）。因此任何走 DMA 存储后端的缓冲区（含中间件帧缓冲的载荷偏移、取证工具的读窗）都必须 4 字节对齐，否则数据整体位移且 **无任何错误上报**（CRC 由外设对实际发出的字节生成）。已在 `app_ymodem_demo.c` 用对齐中转缓冲规避；详见 `Docs/40-records/串口框架与Ymodem移植记录-20260922.md` §3
 
 ### Interface 层模块清单
 
@@ -111,16 +113,17 @@ Core (CubeMX 生成) + HAL
 > 当前开发方向由用户在会话中提出，新任务确定后在此登记：任务名 / 涉及模块 / 状态。
 > 已知问题见第 9 节；历史批次记录（zcode 分支 RocketPi 实验）随 zcode 分支留存，不在本分支维护。
 
-当前批次：**阶段八 音频子系统**（方案见 `Docs/20-planning/阶段八音频子系统实施方案.md`，调试记录见 `Docs/40-records/阶段八音频调试记录-20260920.md`，分支 `feature/M32-wav-player`）
+当前批次：**阶段八后续收口——存储链路完整性与串口框架升级**（方案与实测见 `Docs/40-records/串口框架与Ymodem移植记录-20260922.md`，分支 `fix/ymodem-write-corruption`；阶段八本体见同目录 `阶段八音频调试记录-20260920.md`，已合入 zcode_bsp）
 
 | 任务 | 里程碑 | 涉及模块 | 状态 |
 |---|---|---|---|
+| 串口框架升级至 V2.1 + Ymodem 升级至 V3 | M32+ | `port_uart`、`Middleware/Ymodem`（替换）；`app_ymodem_demo`（ops 适配 + 对齐中转 + 连续性守卫）；`stm32f4xx_it.c`（去重复委托） | 上板验收通过（Ymodem→SD 字节级一致且可播放），待提交 |
 | I2S2 接口层 + SPI2/I2S2 总线仲裁 | M30 | `port_i2s`、`bsp_bus`（新建）；`bsp_imu`、`Core/Src/stm32f4xx_it.c`（修改） | 上板验收通过，已合入 zcode_bsp |
 | ES8388 编解码驱动 + HT6872 功放使能 | M31 | `dev_es8388`、`dev_ht6872`（新建）；`dev_pca9555`、`port_i2c`（复用） | 上板验收通过，已合入 zcode_bsp |
 | WAV 音乐播放器 Demo | M32 | `bsp_audio`、`app_audio_demo`（新建/扩充）；`bsp_file` 补 read/size 接口 | 上板验收通过（读卡器导入 WAV 正常出声），待提交 |
 | SDIO 卡识别回归修复（M30 调试副产） | M32 | `port_sdio`（修复）；`app_fatfs_demo`、`bsp_audio`（诊断日志） | 上板验证通过，工作区未提交；诊断代码待收口 |
 
-待办：Ymodem 写入损坏、FatFS LFN 开启、`dev_w25q` 接入总线仲裁，详见第 9 节。
+待办：LittleFS/W25Q 写入块级损坏、FatFS LFN 开启、`dev_w25q` 接入总线仲裁、对齐契约从点状规避升格为统一保障，详见第 9 节。
 
 ## 9. 已知问题清单（在 develop 基点代码中核实过，修一个删一行）
 
@@ -129,7 +132,9 @@ Core (CubeMX 生成) + HAL
 - [ ] `port_gpio.c` `HAL_GPIO_EXTI_Callback` 路由仅比对引脚号不比对端口（PE8 按键与 PB8 LED 同为 pin 8），现靠回调 NULL 检查兜底；根治方案是从 SYSCFG_EXTICR 反查端口归属
 
 - [ ] `dev_w25q.c` 全链路使用 `BSP_WAIT_FOREVER` 且忽略 `port_spi` 返回值（get_id/write_enable/wait_busy 等）：SPI2 总线被 I2S2 仲裁走后，HAL 标志轮询永不满足，`flash_id` 等 Shell 命令永久阻塞导致系统假死。修复方向：校验返回值 + 有限超时，或将 W25Q/LittleFS 路径接入 bsp_bus 仲裁器（M32 已落地，此项仍未收口，待单独批次处理）
-- [ ] Ymodem 写文件内容损坏：传输 100% 完成、逐包 CRC 全对，但卡内文件头 offset 8-11（`WAVE` 字段）为垃圾 `B2 BB BB BB`，前 8 字节完好。**已排除 `port_uart` RX 丢字节**（Ymodem 对整 1024 字节 payload 算 CRC，丢字节必致失配重传），疑点在 CRC 之后的写路径：`bsp_file_write` → `f_write` → diskio → `BSP_SD_WriteBlocks`。待查：需先给 `fatfs_test` 补文件 hexdump 子命令，比对损坏分布（仅头部 or 随机）。详见 `Docs/40-records/阶段八音频调试记录-20260920.md` §2.7
+- [x] ~~Ymodem 写文件内容损坏~~ —— **已定案修复（2026-09-22）**：根因是 Ymodem 载荷指针 `&frame_buf[3]` 非 4 字节对齐，经 FatFS 直达路径交给 SDIO IDMA，而 IDMA 丢弃地址低 2 位 → 整块位移（含帧头 `02 01 FE`），且因 CRC 由外设对实际发出字节生成而全程无错。V3 的 ctx 布局使 `frame_buf` 偏移从 9（碰巧对齐）变为 16（必然非对齐），因而必现。修复：`app_ymodem_demo.c` 落盘前经对齐中转缓冲 + 偏移连续性守卫。验证：`tour.wav` 176478 字节板端 CRC32 与 PC 一致（7a6fd6f4），43 块双趟读全一致，可正常播放。详见 `Docs/40-records/串口框架与Ymodem移植记录-20260922.md`
+- [ ] LittleFS/W25Q 写路径存在块级内容损坏：`flash/Tour_France.wav` 经 `fatfs_test crcmap` 实测 **43 块中有 2 块（blk7=0x7000、blk9=0x9000）与 PC 不一致且两趟读完全一致**（即稳定损坏，非读抖动）。方向：`port_spi`/`dev_w25q` 的同类对齐约束与页编程边界（SPI DMA 与 256B page program 交界处）。取证工具已就位：`fatfs_test crc <path>` / `crcmap <path> [blk]` / `dump <path> [off] [len]`（已改走 VFS，SD 与 flash 通用）
+- [ ] DMA 缓冲 4 字节对齐契约目前仅在 Ymodem 一处点状规避：建议在 `bsp_file`（统一入参对齐校验/兜底中转）或 `port_sdio`+`port_spi`（非对齐则拒绝或内部中转）升格为全局保障，否则任何新调用方传入非对齐指针（如直接传结构体字段）都会重现静默位移
 - [ ] FatFs 未开启长文件名：`ffconf.h` `_USE_LFN = 0`，文件名超 8.3 格式时 `f_open` 直接失败（Ymodem 接收报 Code 5）。修复方向：`_USE_LFN = 1` + 静态工作缓冲，需评估 RAM 开销
 - [ ] `port_pwm.c` `port_pwm_set_freq()` 定时器时钟域写死 APB1（`HAL_RCC_GetPCLK1Freq()` + `PPRE1` 判 ×2，恒得 84MHz），而 `pwm_mapping` 混挂了 APB2 的 `htim10`（LCD 背光，实际 168MHz）：ARR 算少一半，输出频率为目标的 2 倍。当前潜伏——全工程仅 `dev_buzzer`(TIM13/APB1) 与 `dev_ws2812`(TIM5/APB1) 调该函数，背光只走 `set_duty`（CCR/ARR 比值，与时钟无关）。修复方向：`port_pwm_map_t` 增加总线归属字段，`set_freq` 查表取时钟，禁止运行时猜 `RCC->CFGR`（换板只改表）
 - [ ] `bsp_backlight.c` 亮度语义与板级极性相反：`LCD_BLK_PWM` 网络硬件为低电平点亮（依据 `Docs/00-board_info/EC11_LCD_KEY描述.md`），而 TIM10 CH1 配为 PWM1 + `OCPOLARITY_HIGH`、上层按高电平占比等于亮度写 CCR，导致 `backlight 0` 最亮、`backlight 100` 熄灭。修复方向：`port_pwm_map_t` 增加有效电平标记，由 `set_duty` 统一反相，使 Board 层对上维持 0=灭、100=最亮的直觉语义。连带隐患：`bsp_backlight_init()` 是先 `port_pwm_start()` 再 `bsp_backlight_set()`，而 CubeMX 初始 `Pulse=0` 在低有效硬件上等于全亮，定时器启动到设亮度之间可能短暂闪一下最亮（未实测，修反相时应改成先写 CCR 再 start）
