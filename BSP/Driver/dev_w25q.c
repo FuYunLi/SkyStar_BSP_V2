@@ -22,6 +22,8 @@
 
 #define W25X_WIP_FLAG        0x01 /* 写进行中标志位(WIP) */
 #define W25Q_TIMEOUT_MS      2000 /* 擦写最大超时时间 */
+#define W25Q_XFER_TIMEOUT_MS 100  /* 单次 SPI 传输超时：禁止无限等待，
+                                    * SPI2 总线被 bsp_bus 仲裁给 I2S2 时快速失败防系统假死 */
 
 /* =========================================================================
  * 内部辅助函数
@@ -40,13 +42,14 @@ static inline void w25q_cs_unselect(void)
 /**
  * @brief 发送写使能指令
  */
-static void w25q_write_enable(void)
+static bsp_status_t w25q_write_enable(void)
 {
     uint8_t cmd = W25X_WRITE_ENABLE;
-    
+
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, &cmd, 1, BSP_WAIT_FOREVER);
+    bsp_status_t ret = port_spi_write(W25Q_SPI_BUS, &cmd, 1, W25Q_XFER_TIMEOUT_MS);
     w25q_cs_unselect();
+    return ret;
 }
 
 /**
@@ -59,10 +62,20 @@ static bsp_status_t w25q_wait_busy(void)
     uint32_t start_time = port_tick_get_ms();
 
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, &cmd, 1, BSP_WAIT_FOREVER);
+    bsp_status_t ret = port_spi_write(W25Q_SPI_BUS, &cmd, 1, W25Q_XFER_TIMEOUT_MS);
+    if (ret != BSP_OK)
+    {
+        w25q_cs_unselect();
+        return ret;
+    }
     do
     {
-        port_spi_read(W25Q_SPI_BUS, &status, 1, BSP_WAIT_FOREVER);
+        ret = port_spi_read(W25Q_SPI_BUS, &status, 1, W25Q_XFER_TIMEOUT_MS);
+        if (ret != BSP_OK)
+        {
+            w25q_cs_unselect();
+            return ret;
+        }
         if (port_tick_get_ms() - start_time > W25Q_TIMEOUT_MS)
         {
             w25q_cs_unselect();
@@ -80,19 +93,30 @@ static bsp_status_t w25q_wait_busy(void)
 static bsp_status_t w25q_page_program(uint32_t addr, const uint8_t *buf, uint32_t size)
 {
     uint8_t cmd[4];
-    
-    w25q_write_enable();
-    
+
+    bsp_status_t ret = w25q_write_enable();
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
+
     cmd[0] = W25X_PAGE_PROGRAM;
     cmd[1] = (uint8_t)((addr >> 16) & 0xFF);
     cmd[2] = (uint8_t)((addr >> 8) & 0xFF);
     cmd[3] = (uint8_t)(addr & 0xFF);
 
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, cmd, 4, BSP_WAIT_FOREVER);
-    port_spi_write(W25Q_SPI_BUS, buf, size, BSP_WAIT_FOREVER);
+    ret = port_spi_write(W25Q_SPI_BUS, cmd, 4, W25Q_XFER_TIMEOUT_MS);
+    if (ret == BSP_OK)
+    {
+        ret = port_spi_write(W25Q_SPI_BUS, buf, size, W25Q_XFER_TIMEOUT_MS);
+    }
     w25q_cs_unselect();
 
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
     return w25q_wait_busy();
 }
 
@@ -160,11 +184,14 @@ bsp_status_t dev_w25q_read(uint32_t addr, uint8_t *buf, uint32_t size)
     cmd[3] = (uint8_t)(addr & 0xFF);
 
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, cmd, 4, BSP_WAIT_FOREVER);
-    port_spi_read(W25Q_SPI_BUS, buf, size, BSP_WAIT_FOREVER);
+    ret = port_spi_write(W25Q_SPI_BUS, cmd, 4, W25Q_XFER_TIMEOUT_MS);
+    if (ret == BSP_OK)
+    {
+        ret = port_spi_read(W25Q_SPI_BUS, buf, size, W25Q_XFER_TIMEOUT_MS);
+    }
     w25q_cs_unselect();
 
-    return BSP_OK;
+    return ret;
 }
 
 /**
@@ -217,7 +244,11 @@ bsp_status_t dev_w25q_erase_sector(uint32_t addr)
 {
     uint8_t cmd[4];
 
-    w25q_write_enable();
+    bsp_status_t ret = w25q_write_enable();
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
 
     cmd[0] = W25X_SECTOR_ERASE;
     cmd[1] = (uint8_t)((addr >> 16) & 0xFF);
@@ -225,9 +256,13 @@ bsp_status_t dev_w25q_erase_sector(uint32_t addr)
     cmd[3] = (uint8_t)(addr & 0xFF);
 
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, cmd, 4, BSP_WAIT_FOREVER);
+    ret = port_spi_write(W25Q_SPI_BUS, cmd, 4, W25Q_XFER_TIMEOUT_MS);
     w25q_cs_unselect();
 
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
     return w25q_wait_busy();
 }
 
@@ -251,13 +286,21 @@ bsp_status_t dev_w25q_get_id(uint32_t *p_id)
     
     uint8_t id[3] = {0};
     uint8_t cmd = W25X_JEDEC_DEVICE_ID;
-    
+
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, &cmd, 1, BSP_WAIT_FOREVER);
-    port_spi_read(W25Q_SPI_BUS, id, 3, BSP_WAIT_FOREVER);
+    bsp_status_t ret = port_spi_write(W25Q_SPI_BUS, &cmd, 1, W25Q_XFER_TIMEOUT_MS);
+    if (ret == BSP_OK)
+    {
+        ret = port_spi_read(W25Q_SPI_BUS, id, 3, W25Q_XFER_TIMEOUT_MS);
+    }
     w25q_cs_unselect();
-    
+
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
+
     *p_id = ((uint32_t)id[0] << 16) | ((uint32_t)id[1] << 8) | (uint32_t)id[2];
-    
+
     return BSP_OK;
 }

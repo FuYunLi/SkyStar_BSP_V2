@@ -6,6 +6,7 @@
 #include "app_flash_demo.h"
 #include "bsp_logger.h"
 #include "dev_w25q.h"
+#include "bsp_bus.h"
 #include "bsp_lfs.h"
 #include "shell.h"
 #include <stdio.h>
@@ -88,11 +89,20 @@ bsp_status_t app_flash_demo_init(void)
 
 /**
  * @brief 测试指令：读取 Flash JEDEC ID
+ * @note  经 bsp_bus 仲裁申请 SPI2：I2S2 音频持有期间快速失败报 BUSY，
+ *        而不是在总线已被切走的情况下物理读取（旧版会假死）。
  */
 static void shell_flash_id(void)
 {
     uint32_t id = 0;
+    bsp_status_t bus = bsp_bus_acquire(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_SPI2);
+    if (bus != BSP_OK)
+    {
+        log_e("SPI2 bus not available (ret = %d), audio may own the bus", bus);
+        return;
+    }
     bsp_status_t ret = dev_w25q_get_id(&id);
+    (void)bsp_bus_release(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_SPI2);
     if (ret == BSP_OK)
     {
         log_i("W25Q128 JEDEC ID: 0x%06X", id);

@@ -6,6 +6,7 @@
 
 #include "bsp_lfs.h"
 #include "dev_w25q.h"
+#include "bsp_bus.h"
 #include "bsp_logger.h"
 
 /* =========================================================================
@@ -63,36 +64,77 @@ static inline uint32_t get_physical_address(lfs_block_t block, lfs_off_t off)
     return ((block + LFS_START_BLOCK_OFFSET) * LFS_PORT_BLOCK_SIZE) + off;
 }
 
+/**
+ * @brief SPI2 总线仲裁守卫：I2S2 音频持有期间 LittleFS 读写快速失败
+ * @note  acquire 在物理侧已为 SPI2 时仅置占用权开销极小；I2S2 持有期间
+ *        返回 BSP_BUSY，避免 flash 访问把总线从音频侧抢走或死等。
+ */
+static bsp_status_t lfs_bus_guard_acquire(void)
+{
+    return bsp_bus_acquire(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_SPI2);
+}
+
+static void lfs_bus_guard_release(void)
+{
+    (void)bsp_bus_release(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_SPI2);
+}
+
 /* =========================================================================
  * LittleFS 回调实现
  * ========================================================================= */
 
-static int lfs_read_cb(const struct lfs_config *c, lfs_block_t block,
-                       lfs_off_t off, void *buffer, lfs_size_t size)
+static int lfs_read_cb(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
 {
+    (void)c;
+    bsp_status_t bus = lfs_bus_guard_acquire();
+    if (bus != BSP_OK)
+    {
+        return bsp_to_lfs_error(bus);
+    }
     uint32_t addr = get_physical_address(block, off);
     bsp_status_t ret = dev_w25q_read(addr, buffer, size);
+    lfs_bus_guard_release();
     return bsp_to_lfs_error(ret);
 }
 
-static int lfs_prog_cb(const struct lfs_config *c, lfs_block_t block,
-                       lfs_off_t off, const void *buffer, lfs_size_t size)
+static int lfs_prog_cb(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size)
 {
+    (void)c;
+    bsp_status_t bus = lfs_bus_guard_acquire();
+    if (bus != BSP_OK)
+    {
+        return bsp_to_lfs_error(bus);
+    }
     uint32_t addr = get_physical_address(block, off);
     bsp_status_t ret = dev_w25q_write(addr, buffer, size);
+    lfs_bus_guard_release();
     return bsp_to_lfs_error(ret);
 }
 
 static int lfs_erase_cb(const struct lfs_config *c, lfs_block_t block)
 {
+    (void)c;
+    bsp_status_t bus = lfs_bus_guard_acquire();
+    if (bus != BSP_OK)
+    {
+        return bsp_to_lfs_error(bus);
+    }
     uint32_t addr = get_physical_address(block, 0);
     bsp_status_t ret = dev_w25q_erase_sector(addr);
+    lfs_bus_guard_release();
     return bsp_to_lfs_error(ret);
 }
 
 static int lfs_sync_cb(const struct lfs_config *c)
 {
+    (void)c;
+    bsp_status_t bus = lfs_bus_guard_acquire();
+    if (bus != BSP_OK)
+    {
+        return bsp_to_lfs_error(bus);
+    }
     bsp_status_t ret = dev_w25q_sync();
+    lfs_bus_guard_release();
     return bsp_to_lfs_error(ret);
 }
 
@@ -134,8 +176,14 @@ bsp_status_t bsp_lfs_mount(void)
         return BSP_OK;
     }
 
-    /* 1. 先进行底层 Flash 驱动初始化检查 */
+    /* 1. 先进行底层 Flash 驱动初始化检查（经总线仲裁守卫） */
+    bsp_status_t bus = lfs_bus_guard_acquire();
+    if (bus != BSP_OK)
+    {
+        return bus;
+    }
     bsp_status_t bsp_ret = dev_w25q_init();
+    lfs_bus_guard_release();
     if (bsp_ret != BSP_OK)
     {
         return bsp_ret;
