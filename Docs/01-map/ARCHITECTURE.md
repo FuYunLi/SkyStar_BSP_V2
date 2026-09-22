@@ -131,7 +131,6 @@ Core (CubeMX 生成) + HAL
 - [ ] `bsp_uart.c` `uart_rx_data_cb` 为空：推送通知链路已建未用，上层为拉模式
 - [ ] `port_gpio.c` `HAL_GPIO_EXTI_Callback` 路由仅比对引脚号不比对端口（PE8 按键与 PB8 LED 同为 pin 8），现靠回调 NULL 检查兜底；根治方案是从 SYSCFG_EXTICR 反查端口归属
 
-- [ ] `dev_w25q.c` 全链路使用 `BSP_WAIT_FOREVER` 且忽略 `port_spi` 返回值（get_id/write_enable/wait_busy 等）：SPI2 总线被 I2S2 仲裁走后，HAL 标志轮询永不满足，`flash_id` 等 Shell 命令永久阻塞导致系统假死。修复方向：校验返回值 + 有限超时，或将 W25Q/LittleFS 路径接入 bsp_bus 仲裁器（M32 已落地，此项仍未收口，待单独批次处理）
 - [x] ~~Ymodem 写文件内容损坏~~ —— **已定案修复（2026-09-22）**：根因是 Ymodem 载荷指针 `&frame_buf[3]` 非 4 字节对齐，经 FatFS 直达路径交给 SDIO IDMA，而 IDMA 丢弃地址低 2 位 → 整块位移（含帧头 `02 01 FE`），且因 CRC 由外设对实际发出字节生成而全程无错。V3 的 ctx 布局使 `frame_buf` 偏移从 9（碰巧对齐）变为 16（必然非对齐），因而必现。修复：`app_ymodem_demo.c` 落盘前经对齐中转缓冲 + 偏移连续性守卫。验证：`tour.wav` 176478 字节板端 CRC32 与 PC 一致（7a6fd6f4），43 块双趟读全一致，可正常播放。详见 `Docs/40-records/串口框架与Ymodem移植记录-20260922.md`
 - [ ] LittleFS/W25Q 写路径存在块级内容损坏：`flash/Tour_France.wav` 经 `fatfs_test crcmap` 实测 **43 块中有 2 块（blk7=0x7000、blk9=0x9000）与 PC 不一致且两趟读完全一致**（即稳定损坏，非读抖动）。方向：`port_spi`/`dev_w25q` 的同类对齐约束与页编程边界（SPI DMA 与 256B page program 交界处）。取证工具已就位：`fatfs_test crc <path>` / `crcmap <path> [blk]` / `dump <path> [off] [len]`（已改走 VFS，SD 与 flash 通用）
 - [ ] DMA 缓冲 4 字节对齐契约目前仅在 Ymodem 一处点状规避：建议在 `bsp_file`（统一入参对齐校验/兜底中转）或 `port_sdio`+`port_spi`（非对齐则拒绝或内部中转）升格为全局保障，否则任何新调用方传入非对齐指针（如直接传结构体字段）都会重现静默位移
