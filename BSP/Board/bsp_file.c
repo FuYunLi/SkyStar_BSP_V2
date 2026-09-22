@@ -367,3 +367,107 @@ bsp_status_t bsp_file_mkdir_rec(const char *path)
 
     return BSP_OK;
 }
+
+bsp_status_t bsp_file_remove(const char *path)
+{
+    if (path == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    if (strncmp(path, "0:", 2) == 0)
+    {
+        FRESULT fr = f_unlink(path);
+
+        if (fr == FR_OK)
+        {
+            return BSP_OK;
+        }
+        if (fr == FR_NO_FILE || fr == FR_NO_PATH)
+        {
+            return BSP_ENODEV;
+        }
+        return BSP_ERROR;
+    }
+    else if (strncmp(path, "flash/", 6) == 0)
+    {
+        lfs_t *lfs = bsp_lfs_get_handle();
+
+        if (lfs == NULL)
+        {
+            return BSP_ENODEV;
+        }
+
+        int err = lfs_remove(lfs, path + 6);
+
+        if (err == LFS_ERR_OK)
+        {
+            return BSP_OK;
+        }
+        if (err == LFS_ERR_NOENT)
+        {
+            return BSP_ENODEV;
+        }
+        return BSP_ERROR;
+    }
+
+    return BSP_EINVAL;
+}
+
+bsp_status_t bsp_file_rename(const char *old_path, const char *new_path)
+{
+    bool old_fatfs;
+    bool new_fatfs;
+
+    if (old_path == NULL || new_path == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    old_fatfs = (strncmp(old_path, "0:", 2) == 0);
+    new_fatfs = (strncmp(new_path, "0:", 2) == 0);
+
+    /* 后端不一致属于误用：底层无法跨 FatFS/LittleFS 搬运，当场拒绝 */
+    if (old_fatfs != new_fatfs)
+    {
+        return BSP_EINVAL;
+    }
+
+    if (old_fatfs)
+    {
+        /* FatFS 的目标已存在时会返回 FR_EXIST，先按覆盖语义删掉目标 */
+        (void)f_unlink(new_path);
+
+        FRESULT fr = f_rename(old_path, new_path);
+
+        if (fr == FR_OK)
+        {
+            return BSP_OK;
+        }
+        if (fr == FR_NO_FILE || fr == FR_NO_PATH)
+        {
+            return BSP_ENODEV;
+        }
+        return BSP_ERROR;
+    }
+
+    lfs_t *lfs = bsp_lfs_get_handle();
+
+    if (lfs == NULL)
+    {
+        return BSP_ENODEV;
+    }
+
+    /* LittleFS 的 rename 本身具备目标存在时的替换语义 */
+    int err = lfs_rename(lfs, old_path + 6, new_path + 6);
+
+    if (err == LFS_ERR_OK)
+    {
+        return BSP_OK;
+    }
+    if (err == LFS_ERR_NOENT)
+    {
+        return BSP_ENODEV;
+    }
+    return BSP_ERROR;
+}
