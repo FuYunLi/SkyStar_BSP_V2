@@ -121,6 +121,7 @@ Core (CubeMX 生成) + HAL
 | I2S2 接口层 + SPI2/I2S2 总线仲裁 | M30 | `port_i2s`、`bsp_bus`（新建）；`bsp_imu`、`Core/Src/stm32f4xx_it.c`（修改） | 上板验收通过，已合入 zcode_bsp |
 | ES8388 编解码驱动 + HT6872 功放使能 | M31 | `dev_es8388`、`dev_ht6872`（新建）；`dev_pca9555`、`port_i2c`（复用） | 上板验收通过，已合入 zcode_bsp |
 | WAV 音乐播放器 Demo | M32 | `bsp_audio`、`app_audio_demo`（新建/扩充）；`bsp_file` 补 read/size 接口 | 上板验收通过（读卡器导入 WAV 正常出声），待提交 |
+| DMA 对齐契约全局化 + W25Q 写损坏修复 | 收口批次 | `port_sdio`、`port_spi`、`bsp_file`、`dev_w25q`/`bsp_lfs`；方案见 `Docs/20-planning/DMA对齐契约与W25Q写损坏修复方案.md` | 方案已定，待 hotfix/flash-bus-mutex 合入后开工 |
 | SDIO 卡识别回归修复（M30 调试副产） | M32 | `port_sdio`（修复）；`app_fatfs_demo`、`bsp_audio`（诊断日志） | 上板验证通过，工作区未提交；诊断代码待收口 |
 
 待办：LittleFS/W25Q 写入块级损坏、FatFS LFN 开启、`dev_w25q` 接入总线仲裁、对齐契约从点状规避升格为统一保障，详见第 9 节。
