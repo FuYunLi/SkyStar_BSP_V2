@@ -119,6 +119,14 @@ bsp_status_t bsp_file_remove(const char *path);
  */
 bsp_status_t bsp_file_rename(const char *old_path, const char *new_path);
 
+/**
+ * @brief 取回“非 4 字节对齐缓冲经内部暂存区落盘”的累计次数
+ * @return uint32_t 次数；一直为 0 说明调用方全都没踩对齐红线，也说明本机制未被验证
+ * @note  DMA 对齐契约的兜底入口（详见 ARCHITECTURE.md 第 4 节第 4 条）。仅对 FatFS(SDIO
+ *        DMA) 后端生效；LittleFS 走轮询 SPI，不受该硬件约束。
+ */
+uint32_t bsp_file_get_align_stage_count(void);
+
 #ifdef __cplusplus
 }
 #endif

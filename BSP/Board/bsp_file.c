@@ -9,6 +9,200 @@
 #include <string.h>
 
 /* =========================================================================
+ * DMA 对齐契约的 VFS 统一兜底（契约见 ARCHITECTURE.md 第 4 节第 4 条）
+ *
+ * 为什么要在这拦：SDIO IDMA 只按 32 位取指、会丢弃地址低 2 位，而 FatFS 对整扇区
+ * 读写是把用户指针直达 disk_read/disk_write（ff.c 的 direct 路径，无中间拷贝）。
+ * 非 4 字节对齐的缓冲一旦走上该路径，整块数据从对齐下界开始搬运，位移却不报任何错
+ * （CRC 由外设对实际发出的字节生成）——实测代价是文件头被帧头覆盖、内容整体错位。
+ *
+ * 本层是全部文件读写的唯一入口，因此在这里兜底一次即覆盖所有上层调用方；
+ * 更底层 sd_diskio 另有一道拒绝守卫作为红线（只拒绝不中转），专拦绕过 VFS 直接操作
+ * FatFs 的调用。LittleFS 后端走轮询 SPI 与自带缓存，不受此约束，故不中转。
+ * ========================================================================= */
+#define BSP_FILE_ALIGN_STAGE_SIZE   (1024U) /* 暂存区大小：必须是扇区大小的整数倍，且不应为 512——
+                                              * 实测连续两笔单扇区 DMA 写会确定性错开 2 字节（见 §9），
+                                              * 拆成单扇区反而诱发旧缺陷；保留多扇区一笔下发的形状 */
+
+/* 以 uint32_t 为底，天然 4 字节对齐（工程惯例，不依赖编译器对齐关键字） */
+static uint32_t s_align_stage[BSP_FILE_ALIGN_STAGE_SIZE / 4U];
+static volatile uint32_t s_align_stage_count;
+
+/**
+ * @brief 取回非对齐请求经中转落地的次数
+ * @note  用于自检区分"本来就合规"与"靠中转才正确"，不靠推断下结论
+ */
+uint32_t bsp_file_get_align_stage_count(void)
+{
+    return s_align_stage_count;
+}
+
+/* 扇区大小：本配置 _MIN_SS == _MAX_SS == 512（ssize 字段被编译掉），直接取宏；
+ * 若将来启用可变扇区，则改从 FATFS::ssize 取 */
+static uint32_t s_fs_sector_size(const bsp_file_t *file)
+{
+#if (_MAX_SS != _MIN_SS)
+    const FATFS *fs = file->handle.fat_file.obj.fs;
+
+    return ((fs != NULL) && (fs->ssize != 0U)) ? (uint32_t)fs->ssize : BSP_FILE_ALIGN_STAGE_SIZE;
+#else
+    (void)file;
+    return (uint32_t)_MIN_SS;
+#endif
+}
+
+/**
+ * @brief 判定本次请求是否必须经对齐中转
+ * @note  条件不是“用户缓冲 4 字节对齐”，而是 buf 与当前文件位置同余 mod 4：
+ *       FatFS 的 direct 路径会先把用户指针推进到扇区边界（推进量 = ssz - fptr%ssz，
+ *       且 ssz 是 4 的倍数），故交给 disk_* 的地址 ≡ buf - fptr (mod 4)。
+ *       实测反例：data 块起始 78 字节的 WAV，半区缓冲本身 4 字节对齐，FatFS 仍交出 buf+434。
+ */
+static uint8_t s_need_align_stage(const bsp_file_t *file, const void *buf)
+{
+    if (file->type != BSP_FILE_TYPE_FATFS)
+    {
+        return 0U;
+    }
+
+    return ((((uint32_t)(uintptr_t)buf) ^ file->handle.fat_file.fptr) & 0x3U) != 0U;
+}
+
+/**
+ * @brief 经对齐中转分段写：段首/段尾走 FatFS 窗口，段体批量整扇区经对齐暂存区
+ * @note  拆成三类分段的原因：只有“文件位置在扇区边界 + 整扇区长度”的请求才走 direct 路径，
+ *       此时目标地址是 stage + k*ssz（ssz 是 4 的倍数）→ 恒 4 对齐；不足一扇区的头/尾由 FatFS
+ *       逐字节拷进自己的窗口再 RMW，不会把用户指针交给 DMA。短写（卡满等）不猜测，按实际已写数返回。
+ */
+static bsp_status_t s_fatfs_write_staged(bsp_file_t *file, const uint8_t *buf, uint32_t len,
+                                        uint32_t *written)
+{
+    uint8_t *stage = (uint8_t *)s_align_stage;
+    const uint32_t ssz = s_fs_sector_size(file);
+    uint32_t done = 0U;
+    UINT bw = 0U;
+
+    s_align_stage_count++;
+
+    while (done < len)
+    {
+        uint32_t in_sec = (uint32_t)(file->handle.fat_file.fptr % ssz);
+        const uint8_t *src = buf + done;
+        uint32_t n;
+
+        if (in_sec != 0U)
+        {
+            /* 段首：先补到扇区边界，不足一扇区 → FatFS 走窗口，不碰用户指针 */
+            uint32_t to_bound = ssz - in_sec;
+
+            n = ((len - done) < to_bound) ? (len - done) : to_bound;
+        }
+        else if ((len - done) >= ssz)
+        {
+            /* 段体：一次下发尽可能多的整扇区（不拆成单扇区连续写，那会错 2 字节） */
+            n = ((len - done) > BSP_FILE_ALIGN_STAGE_SIZE) ? BSP_FILE_ALIGN_STAGE_SIZE : (len - done);
+            n -= n % ssz;
+            memcpy(stage, src, n);
+            src = stage;
+        }
+        else
+        {
+            n = len - done;   /* 段尾：不足一扇区 */
+        }
+
+        if (f_write(&file->handle.fat_file, (const BYTE *)src, n, &bw) != FR_OK)
+        {
+            if (written != NULL)
+            {
+                *written = done;
+            }
+            return BSP_ERROR;
+        }
+
+        done += (uint32_t)bw;
+        if (bw != n)
+        {
+            break;
+        }
+    }
+
+    if (written != NULL)
+    {
+        *written = done;
+    }
+    return BSP_OK;
+}
+
+/**
+ * @brief 读侧同理：段首/段尾走 FatFS 窗口，段体批量整扇区经对齐暂存区拷出
+ */
+static bsp_status_t s_fatfs_read_staged(bsp_file_t *file, uint8_t *buf, uint32_t len,
+                                       uint32_t *readed)
+{
+    uint8_t *stage = (uint8_t *)s_align_stage;
+    const uint32_t ssz = s_fs_sector_size(file);
+    uint32_t done = 0U;
+    UINT br = 0U;
+
+    s_align_stage_count++;
+
+    while (done < len)
+    {
+        uint32_t in_sec = (uint32_t)(file->handle.fat_file.fptr % ssz);
+        uint8_t *dst = buf + done;
+        uint32_t n;
+
+        if ((in_sec != 0U) || ((len - done) < ssz))
+        {
+            /* 段首或段尾：不足一个扇区边界，FatFS 走内部窗口，不碰用户指针的 DMA 约束 */
+            n = len - done;
+            if (in_sec != 0U)
+            {
+                uint32_t to_bound = ssz - in_sec;
+
+                if (n > to_bound)
+                {
+                    n = to_bound;
+                }
+            }
+        }
+        else
+        {
+            /* 段体：一次读尽可能多的整扇区到对齐暂存区，再拷给用户 */
+            n = ((len - done) > BSP_FILE_ALIGN_STAGE_SIZE) ? BSP_FILE_ALIGN_STAGE_SIZE : (len - done);
+            n -= n % ssz;
+            dst = stage;
+        }
+
+        if (f_read(&file->handle.fat_file, dst, n, &br) != FR_OK)
+        {
+            if (readed != NULL)
+            {
+                *readed = done;
+            }
+            return BSP_ERROR;
+        }
+
+        if (dst == stage)
+        {
+            memcpy(buf + done, stage, br);
+        }
+
+        done += (uint32_t)br;
+        if (br != n)
+        {
+            break;   /* 文件尾：属正常结束，由调用方比对 readed 与 len 判定 */
+        }
+    }
+
+    if (readed != NULL)
+    {
+        *readed = done;
+    }
+    return BSP_OK;
+}
+
+/* =========================================================================
  * 导出 API 接口
  * ========================================================================= */
 
@@ -103,6 +297,11 @@ bsp_status_t bsp_file_write(bsp_file_t *file, const void *buf, uint32_t len, uin
 
     if (file->type == BSP_FILE_TYPE_FATFS)
     {
+        if (s_need_align_stage(file, buf) != 0U)
+        {
+            return s_fatfs_write_staged(file, (const uint8_t *)buf, len, written);
+        }
+
         UINT bw = 0;
         FRESULT fr = f_write(&file->handle.fat_file, buf, len, &bw);
         if (written != NULL)
@@ -146,6 +345,11 @@ bsp_status_t bsp_file_read(bsp_file_t *file, void *buf, uint32_t len, uint32_t *
 
     if (file->type == BSP_FILE_TYPE_FATFS)
     {
+        if (s_need_align_stage(file, buf) != 0U)
+        {
+            return s_fatfs_read_staged(file, (uint8_t *)buf, len, readed);
+        }
+
         UINT br = 0;
         FRESULT fr = f_read(&file->handle.fat_file, buf, len, &br);
         if (readed != NULL)
