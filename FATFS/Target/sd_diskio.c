@@ -71,10 +71,60 @@
 /* 保持关闭：实测（2026-09-22）开启后 Ymodem 传输在 packet 0 即被 CAN 中止——
  * 其非对齐慢路径逐扇区写后只等 WriteStatus(DMA完成)，不等 BSP_SD_GetCardState()，
  * 多扇区场景下下一笔写提前发出而失败。
- * 非对齐问题改由调用方保证 4 字节对齐（见 app_ymodem_demo.c 的中转缓冲）。
+ * 非对齐问题改由下面的 SD_DmaBufOk() 守卫 + BSP 层 bsp_file 统一中转解决。
  * 详见 Docs/40-records/串口框架与Ymodem移植记录-20260922.md */
 /* #define ENABLE_SCRATCH_BUFFER */
 /* USER CODE END enableScratchBuffer */
+
+/* USER CODE BEGIN dmaBufGuard */
+/*
+ * DMA 缓冲守卫（架构契约，见 ARCHITECTURE.md 第 4 节第 4 条）
+ *
+ * SDIO IDMA 只按 32 位取指，会丢弃地址低 2 位：非 4 字节对齐的缓冲交进来不会报错，
+ * 而是从对齐下界开始搬运，整块数据位移且 CRC 由外设对实际发出的字节生成 —— 静默损坏。
+ * CCM RAM(0x10000000) 只有 CPU 总线可达，DMA 读不到，指过去同样是静默错数据。
+ * 因此这里宁可显式失败(RES_PARERR)，也不让这类请求摸到硬件。
+ *
+ * 注：上层 bsp_file 已对非对齐缓冲做统一中转，正常调用路径不会触发本守卫；
+ *     一旦触发即说明有人绕过 VFS 直接操作 FatFs，属需修的缺陷，不是可容忍的分支。
+ */
+#define SD_DMA_BUF_ALIGN_MASK     (0x3U)                 /* SDIO IDMA 要求 4 字节对齐 */
+#define SD_DMA_MEM_BASE         (0x20000000U)           /* 主 SRAM 起点（DMA 可达） */
+#define SD_DMA_MEM_END          (0x20040000U)           /* 主 SRAM 终点（112K + 16K 之后） */
+
+static volatile uint32_t s_sd_buf_reject = 0;           /* 被守卫拒绝的非法请求计数 */
+
+/**
+  * @brief  校验缓冲能否安全交给 SDIO IDMA
+  * @param  buff: 待搬运的缓冲指针
+  * @retval 1 合法（4 字节对齐且位于 DMA 可达内存）；0 非法
+  */
+static uint8_t SD_DmaBufOk(const void *buff)
+{
+  uint32_t addr = (uint32_t)buff;
+
+  if ((addr & SD_DMA_BUF_ALIGN_MASK) != 0U)
+  {
+    return 0U;
+  }
+
+  if ((addr < SD_DMA_MEM_BASE) || (addr >= SD_DMA_MEM_END))
+  {
+    return 0U;   /* 含 CCM 与外设地址区，DMA 不可达 */
+  }
+
+  return 1U;
+}
+
+/**
+  * @brief  取回累计被拒绝的非法 DMA 请求次数（供自检命令区分"被拒"与"数据错"）
+  * @retval 次数
+  */
+uint32_t SD_GetBufRejectCount(void)
+{
+  return s_sd_buf_reject;
+}
+/* USER CODE END dmaBufGuard */
 
 /* Private variables ---------------------------------------------------------*/
 #if defined(ENABLE_SCRATCH_BUFFER)
@@ -211,6 +261,17 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
     return res;
   }
 
+/* USER CODE BEGIN SD_read_bufGuard */
+#if !defined(ENABLE_SCRATCH_BUFFER)
+  /* 未启用 scratch 中转时，用户指针会直达 IDMA；非法缓冲在此显式拒绝 */
+  if (SD_DmaBufOk(buff) == 0U)
+  {
+    s_sd_buf_reject++;
+    return RES_PARERR;
+  }
+#endif
+/* USER CODE END SD_read_bufGuard */
+
 #if defined(ENABLE_SCRATCH_BUFFER)
   if (!((uint32_t)buff & 0x3))
   {
@@ -331,6 +392,17 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
   {
     return res;
   }
+
+/* USER CODE BEGIN SD_write_bufGuard */
+#if !defined(ENABLE_SCRATCH_BUFFER)
+  /* 非对齐/不可达缓冲交给 IDMA 会造成整块静默位移，此处一律拒绝 */
+  if (SD_DmaBufOk(buff) == 0U)
+  {
+    s_sd_buf_reject++;
+    return RES_PARERR;
+  }
+#endif
+/* USER CODE END SD_write_bufGuard */
 
 #if defined(ENABLE_SCRATCH_BUFFER)
   if (!((uint32_t)buff & 0x3))

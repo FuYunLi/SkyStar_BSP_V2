@@ -35,7 +35,9 @@
 extern const Diskio_drvTypeDef  SD_Driver;
 
 /* USER CODE BEGIN lastSection */
-/* can be used to modify / undefine previous code or add new definitions */
+/* DMA 缓冲守卫（实现见 sd_diskio.c 的 dmaBufGuard 区）：累计被拒绝的非法请求次数。
+ * 自检命令靠它区分“被守卫拒绝”与“碰巧失败”，不靠推断下结论 */
+extern uint32_t SD_GetBufRejectCount(void);
 /* USER CODE END lastSection */
 
 #endif /* __SD_DISKIO_H */
