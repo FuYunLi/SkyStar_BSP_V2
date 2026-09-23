@@ -48,6 +48,37 @@ static port_spi_id_t get_id_by_handle(SPI_HandleTypeDef *hspi)
     return PORT_SPI_MAX;
 }
 
+/* ================================================================
+ * DMA 缓冲契约守卫（契约见 ARCHITECTURE.md 第 4 节第 4 条）
+ *
+ * 与 SDIO 的区别必须分清，不要把 4 字节规则照搬过来拒绝合法调用：
+ * SPI 挂在 DMA1/DMA2 上，可按字节搬运，当前 DataSize=8BIT，所以不存在 SDIO IDMA
+ * 那种“丢弃地址低 2 位→整块静默位移”的隐患。真正会静默出错的是两件事：
+ *   1) 缓冲落在 CCM(0x10000000)：DMA 不可达，搬回来的是垃圾且无任何报错；
+ *   2) 若将来把 DataSize 改成 16/32 位，DMA 按半字/字取指，就需要相应自然对齐。
+ * 因此对齐要求按 Init.DataSize 动态得出，规则跟着配置走而不是写死在代码里。
+ * ================================================================ */
+#define SPI_DMA_MEM_BASE    (0x20000000U)     /* 主 SRAM 起点，DMA 可达 */
+#define SPI_DMA_MEM_END     (0x20040000U)     /* 主 SRAM 终点（112K + 16K） */
+
+static bsp_status_t s_dma_buf_check(const SPI_HandleTypeDef *hspi, const void *buf)
+{
+    uint32_t addr = (uint32_t)(uintptr_t)buf;
+    uint32_t align_mask = 0U;
+
+    if (hspi->Init.DataSize == SPI_DATASIZE_16BIT)
+    {
+        align_mask = 0x1U;    /* 半字访问需 2 字节对齐；若进一步改 32 位则需 4 字节 */
+    }
+
+    if (((addr & align_mask) != 0U) || (addr < SPI_DMA_MEM_BASE) || (addr >= SPI_DMA_MEM_END))
+    {
+        return BSP_EINVAL;
+    }
+
+    return BSP_OK;
+}
+
 
 /* ================================================================
  * 公开接口 API
@@ -194,6 +225,11 @@ bsp_status_t port_spi_read_dma(port_spi_id_t id, uint8_t *data, uint16_t len, po
         return BSP_BUSY;
     }
 
+    if (s_dma_buf_check(hspi, data) != BSP_OK)
+    {
+        return BSP_EINVAL;      /* 缓冲 DMA 不可达或不满足数据宽度的自然对齐 */
+    }
+
     s_spi_contexts[id].callback = cb;
     s_spi_contexts[id].user_ctx = user_ctx;
     s_spi_contexts[id].is_busy  = true;
@@ -238,6 +274,11 @@ bsp_status_t port_spi_write_dma(port_spi_id_t id, const uint8_t *data, uint16_t 
         return BSP_BUSY;
     }
 
+    if (s_dma_buf_check(hspi, data) != BSP_OK)
+    {
+        return BSP_EINVAL;      /* 同上：DMA 只能访问主 SRAM，且对齐由数据宽度决定 */
+    }
+
     s_spi_contexts[id].callback = cb;
     s_spi_contexts[id].user_ctx = user_ctx;
     s_spi_contexts[id].is_busy  = true;
@@ -277,6 +318,11 @@ bsp_status_t port_spi_write_read_dma(port_spi_id_t id, const uint8_t *tx_data, u
     if (s_spi_contexts[id].is_busy)
     {
         return BSP_BUSY;
+    }
+
+    if ((s_dma_buf_check(hspi, tx_data) != BSP_OK) || (s_dma_buf_check(hspi, rx_data) != BSP_OK))
+    {
+        return BSP_EINVAL;      /* 双向传输两侧缓冲均需 DMA 可达 */
     }
 
     s_spi_contexts[id].callback = cb;
