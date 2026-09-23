@@ -8,6 +8,8 @@
 
 #include "app_imu_demo.h"
 #include "bsp_imu.h"
+#include "bsp_bus.h"
+#include "dev_icm42688.h"
 #include "bsp_logger.h"
 #include "shell.h"
 #include <stdio.h>
@@ -166,4 +168,57 @@ bsp_status_t app_imu_demo_init(void)
 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, imu_read, shell_imu_read, Read IMU 6-axis raw data);
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, imu_attitude, shell_imu_attitude, Read IMU pitch and roll attitude);
+
+/**
+ * @brief imu_probe 指令：分层定位 ICM-42688 读不出的真实原因，并尝试现场重初
+ * @param argc 参数个数
+ * @param argv 参数列表指针数组
+ * @return int 0 表示器件当前可用，-1 表示仍不可用
+ * @note  分四步独立报结果，因为“ret = -1”这一种现象背后至少三种病因（未初始化、
+ *        SPI 事务失败、ID 不匹配），不分层就只能猜：
+ *        ① 申请 SPI2 归属权（顺带把模拟开关扳回 SPI 侧）；② 裸读 WHO_AM_I（不动寄存器）；
+ *        ③ 跑完整驱动初始化（含软复位）；④ 成功后重试 Board 层初始化并采一次样。
+ *        若③成功而开机失败，则病因在启动时序（供电/时钟未稳定），而非硬件坏
+ */
+static int shell_imu_probe(int argc, char *argv[])
+{
+    uint8_t chip_id = 0U;
+    bsp_status_t bus_st;
+    bsp_status_t id_st;
+    bsp_status_t init_st;
+
+    (void)argc;
+    (void)argv;
+
+    bus_st = bsp_bus_acquire(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_SPI2);
+    printf("[1] bus acquire(SPI2) : %d\r\n", (int)bus_st);
+
+    id_st = icm42688_read_chip_id(&chip_id);
+    printf("[2] raw WHO_AM_I      : status=%d id=0x%02X (expect 0x47)\r\n",
+           (int)id_st, (unsigned)chip_id);
+
+    init_st = icm42688_init();
+    printf("[3] driver init       : status=%d\r\n", (int)init_st);
+
+    if (init_st == BSP_OK)
+    {
+        init_st = bsp_imu_init();
+        printf("[4] board init retry  : status=%d\r\n", (int)init_st);
+        if (init_st == BSP_OK)
+        {
+            (void)bsp_imu_update();
+            printf("=> IMU restored, now use 'imu_read'\r\n");
+        }
+    }
+    else
+    {
+        printf("=> driver still failing; see [2]: id=0xFF means no response (bus/power/CS),\r\n");
+        printf("   other wrong ids mean the chip answers but the value is not 0x47\r\n");
+    }
+
+    (void)bsp_bus_release(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_SPI2);
+
+    return (init_st == BSP_OK) ? 0 : -1;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0) | SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN) | SHELL_CMD_DISABLE_RETURN, imu_probe, shell_imu_probe, Probe ICM42688 layer by layer);
 

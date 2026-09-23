@@ -56,7 +56,9 @@ bsp_status_t bsp_imu_init(void)
     status = icm42688_init();
     if (status != BSP_OK)
     {
-        log_e("ICM-42688-P physical hardware init failed");
+        /* 必须带上状态码：-7=器件不答/ID 不匹配、-4=超时、-1=SPI 事务失败，
+         * 三者对应完全不同的排查方向，丢码会把定位带成猜谜 */
+        log_e("ICM-42688-P physical hardware init failed, status = %d", (int)status);
         return status;
     }
 
