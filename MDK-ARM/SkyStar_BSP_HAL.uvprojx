@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F407xx,LWRB_DISABLE_ATOMIC,LV_CONF_INCLUDE_SIMPLE,LV_LVGL_H_INCLUDE_SIMPLE</Define>
+              <Define>USE_HAL_DRIVER,STM32F407xx,LWRB_DISABLE_ATOMIC,LV_CONF_INCLUDE_SIMPLE,LV_LVGL_H_INCLUDE_SIMPLE,LFS_DEFINES=lfs_defines.h,LFS_THREADSAFE</Define>
               <Undefine></Undefine>
               <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc;../BSP/Driver;../APP/demos;../Middleware/MultiButton;../APP/tasks;../BSP/Driver/LibDriver/AT24Cxx/src;../BSP/Driver/LibDriver/AT24Cxx/interface;../BSP/Driver/LibDriver/AT24Cxx/example;../Middleware/LittleFS;../Middleware/lvgl;../Middleware/lvgl/src;../Middleware/lvgl/examples/porting;../BSP/Driver/LibDriver/AHT20/src;../BSP/Driver/LibDriver/AHT20/interface;../BSP/Driver/LibDriver/AHT20/example;../BSP/Driver/LibDriver/INA226/src;../BSP/Driver/LibDriver/INA226/interface;../BSP/Driver/LibDriver/INA226/example;../FATFS/Target;../FATFS/App;../Middlewares/Third_Party/FatFs/src;../Middleware/Ymodem</IncludePath>
             </VariousControls>
@@ -4680,6 +4680,21 @@
               <FileName>bsp_lfs.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\BSP\Board\bsp_lfs.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_lfs_pool.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\Board\bsp_lfs_pool.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_lfs_pool.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Board\bsp_lfs_pool.h</FilePath>
+            </File>
+            <File>
+              <FileName>lfs_defines.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\BSP\Board\lfs_defines.h</FilePath>
             </File>
             <File>
               <FileName>bsp_logger.c</FileName>

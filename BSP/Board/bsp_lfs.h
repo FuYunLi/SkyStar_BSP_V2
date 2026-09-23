@@ -21,6 +21,14 @@ lfs_t* bsp_lfs_get_handle(void);
 /* 文件系统挂载初始化接口 */
 bsp_status_t bsp_lfs_mount(void);
 
+/**
+ * @brief 取回最近一次 SPI2 总线仲裁结果
+ * @return bsp_status_t BSP_OK 上次占有成功；BSP_BUSY 总线被其他归属方（如 I2S2 音频）持有
+ * @note LittleFS 本版本没有"设备忙"错误码，块设备失败会被统一成 LFS_ERR_IO；
+ *       bsp_file 依赖本接口把它还原成可重试语义，调用方无须主动清零（下次占有自动刷新）
+ */
+bsp_status_t bsp_lfs_get_last_error(void);
+
 #ifdef __cplusplus
 }
 #endif
