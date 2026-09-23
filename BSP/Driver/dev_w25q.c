@@ -22,6 +22,7 @@
 
 #define W25X_WIP_FLAG        0x01 /* 写进行中标志位(WIP) */
 #define W25Q_TIMEOUT_MS      2000 /* 擦写最大超时时间 */
+#define W25Q_XFER_TIMEOUT_MS 200  /* 单笔 SPI 事务（命令加至多 256 字节数据）超时 */
 
 /* =========================================================================
  * 内部辅助函数
@@ -39,59 +40,91 @@ static inline void w25q_cs_unselect(void)
 
 /**
  * @brief 发送写使能指令
+ * @retval bsp_status_t 传输结果；失败时调用方必须中止后续写操作，
+ *         否则 WEL 未置位情况下的编程/擦除会被设备忽略而静默丢数据
  */
-static void w25q_write_enable(void)
+static bsp_status_t w25q_write_enable(void)
 {
     uint8_t cmd = W25X_WRITE_ENABLE;
-    
+
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, &cmd, 1, BSP_WAIT_FOREVER);
+    bsp_status_t ret = port_spi_write(W25Q_SPI_BUS, &cmd, 1, W25Q_XFER_TIMEOUT_MS);
     w25q_cs_unselect();
+
+    return ret;
 }
 
 /**
  * @brief 等待设备就绪 (等待 WIP 位清零)
+ * @retval bsp_status_t BSP_OK 空闲；BSP_ETIMEOUT 超时；其余为 SPI 传输错误
+ * @note  不再使用 BSP_WAIT_FOREVER，且每次 SPI 事务的返回值都上抛：
+ *        总线异常必须表现为可区分的错误码，而不是无限死等或假装成功
  */
 static bsp_status_t w25q_wait_busy(void)
 {
     uint8_t cmd = W25X_READ_STATUS_REG;
     uint8_t status = 0;
     uint32_t start_time = port_tick_get_ms();
+    bsp_status_t ret;
 
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, &cmd, 1, BSP_WAIT_FOREVER);
+    ret = port_spi_write(W25Q_SPI_BUS, &cmd, 1, W25Q_XFER_TIMEOUT_MS);
+    if (ret != BSP_OK)
+    {
+        w25q_cs_unselect();
+        return ret;
+    }
+
     do
     {
-        port_spi_read(W25Q_SPI_BUS, &status, 1, BSP_WAIT_FOREVER);
+        ret = port_spi_read(W25Q_SPI_BUS, &status, 1, W25Q_XFER_TIMEOUT_MS);
+        if (ret != BSP_OK)
+        {
+            w25q_cs_unselect();
+            return ret;
+        }
         if (port_tick_get_ms() - start_time > W25Q_TIMEOUT_MS)
         {
             w25q_cs_unselect();
             return BSP_ETIMEOUT;
         }
     } while ((status & W25X_WIP_FLAG) == W25X_WIP_FLAG);
-    
+
     w25q_cs_unselect();
     return BSP_OK;
 }
 
 /**
  * @brief 在一页内编程 (不超过256字节，不跨页)
+ * @retval bsp_status_t 任一步失败均向上抛出，不再掩盖
  */
 static bsp_status_t w25q_page_program(uint32_t addr, const uint8_t *buf, uint32_t size)
 {
     uint8_t cmd[4];
-    
-    w25q_write_enable();
-    
+    bsp_status_t ret = w25q_write_enable();
+
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
+
     cmd[0] = W25X_PAGE_PROGRAM;
     cmd[1] = (uint8_t)((addr >> 16) & 0xFF);
     cmd[2] = (uint8_t)((addr >> 8) & 0xFF);
     cmd[3] = (uint8_t)(addr & 0xFF);
 
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, cmd, 4, BSP_WAIT_FOREVER);
-    port_spi_write(W25Q_SPI_BUS, buf, size, BSP_WAIT_FOREVER);
+    ret = port_spi_write(W25Q_SPI_BUS, cmd, 4, W25Q_XFER_TIMEOUT_MS);
+    if (ret == BSP_OK)
+    {
+        ret = port_spi_write(W25Q_SPI_BUS, buf, size, W25Q_XFER_TIMEOUT_MS);
+    }
     w25q_cs_unselect();
+
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
 
     return w25q_wait_busy();
 }
@@ -160,11 +193,14 @@ bsp_status_t dev_w25q_read(uint32_t addr, uint8_t *buf, uint32_t size)
     cmd[3] = (uint8_t)(addr & 0xFF);
 
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, cmd, 4, BSP_WAIT_FOREVER);
-    port_spi_read(W25Q_SPI_BUS, buf, size, BSP_WAIT_FOREVER);
+    ret = port_spi_write(W25Q_SPI_BUS, cmd, 4, W25Q_XFER_TIMEOUT_MS);
+    if (ret == BSP_OK)
+    {
+        ret = port_spi_read(W25Q_SPI_BUS, buf, size, W25Q_XFER_TIMEOUT_MS);
+    }
     w25q_cs_unselect();
 
-    return BSP_OK;
+    return ret;
 }
 
 /**
@@ -211,13 +247,17 @@ bsp_status_t dev_w25q_write(uint32_t addr, const uint8_t *buf, uint32_t size)
 /**
  * @brief 擦除扇区 (4KB)
  * @param addr 扇区物理地址 (必须对齐4KB)
- * @retval bsp_status_t 执行结果
+ * @retval bsp_status_t 执行结果；写使能/命令传输/等待均失败时逐层上抛
  */
 bsp_status_t dev_w25q_erase_sector(uint32_t addr)
 {
     uint8_t cmd[4];
+    bsp_status_t ret = w25q_write_enable();
 
-    w25q_write_enable();
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
 
     cmd[0] = W25X_SECTOR_ERASE;
     cmd[1] = (uint8_t)((addr >> 16) & 0xFF);
@@ -225,8 +265,13 @@ bsp_status_t dev_w25q_erase_sector(uint32_t addr)
     cmd[3] = (uint8_t)(addr & 0xFF);
 
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, cmd, 4, BSP_WAIT_FOREVER);
+    ret = port_spi_write(W25Q_SPI_BUS, cmd, 4, W25Q_XFER_TIMEOUT_MS);
     w25q_cs_unselect();
+
+    if (ret != BSP_OK)
+    {
+        return ret;
+    }
 
     return w25q_wait_busy();
 }
@@ -253,11 +298,20 @@ bsp_status_t dev_w25q_get_id(uint32_t *p_id)
     uint8_t cmd = W25X_JEDEC_DEVICE_ID;
     
     w25q_cs_select();
-    port_spi_write(W25Q_SPI_BUS, &cmd, 1, BSP_WAIT_FOREVER);
-    port_spi_read(W25Q_SPI_BUS, id, 3, BSP_WAIT_FOREVER);
+    bsp_status_t ret = port_spi_write(W25Q_SPI_BUS, &cmd, 1, W25Q_XFER_TIMEOUT_MS);
+    if (ret == BSP_OK)
+    {
+        ret = port_spi_read(W25Q_SPI_BUS, id, 3, W25Q_XFER_TIMEOUT_MS);
+    }
     w25q_cs_unselect();
-    
+
+    if (ret != BSP_OK)
+    {
+        *p_id = 0U;
+        return ret;
+    }
+
     *p_id = ((uint32_t)id[0] << 16) | ((uint32_t)id[1] << 8) | (uint32_t)id[2];
-    
+
     return BSP_OK;
 }

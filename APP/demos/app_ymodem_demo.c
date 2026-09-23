@@ -38,6 +38,20 @@ static bsp_status_t s_ymodem_last_status = BSP_OK; /* 最后一次失败的底�
 static bool s_ymodem_close_failed = false;
 static uint32_t s_ymodem_tx_drop = 0U;            /* 发送队列满导致丢弃的协议字节数 */
 
+/* 提交策略：先写临时名，全部完成并校验无误后再改名为正式名；
+ * 任何失败/中止路径删除临时文件，避免留下“文件在、size 对、数据块已被复用”的坏文件。
+ * 临时名不能用“正式名 + .tmp”：在 FatFS 默认 _USE_LFN=0 下 "xxx.wav.tmp" 违反 8.3 格式，
+ * f_open 会返回 FR_INVALID_NAME 导致 SD 接收整会话失败；改用 8.3 安全的固定名。
+ * 会话内同时只有一个文件在写，故固定名不会冲突。
+ * 路径不占静态缓冲（本机 RAM 余量已不足 336 字节），而是在使用点重建；
+ * open 与 finish 不巢套，只占栈 */
+#define YMODEM_TMP_NAME    "__ymodem.tmp"  /* 8 字符主名 + 3 字符扩展，兼容 FatFS 8.3 */
+#define YMODEM_PATH_MAX    (192U)
+static bsp_status_t s_ymodem_commit_status = BSP_OK;
+static bool s_ymodem_discarded = false;               /* 本次失败的文件已被清除 */
+
+static void s_ymodem_finish(ymodem_result_t result);
+
 /* ================================================================
  * Ymodem 底层操作回调函数实现
  * ================================================================ */
@@ -64,19 +78,18 @@ static void s_ymodem_send_char(ymodem_ctx_t *ctx, uint8_t ch)
  */
 static int s_ymodem_on_file_open(ymodem_ctx_t *ctx, const char *filename, uint32_t filesize)
 {
-    char filepath[160];
+    char final_path[YMODEM_PATH_MAX];
+    char tmp_path[YMODEM_PATH_MAX + 8U];
     bsp_status_t status;
+    int final_len;
+    int tmp_len;
 
     (void)ctx;
 
-    /* 如果之前有文件处于打开状态（批量传输中上一个文件的异常兜底），先关闭它 */
+    /* 上一个文件仍开着（批量传输中的异常或中止）：先按丢弃/提交规则收尾 */
     if (s_ymodem_file_opened)
     {
-        if (bsp_file_close(&s_ymodem_file) != BSP_OK)
-        {
-            s_ymodem_close_failed = true;
-        }
-        s_ymodem_file_opened = false;
+        s_ymodem_finish(YMODEM_ERR_ABORT);
     }
 
     /* 剥离可能含有的目录前缀，仅提取纯文件名 */
@@ -91,15 +104,27 @@ static int s_ymodem_on_file_open(ymodem_ctx_t *ctx, const char *filename, uint32
         p++;
     }
 
-    /* 动态拼接存储前缀与纯文件名 */
-    snprintf(filepath, sizeof(filepath), "%s%s", s_filepath_prefix, basename);
+    /* 拼接正式名与临时名；宁可拒截也不静默截断，截断会让改名与打开不一致 */
+    final_len = snprintf(final_path, sizeof(final_path), "%s%s", s_filepath_prefix, basename);
+    tmp_len = snprintf(tmp_path, sizeof(tmp_path), "%s%s", s_filepath_prefix, YMODEM_TMP_NAME);
+    if (final_len < 0 || (uint32_t)final_len >= sizeof(final_path)
+        || tmp_len < 0 || (uint32_t)tmp_len >= sizeof(tmp_path))
+    {
+        s_ymodem_last_status = BSP_EINVAL;
+        return -1;
+    }
+
     snprintf(s_ymodem_filename, sizeof(s_ymodem_filename), "%s", basename);
     s_ymodem_filesize = filesize;
 
     /* 递归创建目标目录，防止因路径目录不存在导致打开失败 */
     (void)bsp_file_mkdir_rec(s_filepath_prefix);
 
-    status = bsp_file_open(&s_ymodem_file, filepath, BSP_FILE_CREATE | BSP_FILE_TRUNC | BSP_FILE_WRITE);
+    /* 先清掉上一次异常退出的残留临时文件，避免追加到旧内容上 */
+    (void)bsp_file_remove(tmp_path);
+
+    status = bsp_file_open(&s_ymodem_file, tmp_path,
+                           BSP_FILE_CREATE | BSP_FILE_TRUNC | BSP_FILE_WRITE);
     if (status != BSP_OK)
     {
         s_ymodem_last_status = status;
@@ -110,7 +135,58 @@ static int s_ymodem_on_file_open(ymodem_ctx_t *ctx, const char *filename, uint32
     s_ymodem_file_opened = true;
     s_ymodem_next_offset = 0U;
     s_ymodem_bytes = 0U;
+    s_ymodem_commit_status = BSP_OK;
+    /* 逐文件重置判定位：否则批量传输中一个文件的失败会连带后续文件全部被丢弃 */
+    s_ymodem_close_failed = false;
+    s_ymodem_discarded = false;
     return 0;
+}
+
+/**
+ * @brief 单文件收尾：关闭后根据传输结果决定提交（改名）还是丢弃（删除临时文件）
+ * @param result 本协议文件的传输结果
+ * @note  提交条件比“协议说 OK”更严：还必须字节数与声明的文件大小一致且 close 未报错，
+ *       否则 FatFS/LittleFS 的 flush 失败会被当成成功而留下半截文件
+ */
+static void s_ymodem_finish(ymodem_result_t result)
+{
+    char final_path[YMODEM_PATH_MAX];
+    char tmp_path[YMODEM_PATH_MAX + 8U];
+    bool complete;
+
+    /* 按与打开时完全相同的规则重建两个路径，避免长期占用静态缓冲 */
+    if (snprintf(final_path, sizeof(final_path), "%s%s", s_filepath_prefix, s_ymodem_filename)
+        >= (int)sizeof(final_path)
+        || snprintf(tmp_path, sizeof(tmp_path), "%s%s", s_filepath_prefix, YMODEM_TMP_NAME)
+           >= (int)sizeof(tmp_path))
+    {
+        s_ymodem_commit_status = BSP_EINVAL;
+        s_ymodem_file_opened = false;
+        return;
+    }
+
+    if (s_ymodem_file_opened)
+    {
+        if (bsp_file_close(&s_ymodem_file) != BSP_OK)
+        {
+            s_ymodem_close_failed = true;
+        }
+        s_ymodem_file_opened = false;
+    }
+
+    complete = (result == YMODEM_OK) && !s_ymodem_close_failed
+               && (s_ymodem_bytes == s_ymodem_filesize);
+
+    if (complete)
+    {
+        s_ymodem_commit_status = bsp_file_rename(tmp_path, final_path);
+    }
+    else
+    {
+        /* 丢弃临时文件；失败也必须报出来，否则残留块会被当成“可用空间”误读 */
+        s_ymodem_commit_status = bsp_file_remove(tmp_path);
+        s_ymodem_discarded = (s_ymodem_commit_status == BSP_OK);
+    }
 }
 
 /* 落盘中转缓冲：以 uint32_t 为底保证 4 字节对齐，容量等于最大载荷 1024 字节 */
@@ -169,23 +245,13 @@ static int s_ymodem_on_write(ymodem_ctx_t *ctx, uint32_t offset, const uint8_t *
 }
 
 /**
- * @brief 单文件结束回调（V3 新增）：真正的落盘时刻在这里，不得吞掉 close 失败
+ * @brief 单文件结束回调（V3 新增）：真正的提交/丢弃时机在这里
  */
 static void s_ymodem_on_file_close(ymodem_ctx_t *ctx, ymodem_result_t result)
 {
     (void)ctx;
-    (void)result;
 
-    if (!s_ymodem_file_opened)
-    {
-        return;
-    }
-
-    if (bsp_file_close(&s_ymodem_file) != BSP_OK)
-    {
-        s_ymodem_close_failed = true;
-    }
-    s_ymodem_file_opened = false;
+    s_ymodem_finish(result);
 }
 
 /**
@@ -197,28 +263,33 @@ static void s_ymodem_on_transfer_end(ymodem_ctx_t *ctx, ymodem_result_t result)
 {
     (void)ctx;
 
+    /* 会话异常中断时可能没有触发过 on_file_close，此处兜底收尾 */
     if (s_ymodem_file_opened)
     {
-        if (bsp_file_close(&s_ymodem_file) != BSP_OK)
-        {
-            s_ymodem_close_failed = true;
-        }
-        s_ymodem_file_opened = false;
+        s_ymodem_finish(result);
     }
 
     g_ymodem_active = false;
 
-    if (result == YMODEM_OK && !s_ymodem_close_failed && s_ymodem_bytes == s_ymodem_filesize)
+    if (result == YMODEM_OK && !s_ymodem_close_failed && s_ymodem_bytes == s_ymodem_filesize
+        && s_ymodem_commit_status == BSP_OK)
     {
         log_i("Ymodem: OK  file=%s  bytes=%lu/%lu  tx_drop=%lu",
               s_ymodem_filename, (unsigned long)s_ymodem_bytes, (unsigned long)s_ymodem_filesize,
               (unsigned long)s_ymodem_tx_drop);
     }
+    else if (s_ymodem_discarded && s_ymodem_commit_status == BSP_OK)
+    {
+        log_e("Ymodem: FAILED result=%d  bytes=%lu/%lu  commit=%d  tx_drop=%lu  (incomplete file discarded)",
+              (int)result, (unsigned long)s_ymodem_bytes, (unsigned long)s_ymodem_filesize,
+              (int)s_ymodem_commit_status, (unsigned long)s_ymodem_tx_drop);
+    }
     else
     {
-        log_e("Ymodem: FAILED result=%d  bytes=%lu/%lu  close_failed=%d  last_status=%d  tx_drop=%lu",
+        log_e("Ymodem: FAILED result=%d  bytes=%lu/%lu  close_failed=%d  last_status=%d  commit=%d  tx_drop=%lu",
               (int)result, (unsigned long)s_ymodem_bytes, (unsigned long)s_ymodem_filesize,
-              (int)s_ymodem_close_failed, (int)s_ymodem_last_status, (unsigned long)s_ymodem_tx_drop);
+              (int)s_ymodem_close_failed, (int)s_ymodem_last_status, (int)s_ymodem_commit_status,
+              (unsigned long)s_ymodem_tx_drop);
     }
 }
 

@@ -545,6 +545,7 @@ static void app_fatfs_crc(const char *path)
     uint32_t size = 0;
     uint32_t total = 0;
     uint32_t rd = 0;
+    uint32_t shortread = 0;
     bool truncated = false;
 
     if (bsp_file_open(&file, path, BSP_FILE_READ) != BSP_OK)
@@ -572,6 +573,12 @@ static void app_fatfs_crc(const char *path)
             }
             break;
         }
+        /* 短读必须单独计数：过去只查 rd==0，使短读被当作正常推进而当成“内容不同”，会误导向 */
+        if ((rd != CRC_WIN_BYTES) && ((total + rd) < size))
+        {
+            shortread++;
+            log_w("crc: SHORT read=%lu at %lu", (unsigned long)rd, (unsigned long)total);
+        }
         for (uint32_t i = 0; i < rd; i++)
         {
             crc = s_crc32_update(crc, s_crc_win[i]);
@@ -580,8 +587,9 @@ static void app_fatfs_crc(const char *path)
     }
     (void)bsp_file_close(&file);
 
-    printf("%-28s size=%-8lu read=%-8lu crc32=%08lX%s\r\n", path, (unsigned long)size, (unsigned long)total,
-           (unsigned long)(crc ^ 0xFFFFFFFFU), truncated ? "  <TRUNCATED, crc NOT trustworthy>" : "");
+    printf("%-28s size=%-8lu read=%-8lu crc32=%08lX short=%lu%s\r\n", path, (unsigned long)size,
+           (unsigned long)total, (unsigned long)(crc ^ 0xFFFFFFFFU), (unsigned long)shortread,
+           truncated ? "  <READ FAILED, crc NOT trustworthy>" : "");
 }
 
 int shell_fatfs_test(int argc, char *argv[])

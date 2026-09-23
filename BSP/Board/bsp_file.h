@@ -103,6 +103,22 @@ bsp_status_t bsp_file_mkdir(const char *path);
  */
 bsp_status_t bsp_file_mkdir_rec(const char *path);
 
+/**
+ * @brief 删除文件
+ * @param path 文件路径（"0:/..." 指向 FatFS，"flash/..." 指向 LittleFS）
+ * @return bsp_status_t BSP_OK 已删除；BSP_ENODEV 目标不存在；其余为底层错误
+ */
+bsp_status_t bsp_file_remove(const char *path);
+
+/**
+ * @brief 重命名文件（常用于“临时文件写完后改名”以提交结果）
+ * @param old_path 原路径
+ * @param new_path 新路径；已存在时先删除再改名，以覆盖语义
+ * @return bsp_status_t 执行结果；两路径分属不同后端时返回 BSP_EINVAL
+ * @note  不支持跨后端改名（SD <-> Flash），调用方须自行保证同侧
+ */
+bsp_status_t bsp_file_rename(const char *old_path, const char *new_path);
+
 #ifdef __cplusplus
 }
 #endif
