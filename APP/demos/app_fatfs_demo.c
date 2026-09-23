@@ -8,6 +8,7 @@
 #include "port_sdio.h"
 #include "bsp_file.h"
 #include "fatfs.h"
+#include "sd_diskio.h"   /* 仅取 DMA 缓冲守卫的拒绝计数，用以区分"被拒"与"数据错" */
 #include "shell.h"
 #define LOG_TAG "FATFS_DEMO"
 #include "elog.h"
@@ -218,14 +219,15 @@ static void app_fatfs_diff_dump(const uint8_t *src, uint32_t len)
  * @param src     写入源指针（允许非 4 字节对齐）
  * @param tag     本轮标签
  * @param len     写入总字节数
- * @param chunk   每次 f_write 的字节数（1024 与 Ymodem 单包等大，以触发整扇区直写）
- * @param gap_ms  f_open 与首次 f_write 之间的空距，用于验证“上一笔写未完”类假设
- * @return int 失配字节数；-1 表示读写流程本身失败
+ * @param chunk   每次写调用的字节数（1024 与 Ymodem 单包等大，以触发整扇区直写）
+ * @param gap_ms  打开与首次写之间的空距，用于验证“上一笔写未完”类假设
+ * @param via_vfs true=经 bsp_file VFS（非对齐应由 L2 自动中转）；false=直接 f_write（非对齐应由 L1 拒绝）
+ * @return int 失配字节数；-1 表示写入被拒或读写流程失败（对直写非对齐轮次，-1 才是期望结果）
  * @note  读回固定 16 字节分块 + 对齐缓冲，走 FatFS 窗口路径，读侧可信；
  *       比对不符时打印前 64 字节 src/rb 对照，直接看出损坏形态
  */
 static int app_fatfs_align_probe(const uint8_t *src, const char *tag, uint32_t len, uint32_t chunk,
-                                uint32_t gap_ms)
+                                uint32_t gap_ms, bool via_vfs)
 {
     FIL file;
     uint32_t bad_list[ALIGN_SHOW_MAX];
@@ -235,31 +237,61 @@ static int app_fatfs_align_probe(const uint8_t *src, const char *tag, uint32_t l
     UINT bw = 0;
     UINT br = 0;
 
-    printf("%-22s src=%08lX mod4=%lu len=%lu chunk=%lu gap=%lu : ", tag, (unsigned long)(uintptr_t)src,
-           (unsigned long)((uint32_t)(uintptr_t)src & 3U), (unsigned long)len, (unsigned long)chunk,
-           (unsigned long)gap_ms);
+    printf("%-22s src=%08lX mod4=%lu len=%lu via=%s : ", tag, (unsigned long)(uintptr_t)src,
+           (unsigned long)((uint32_t)(uintptr_t)src & 3U), (unsigned long)len, via_vfs ? "vfs" : "raw");
 
-    if (f_open(&file, ALIGN_TEST_PATH, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
+    if (via_vfs)
     {
-        printf("open(W) FAILED\r\n");
-        return -1;
-    }
-    if (gap_ms != 0U)
-    {
-        bsp_tick_delay_ms(gap_ms);
-    }
-    while (off < len)
-    {
-        uint32_t n = ((len - off) > chunk) ? chunk : (len - off);
-        if (f_write(&file, src + off, n, &bw) != FR_OK || bw != n)
+        bsp_file_t vf;
+        uint32_t vn = 0;
+
+        if (bsp_file_open(&vf, ALIGN_TEST_PATH, BSP_FILE_WRITE | BSP_FILE_CREATE | BSP_FILE_TRUNC) != BSP_OK)
         {
-            printf("f_write FAILED at %lu\r\n", (unsigned long)off);
-            f_close(&file);
+            printf("vfs open(W) FAILED\r\n");
             return -1;
         }
-        off += n;
+        if (gap_ms != 0U)
+        {
+            bsp_tick_delay_ms(gap_ms);
+        }
+        while (off < len)
+        {
+            uint32_t n = ((len - off) > chunk) ? chunk : (len - off);
+
+            if (bsp_file_write(&vf, src + off, n, &vn) != BSP_OK || vn != n)
+            {
+                printf("bsp_file_write FAILED at %lu\r\n", (unsigned long)off);
+                (void)bsp_file_close(&vf);
+                return -1;
+            }
+            off += n;
+        }
+        (void)bsp_file_close(&vf);
     }
-    f_close(&file);
+    else
+    {
+        if (f_open(&file, ALIGN_TEST_PATH, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
+        {
+            printf("open(W) FAILED\r\n");
+            return -1;
+        }
+        if (gap_ms != 0U)
+        {
+            bsp_tick_delay_ms(gap_ms);
+        }
+        while (off < len)
+        {
+            uint32_t n = ((len - off) > chunk) ? chunk : (len - off);
+            if (f_write(&file, src + off, n, &bw) != FR_OK || bw != n)
+            {
+                printf("f_write FAILED at %lu\r\n", (unsigned long)off);
+                f_close(&file);
+                return -1;
+            }
+            off += n;
+        }
+        f_close(&file);
+    }
 
     memset(s_probe_rb, 0, sizeof(s_probe_rb));
     if (f_open(&file, ALIGN_TEST_PATH, FA_READ) != FR_OK)
@@ -324,14 +356,37 @@ static int app_fatfs_align_probe(const uint8_t *src, const char *tag, uint32_t l
     return (int)bad_cnt;
 }
 
+/* 单轮探针的两种期望：逐字节正确，或当场被拒（两者都是“成功”，含义完全不同） */
+#define ALIGN_EXPECT_CLEAN     (0)
+#define ALIGN_EXPECT_REJECTED  (-1)
+
 /**
- * @brief SDIO 写路径取证矩阵：对齐/非对齐、单扇区/多扇区、是否插入空距
- * @note  七轮对比各自只变一个变量，用来分离“对齐”与“上一笔写未完”两个因素
+ * @brief 比对单轮结果与期望，打印 PASS/FAIL 并返回累计失败数（0 或 1）
+ * @note  不能用“没报错”当通过标准：非对齐直写过去是“静默写坏”，现在必须是“报错”，
+ *       所以期望要显式区分“报错=对”与“写坏=错”
+ */
+static int app_fatfs_expect(int got, int expect)
+{
+    bool ok = (got == expect);
+
+    printf("     => %-4s  expect=%s  got=%d\r\n", ok ? "PASS" : "FAIL",
+           (expect == ALIGN_EXPECT_REJECTED) ? "rejected-by-L1" : "byte-clean", got);
+    return ok ? 0 : 1;
+}
+
+/**
+ * @brief DMA 对齐契约双向矩阵：L1 拒绝与 L2 中转各自独立可验证
+ * @note  每轮只变一个变量。A 组对齐直写需逐字节正确；U 组非对齐直写需被当场拒绝
+ *        （过去它是静默写坏，这条才是修复的真凭据）；V 组同一非对齐指针经 VFS 需正确落盘。
+ *        末行给出两个计数器增量作客观证据，避免“看着对了其实是碰巧对齐”
  */
 static void app_fatfs_align_test(void)
 {
     uint8_t *base = (uint8_t *)s_align_pool;
+    uint32_t reject0 = SD_GetBufRejectCount();
+    uint32_t stage0 = bsp_file_get_align_stage_count();
     int r;
+    int fails = 0;
 
     if (!s_fs_mounted)
     {
@@ -344,17 +399,39 @@ static void app_fatfs_align_test(void)
         base[i] = (uint8_t)(i * 7U + 3U);
     }
 
-    printf("--- FatFS SDIO write-path probe matrix (pattern = i*7+3) ---\r\n");
+    printf("--- DMA alignment contract matrix (pattern = i*7+3) ---\r\n");
 
-    r  = app_fatfs_align_probe(base, "A1 align 512x1", 512U, 512U, 0U);
-    r += app_fatfs_align_probe(base, "A2 align 1024x1", 1024U, 1024U, 0U);
-    r += app_fatfs_align_probe(base, "A3 align 2048x1024", ALIGN_TEST_LEN, ALIGN_TEST_CHUNK, 0U);
-    r += app_fatfs_align_probe(base, "A4 align 2048x1", ALIGN_TEST_LEN, ALIGN_TEST_LEN, 0U);
-    r += app_fatfs_align_probe(base, "A5 align +100ms gap", ALIGN_TEST_LEN, ALIGN_TEST_CHUNK, 100U);
-    r += app_fatfs_align_probe(base + ALIGN_SKEW_BYTES, "U1 skew3 1024x1", 1024U, 1024U, 0U);
-    r += app_fatfs_align_probe(base + 1U, "U2 skew1 1024x1", 1024U, 1024U, 0U);
+    /* A 组：对齐缓冲直写 FatFS，期望逐字节一致 */
+    r = app_fatfs_align_probe(base, "A1 align 512x1", 512U, 512U, 0U, false);
+    fails += app_fatfs_expect(r, ALIGN_EXPECT_CLEAN);
+    r = app_fatfs_align_probe(base, "A2 align 1024x1", 1024U, 1024U, 0U, false);
+    fails += app_fatfs_expect(r, ALIGN_EXPECT_CLEAN);
+    r = app_fatfs_align_probe(base, "A3 align 2048x1024", ALIGN_TEST_LEN, ALIGN_TEST_CHUNK, 0U, false);
+    fails += app_fatfs_expect(r, ALIGN_EXPECT_CLEAN);
+    r = app_fatfs_align_probe(base, "A4 align 2048x1", ALIGN_TEST_LEN, ALIGN_TEST_LEN, 0U, false);
+    fails += app_fatfs_expect(r, ALIGN_EXPECT_CLEAN);
+    r = app_fatfs_align_probe(base, "A5 align +100ms gap", ALIGN_TEST_LEN, ALIGN_TEST_CHUNK, 100U, false);
+    fails += app_fatfs_expect(r, ALIGN_EXPECT_CLEAN);
 
-    printf("--- matrix total mismatches = %d ---\r\n", r);
+    /* U 组：非对齐指针直写，期望被 L1 守卫拒绝（不再静默写坏） */
+    r = app_fatfs_align_probe(base + ALIGN_SKEW_BYTES, "U1 skew3 1024x1", 1024U, 1024U, 0U, false);
+    fails += app_fatfs_expect(r, ALIGN_EXPECT_REJECTED);
+    r = app_fatfs_align_probe(base + 1U, "U2 skew1 1024x1", 1024U, 1024U, 0U, false);
+    fails += app_fatfs_expect(r, ALIGN_EXPECT_REJECTED);
+
+    /* V 组：同一非对齐指针经 VFS，期望由 L2 中转后逐字节正确 */
+    r = app_fatfs_align_probe(base + ALIGN_SKEW_BYTES, "V1 skew3 via-vfs", 1024U, 1024U, 0U, true);
+    fails += app_fatfs_expect(r, ALIGN_EXPECT_CLEAN);
+    r = app_fatfs_align_probe(base + ALIGN_SKEW_BYTES, "V2 skew3 2048x1024", ALIGN_TEST_LEN,
+                              ALIGN_TEST_CHUNK, 0U, true);
+    fails += app_fatfs_expect(r, ALIGN_EXPECT_CLEAN);
+
+    (void)f_unlink(ALIGN_TEST_PATH);
+
+    printf("--- rejects=+%lu (L1)  staged=+%lu (L2)  failures=%d  =>  %s ---\r\n",
+           (unsigned long)(SD_GetBufRejectCount() - reject0),
+           (unsigned long)(bsp_file_get_align_stage_count() - stage0),
+           fails, (fails == 0) ? "PASS" : "FAIL");
 }
 
 /**

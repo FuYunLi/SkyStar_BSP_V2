@@ -1,7 +1,7 @@
 # SkyStar BSP V2 架构地图
 
-> 版本：1.0.1
-> 更新日期：2026-09-20
+> 版本：1.0.2
+> 更新日期：2026-09-23
 > 说明：面向开发者（含 AI 助手）的工程全局索引。新会话/新成员先读本文即可建立总体认知，细节再按图索骥。每合并一批功能须同步更新。
 
 ---
@@ -57,8 +57,16 @@ Core (CubeMX 生成) + HAL
    所有异步操作（SPI DMA、UART TX/Error 等）共用此签名；`user_ctx` 透明指针原样回传。
 3. **逻辑 ID + 静态映射表**
    每支 port 用枚举逻辑通道 + 指定初始化器映射表（如 `port_pwm.c` 的 `pwm_mapping`、`port_uart.c` 的 `s_uart_map`、`port_encoder.c` 的 `s_tim_map`）对接物理外设；未使能通道句柄置 NULL 做运行时守卫。换板 = 改表。
-4. **交给 DMA 后端的缓冲必须 4 字节对齐（硬约束，违反则静默位移）**
-   SDIO IDMA 与 SPI DMA 只按 32 位取指，会丢弃地址低 2 位；而 FatFS 对整扇区读写是把用户指针直达 `disk_write/disk_read`（`ff.c` direct-write 路径，无中间拷贝）。因此任何走 DMA 存储后端的缓冲区（含中间件帧缓冲的载荷偏移、取证工具的读窗）都必须 4 字节对齐，否则数据整体位移且 **无任何错误上报**（CRC 由外设对实际发出的字节生成）。已在 `app_ymodem_demo.c` 用对齐中转缓冲规避；详见 `Docs/40-records/串口框架与Ymodem移植记录-20260922.md` §3
+4. **交给 DMA 后端的缓冲必须满足地址不变式（硬约束，违反则静默位移）**
+   不变式不是“缓冲 4 字节对齐”，而是 **`buf ≡ 当前文件位置 (mod 4)`**：SDIO IDMA 只按 32 位取指会丢弃地址低 2 位，
+   而 FatFS 对整扇区读写把用户指针直达 `disk_write/disk_read`（`ff.c` direct 路径无中间拷贝），且会先把指针
+   **推进到扇区边界**（推进量 ≡ -fptr mod 4）。实测两个必现场：Ymodem 载荷 `frame_buf+3`（恒 4n+3）、
+   data 块起始 78 字节的 WAV（缓冲本身对齐但交出 `buf+434`）。违规后果：数据整体位移且**无任何错误上报**
+   （CRC 由外设对实际发出的字节生成）。已升格为架构级保障（不再靠调用方自觉）：
+   L1 `sd_diskio.c` 入口只拒绝不中转（非对齐/CCM 不可达 → `RES_PARERR`）；
+   L2 `bsp_file` 统一兜底（段首段尾走 FatFS 窗口、段体批量整扇区经 1KB 对齐暂存区）；两个计数器供自检取证。
+   SPI 侧规则不同：`DataSize=8BIT` 时 DMA 可按字节搬运、无对齐约束（16 位时需 2 字节对齐），但同样要求 DMA 可达；
+   **CCM(0x10000000) 对所有 DMA 不可达**，放 CCM 的缓冲不得交给任何 DMA 路径。详见 `Docs/40-records/DMA对齐契约全局化-20260923.md`（根因定案过程另见同目录 `串口框架与Ymodem移植记录-20260922.md` §3）。
 
 ### Interface 层模块清单
 
@@ -113,18 +121,21 @@ Core (CubeMX 生成) + HAL
 > 当前开发方向由用户在会话中提出，新任务确定后在此登记：任务名 / 涉及模块 / 状态。
 > 已知问题见第 9 节；历史批次记录（zcode 分支 RocketPi 实验）随 zcode 分支留存，不在本分支维护。
 
-当前批次：**阶段八后续收口——存储链路完整性与串口框架升级**（方案与实测见 `Docs/40-records/串口框架与Ymodem移植记录-20260922.md`，分支 `fix/ymodem-write-corruption`；阶段八本体见同目录 `阶段八音频调试记录-20260920.md`，已合入 zcode_bsp）
+当前批次：**阶段八后续收口——存储链路完整性、串口框架与对齐契约**（本轮实测见 `Docs/40-records/DMA对齐契约全局化-20260923.md`，分支 `feature/dma-alignment-contract`；上一批见同目录 `串口框架与Ymodem移植记录-20260922.md`；阶段八本体见 `阶段八音频调试记录-20260920.md`）
 
 | 任务 | 里程碑 | 涉及模块 | 状态 |
 |---|---|---|---|
-| 串口框架升级至 V2.1 + Ymodem 升级至 V3 | M32+ | `port_uart`、`Middleware/Ymodem`（替换）；`app_ymodem_demo`（ops 适配 + 对齐中转 + 连续性守卫）；`stm32f4xx_it.c`（去重复委托） | 上板验收通过（Ymodem→SD 字节级一致且可播放），待提交 |
+| 串口框架升级至 V2.1 + Ymodem 升级至 V3 | M32+ | `port_uart`、`Middleware/Ymodem`（替换）；`app_ymodem_demo`（ops 适配 + 连续性守卫）；`stm32f4xx_it.c`（去重复委托） | 上板验收通过（Ymodem→SD/flash 字节级一致且可播放），已合入 zcode_bsp |
 | I2S2 接口层 + SPI2/I2S2 总线仲裁 | M30 | `port_i2s`、`bsp_bus`（新建）；`bsp_imu`、`Core/Src/stm32f4xx_it.c`（修改） | 上板验收通过，已合入 zcode_bsp |
 | ES8388 编解码驱动 + HT6872 功放使能 | M31 | `dev_es8388`、`dev_ht6872`（新建）；`dev_pca9555`、`port_i2c`（复用） | 上板验收通过，已合入 zcode_bsp |
-| WAV 音乐播放器 Demo | M32 | `bsp_audio`、`app_audio_demo`（新建/扩充）；`bsp_file` 补 read/size 接口 | 上板验收通过（读卡器导入 WAV 正常出声），待提交 |
-| DMA 对齐契约全局化 + W25Q 写损坏修复 | 收口批次 | `port_sdio`、`port_spi`、`bsp_file`、`dev_w25q`/`bsp_lfs`；方案见 `Docs/20-planning/DMA对齐契约与W25Q写损坏修复方案.md` | 方案已定，待 hotfix/flash-bus-mutex 合入后开工 |
-| SDIO 卡识别回归修复（M30 调试副产） | M32 | `port_sdio`（修复）；`app_fatfs_demo`、`bsp_audio`（诊断日志） | 上板验证通过，工作区未提交；诊断代码待收口 |
+| WAV 音乐播放器 Demo | M32 | `bsp_audio`、`app_audio_demo`（新建/扩充）；`bsp_file` 补 read/size 接口 | 上板验收通过（读卡器导入 WAV 正常出声），已合入 zcode_bsp |
+| DMA 对齐契约全局化（L1 拒绝 + L2 中转 + L3 入契约） | 收口批次 | `FATFS/Target/sd_diskio.c`、`BSP/Board/bsp_file.c`（+计数器）、`port_spi.c`、`bsp_audio.c`（吞错改上抛+停播收尾）、`app_fatfs_demo.c`（双向矩阵）、`app_ymodem_demo.c`（删点状规避） | 上板验收通过（align 9 轮全 PASS、两后端 CRC=PC、44 块双遍一致、78 字节头 WAV 可播且释放总线），待提交 |
+| 存储健壮性第一批：dev_w25q 上抛超时、VFS remove/rename、Ymodem 临时名提交 | 收口批次 | `dev_w25q`、`bsp_file`、`app_ymodem_demo` | 已合入 zcode_bsp（f8f564b）；本轮补齐"中止传输不破坏同名好文件"两后端验证 |
+| W25Q/LittleFS 接入 SPI2 总线仲裁 | 收口批次 | `bsp_lfs`、`bsp_bus`、`app_flash_demo` | 已合入 zcode_bsp（47fcba8）；本轮实测：音频持总线时 flash 快速失败 `ret=-5 BSP_BUSY` 不卡死，切回后 CRC 复原 |
+| SDIO 传输边界缺陷：背靠背单扇区写错 2 字节 / 36 字节岛 | 待定 | `sd_diskio`/`bsp_driver_sd`/HAL SDIO 数据路径 | 未定位（指针合法的 raw 路径仍间歇复现），已入第 9 节 |
+| SDIO 卡识别回归修复（M30 调试副产） | M32 | `port_sdio`（修复）；`app_fatfs_demo`、`bsp_audio`（诊断日志） | 已合入 zcode_bsp（逻辑错误码已在接口层翻译） |
 
-待办：中止传输残留坏文件、LittleFS 无锁与小堆、IMU 读不出、FatFS LFN 开启、`dev_w25q` 接入总线仲裁、对齐契约由点状规避升格为统一保障，详见第 9 节。
+待办：LittleFS 无锁与 4 KB 小堆、CCM 40 KB 空闲未规划、IMU 读不出（`imu_read` ret=-1）、FatFS LFN 开启、SDIO 传输边界缺陷，详见第 9 节。
 
 ## 9. 已知问题清单（在 develop 基点代码中核实过，修一个删一行）
 
@@ -134,10 +145,11 @@ Core (CubeMX 生成) + HAL
 
 - [x] ~~Ymodem 写文件内容损坏~~ —— **已定案修复（2026-09-22）**：根因是 Ymodem 载荷指针 `&frame_buf[3]` 非 4 字节对齐，经 FatFS 直达路径交给 SDIO IDMA，而 IDMA 丢弃地址低 2 位 → 整块位移（含帧头 `02 01 FE`），且因 CRC 由外设对实际发出字节生成而全程无错。V3 的 ctx 布局使 `frame_buf` 偏移从 9（碰巧对齐）变为 16（必然非对齐），因而必现。修复：`app_ymodem_demo.c` 落盘前经对齐中转缓冲 + 偏移连续性守卫。验证：`tour.wav` 176478 字节板端 CRC32 与 PC 一致（7a6fd6f4），43 块双趟读全一致，可正常播放。详见 `Docs/40-records/串口框架与Ymodem移植记录-20260922.md`
 - [x] ~~LittleFS/W25Q 写路径存在块级内容损坏~~ —— **已推翻（2026-09-22）**：裸 `dev_w25q_read` 77 次重复读 0 差异（含跨 4KB 边界地址），LittleFS 单命令内 8 遍 hash 完全一致，干净重传后两后端连测 4 次全部 = PC 基准且 `short=0`。SPI2/W25Q/电气/驱动均无罪
-- [ ] Ymodem 接收失败/中止会留下**无从发现的坏文件**：文件仍在、`size` 也正确，但其数据块已被 LittleFS 释放并复用给其它文件，读它时“同一会话内一致、跨会话变化”，且在 256/4096 整数倍处提前返回。修法：接收写临时名 + 成功后 rename，失败路径上 `lfs_remove`/`f_unlink` 并上报（详见 `Docs/40-records/串口框架与Ymodem移植记录-20260922.md` 第 7 节）
+- [x] ~~Ymodem 接收失败/中止会留下**无从发现的坏文件**~~ —— **已修并上板验证（2026-09-23）**：接收统一写固定临时名 `__ymodem.tmp`（避开 FatFs 8.3 限制），提交条件比"协议报 OK"更严：实收字节数 == 声明大小 且 close 无错才 `bsp_file_rename`，否则 `bsp_file_remove` 丢弃；会话中断有兜底收尾，逐文件复位判定位。实测（刻意少发的 `ymodem_short_sender.py`）：声明 176478 实收 10240 → `FAILED bytes=10240/176478 commit=0 (incomplete file discarded)`，且已存在的同名好文件 CRC 不变、两后端无 `.tmp` 残留
 - [ ] LittleFS 实例被多使用者无锁共用（`lv_port_fs` + 各 demo + 开机写 `boot.txt`）：`bsp_lfs.c` 的 `lfs_cfg` 未提供 `.lock/.unlock`（`LFS_LOCK` 实为空操作）；且未定义 `LFS_NO_MALLOC`，每次 `lfs_file_open`/`lfs_dir_open` 都要向 C 堆要 256 字节，而实测**堆最大连续可用仅 3584 字节**。修法：给 LittleFS 配专用静态内存池 + 协作式 busy 锁（不长时间关中断），并把 LFS 错误码经 `bsp_file` 透传（现统一压成 `BSP_ERROR`，看不出 `NOSPC`）
 - [ ] `imu_read` 持续 `ret = -1`（ICM42688 读不出），而同一 SPI2 上的 W25Q 读写全部正常 ⇒ 独立缺陷，暂候选：`bsp_imu` 的 suspend/resume 链未重新初始化器件（`bsp_bus` 切到 I2S2 时会挂起 IMU）。零成本判据：`imu_read` → `play_wav` → `imu_read`
-- [ ] DMA 缓冲 4 字节对齐契约目前仅在 Ymodem 一处点状规避：建议在 `bsp_file`（统一入参对齐校验/兜底中转）或 `port_sdio`+`port_spi`（非对齐则拒绝或内部中转）升格为全局保障，否则任何新调用方传入非对齐指针（如直接传结构体字段）都会重现静默位移
+- [x] ~~DMA 缓冲 4 字节对齐契约仅在一处点状规避~~ —— **已升格为架构级保障（2026-09-23）**：不变式实为 `buf ≡ 文件位置 (mod 4)`（FatFS 会把用户指针推进到扇区边界），落地为 L1 `sd_diskio` 入口拒绝（非对齐/CCM 不可达 → `RES_PARERR`）+ L2 `bsp_file` 统一分段中转（段首尾走窗口、段体批量整扇区经 1KB 对齐暂存区）+ L3 写入第 4 节契约；两个计数器与 `fatfs_test align` 双向矩阵作为可复验凭据。附带修正：`port_spi` 按 `DataSize` 动态定对齐要求（8BIT 无约束，不行误伤）；`bsp_audio` 填充期吞错已改为上报+停播释放总线（旧行为下一次坏读永久占住 SPI2/I2S2）。详见 `Docs/40-records/DMA对齐契约全局化-20260923.md`
+- [ ] **SDIO 传输边界缺陷（新发现，未定位）**：在**指针完全合法**（已 4 字节对齐、文件位置扇区对齐）的 raw `f_write` 上，历史签名 `mismatches=36 bad@8..43` 仍间歇复现（本轮 3 跑中 2 次，后续 2 跑 0 次）；另有更严重的确定性形式：L2 暂存区取 512（拆成连续两笔单扇区写）时 Ymodem→SD **必现**自第二笔开头错开 2 字节（偏移 532 起整体位移），改回 1KB 批量整扇区下发后消失。即**传输形状/边界影响结果**，方向在 `WriteStatus` 完成语义（DMA/数据结束中断 vs 卡实际编程完成）与 SDIO FIFO 复位，而非信号质量（上拉、SW7、时钟已逐项排除；栈溢出假设也已用 `Stack_Size=0x2000` 实测否证）。取证入口：`fatfs_test align`（raw 轮为负向用例）、`crcmap`、`ymodem_short_sender.py`
 - [ ] FatFs 未开启长文件名：`ffconf.h` `_USE_LFN = 0`，文件名超 8.3 格式时 `f_open` 直接失败（Ymodem 接收报 Code 5）。修复方向：`_USE_LFN = 1` + 静态工作缓冲，需评估 RAM 开销
 - [ ] `port_pwm.c` `port_pwm_set_freq()` 定时器时钟域写死 APB1（`HAL_RCC_GetPCLK1Freq()` + `PPRE1` 判 ×2，恒得 84MHz），而 `pwm_mapping` 混挂了 APB2 的 `htim10`（LCD 背光，实际 168MHz）：ARR 算少一半，输出频率为目标的 2 倍。当前潜伏——全工程仅 `dev_buzzer`(TIM13/APB1) 与 `dev_ws2812`(TIM5/APB1) 调该函数，背光只走 `set_duty`（CCR/ARR 比值，与时钟无关）。修复方向：`port_pwm_map_t` 增加总线归属字段，`set_freq` 查表取时钟，禁止运行时猜 `RCC->CFGR`（换板只改表）
 - [ ] `bsp_backlight.c` 亮度语义与板级极性相反：`LCD_BLK_PWM` 网络硬件为低电平点亮（依据 `Docs/00-board_info/EC11_LCD_KEY描述.md`），而 TIM10 CH1 配为 PWM1 + `OCPOLARITY_HIGH`、上层按高电平占比等于亮度写 CCR，导致 `backlight 0` 最亮、`backlight 100` 熄灭。修复方向：`port_pwm_map_t` 增加有效电平标记，由 `set_duty` 统一反相，使 Board 层对上维持 0=灭、100=最亮的直觉语义。连带隐患：`bsp_backlight_init()` 是先 `port_pwm_start()` 再 `bsp_backlight_set()`，而 CubeMX 初始 `Pulse=0` 在低有效硬件上等于全亮，定时器启动到设亮度之间可能短暂闪一下最亮（未实测，修反相时应改成先写 CCR 再 start）

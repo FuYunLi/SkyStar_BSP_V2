@@ -59,6 +59,7 @@ static uint8_t s_channels;
 static volatile bool s_half_pending;
 static volatile bool s_full_pending;
 static volatile bool s_playing;
+static volatile bool s_fill_failed;                      /* 填充期读失败，待收尾停播 */
 static bool s_chain_inited;                           /* codec 链路是否已初始化 */
 static MultiTimer s_fill_timer;
 
@@ -85,6 +86,28 @@ static void audio_full_cb(void *user_ctx)
 }
 
 /**
+ * @brief 填充期读失败的统一处置：当场可见，只记一次，由定时器负责收尾
+ * @param stage 出错位置标识（mono / stereo）
+ * @param st    底层返回状态（BSP_OK 表示未报错但零进展）
+ * @param want  本次期望字节数
+ * @param got   实际读到的字节数
+ * @note 旧行为是把失败静默成 got=0：s_data_remaining 永不归零 → 填充定时器无限自续期
+ *       → 一次坏读就把 SPI2/I2S2 占用权永久占住（实测后跟：此后所有 flash 访问报 -5，
+ *       播放器只是静音不报错）。与 dev_w25q 吞返回值同属一类缺陷。
+ */
+static void audio_fill_fail(const char *stage, bsp_status_t st, uint32_t want, uint32_t got)
+{
+    if (s_fill_failed)
+    {
+        return;
+    }
+
+    s_fill_failed = true;
+    log_e("Playback aborted: %s read failed status=%d want=%lu got=%lu remaining=%lu",
+          stage, (int)st, (unsigned long)want, (unsigned long)got, (unsigned long)s_data_remaining);
+}
+
+/**
  * @brief 向指定半区填充数据；文件尾补零
  * @return true 该半区已到达文件尾
  */
@@ -92,22 +115,21 @@ static bool audio_fill_half(uint16_t *half)
 {
     uint8_t *dst = (uint8_t *)half;
     uint32_t want = AUDIO_HALF_SAMPLES * 2U;
+    uint32_t asked = 0U;
     uint32_t got = 0;
     bool eof = false;
+    bsp_status_t rst = BSP_OK;
 
     if (s_channels == 1U)
     {
         /* 单声道：先读 1/2 容量的原始样本，再复制到左右声道 */
         uint16_t mono[AUDIO_HALF_SAMPLES / 2U];
-        uint32_t mono_bytes = want / 2U;
-        if (mono_bytes > s_data_remaining)
+        asked = want / 2U;
+        if (asked > s_data_remaining)
         {
-            mono_bytes = s_data_remaining;
+            asked = s_data_remaining;
         }
-        if (bsp_file_read(&s_audio_file, mono, mono_bytes, &got) != BSP_OK)
-        {
-            got = 0;
-        }
+        rst = bsp_file_read(&s_audio_file, mono, asked, &got);
         s_data_remaining -= got;
         uint32_t samples = got / 2U;
         for (uint32_t i = 0; i < samples; i++)
@@ -115,7 +137,7 @@ static bool audio_fill_half(uint16_t *half)
             half[2U * i] = mono[i];
             half[2U * i + 1U] = mono[i];
         }
-        if (got < mono_bytes)
+        if ((got < (want / 2U)) || (rst != BSP_OK))
         {
             memset(&half[2U * samples], 0, want - 2U * samples);
             eof = true;
@@ -123,22 +145,34 @@ static bool audio_fill_half(uint16_t *half)
     }
     else
     {
-        uint32_t bytes = want;
-        if (bytes > s_data_remaining)
+        asked = want;
+        if (asked > s_data_remaining)
         {
-            bytes = s_data_remaining;
+            asked = s_data_remaining;
         }
-        if (bsp_file_read(&s_audio_file, dst, bytes, &got) != BSP_OK)
-        {
-            got = 0;
-        }
+        rst = bsp_file_read(&s_audio_file, dst, asked, &got);
         s_data_remaining -= got;
-        if (got < want)
+        /* EOF 判据用未截断的半区容量：asked 会被 s_data_remaining 截成 0，拿它比就永远判不出
+         * 结束，反而让定时器无限续期（末轮恰好耗尽剩余量时必现） */
+        if ((got < want) || (rst != BSP_OK))
         {
             memset(dst + got, 0, want - got);
             eof = true;
         }
     }
+
+    /* 报错与“没报错但读不到数据”都必须收尾：前者置失败标志由定时器停播并释放总线，
+     * 后者把剩余量归零，让正常结束条件得以成立；两者都不能退成无限续期 */
+    if (rst != BSP_OK)
+    {
+        audio_fill_fail((s_channels == 1U) ? "mono" : "stereo", rst, asked, got);
+    }
+    else if ((got == 0U) && (asked != 0U))
+    {
+        audio_fill_fail((s_channels == 1U) ? "mono" : "stereo", rst, asked, got);
+        s_data_remaining = 0U;
+    }
+
     return eof;
 }
 
@@ -165,6 +199,12 @@ static void audio_fill_timer_cb(MultiTimer *timer, void *user_data)
     {
         s_full_pending = false;
         eof |= audio_fill_half(s_audio_buf[1]);
+    }
+
+    if (s_fill_failed)
+    {
+        (void)bsp_audio_stop();
+        return;
     }
 
     if (eof && s_data_remaining == 0U && !s_half_pending && !s_full_pending)
@@ -319,10 +359,17 @@ bsp_status_t bsp_audio_play(const char *path)
     }
 
     /* 4. 预填双缓冲并启动 DMA 流 */
+    s_fill_failed = false;
     s_data_remaining = data_size;
     s_channels = (uint8_t)fmt.channels;
     bool eof = audio_fill_half(s_audio_buf[0]);
     eof |= audio_fill_half(s_audio_buf[1]);
+    if (s_fill_failed)
+    {
+        bsp_file_close(&s_audio_file);
+        (void)bsp_bus_release(BSP_BUS_SPI2_I2S2, BSP_BUS_OWNER_I2S2);
+        return BSP_EIO;
+    }
     if (eof && s_data_remaining == 0U)
     {
         bsp_file_close(&s_audio_file);

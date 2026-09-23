@@ -189,17 +189,12 @@ static void s_ymodem_finish(ymodem_result_t result)
     }
 }
 
-/* 落盘中转缓冲：以 uint32_t 为底保证 4 字节对齐，容量等于最大载荷 1024 字节 */
-#define YMODEM_STAGE_SIZE (1024U)
-static uint32_t s_ymodem_stage[YMODEM_STAGE_SIZE / 4U];
-
 /**
  * @brief 数据块写入回调（V3 名：on_write，注意参数顺序为 offset 在前）
- * @note  两道防线：
- *       1) 偏移连续性守卫：协议错位/重写当场失败上报，不事后靠 CRC 对账发现；
- *       2) 非 4 字节对齐源经对齐中转缓冲再落盘：FatFS 对整扇区写是把用户指针直达
- *          SDIO IDMA(ff.c direct-write)，而 IDMA 会丢弃地址低 2 位，导致整块位移
- *          ——V3 的 ctx 布局下 frame_buf+3 恰为 4n+3，必现静默数据损坏
+ * @note  本层只留一道守卫：偏移连续性——协议错位或重写当场失败上报，不事后靠 CRC 对账发现。
+ *       非对齐落盘已不在此处理：载荷指针 frame_buf+3 恒为 4n+3，以前靠本地 1KB 对齐中转缓冲
+ *       点状规避；现已升格为 bsp_file 的统一对齐中转（见 ARCHITECTURE.md 第 4 节第 4 条），
+ *       因此这里直接把原指针交给 VFS，那 1KB 静态缓冲随之删除（本机 .ANY 区余量仅百字节级）。
  */
 static int s_ymodem_on_write(ymodem_ctx_t *ctx, uint32_t offset, const uint8_t *data, uint32_t len)
 {
@@ -218,18 +213,6 @@ static int s_ymodem_on_write(ymodem_ctx_t *ctx, uint32_t offset, const uint8_t *
     {
         s_ymodem_last_status = BSP_EINVAL;
         return -1;
-    }
-
-    if (len > YMODEM_STAGE_SIZE)
-    {
-        s_ymodem_last_status = BSP_EINVAL;
-        return -1;
-    }
-
-    if (((uint32_t)(uintptr_t)data & 0x3U) != 0U)
-    {
-        memcpy(s_ymodem_stage, data, len);
-        data = (const uint8_t *)s_ymodem_stage;
     }
 
     status = bsp_file_write(&s_ymodem_file, data, len, &bw);
