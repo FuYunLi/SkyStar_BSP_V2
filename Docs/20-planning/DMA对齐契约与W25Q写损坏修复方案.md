@@ -1,10 +1,28 @@
 # DMA 对齐契约全局化 + W25Q 写损坏修复方案
 
-> 版本:1.0.0
-> 日期:2026-09-22
+> 版本:1.1.0
+> 日期:2026-09-22（实施回填 2026-09-23）
 > 上游依据:`Docs/40-records/串口框架与Ymodem移植记录-20260922.md`(Ymodem 损坏定案)、
 > `Docs/40-records/阶段八音频调试记录-20260920.md`(2.7 节)、ARCHITECTURE.md 第 9 节
 > 分支建议:`feature/dma-alignment-w25q`(自 zcode_bsp 创建,前置:hotfix/flash-bus-mutex 合入)
+
+---
+
+## 0. 实施结果与前提更正（2026-09-23，必读）
+
+本方案已按 `feature/dma-alignment-contract` 实施完毕，实测见
+`Docs/40-records/DMA对齐契约全局化-20260923.md`。三条与原计划不同的事实：
+
+1. **本文的“W25Q 写损坏”前提已被推翻**（§1-2、§3、§5 的 H1-H4 全部作废）：裸 `dev_w25q_read` 77 次重复读 0 差异，
+   真因是早期被 CAN 中止的传输留下的残留坏文件（数据块已释放并被其它文件复用）。因此本批次只交付了“对齐契约”部分；
+   中止残留问题已由“临时名 + 校验后 rename 提交 + 失败丢弃”并在两后端验证（见 ARCHITECTURE 第 9 节已勾项）。
+2. **L1 落点不是 `port_sdio`**：该层只有 init/在位/容量/错误码接口，SD 块读写实际在
+   `FATFS/Target/sd_diskio.c` → `BSP_SD_*Blocks_DMA`，用户指针在那里才变成硬件地址；守卫已落在 disk 层。
+3. **不变式不是“缓冲 4 字节对齐”**，而是 `buf ≡ 文件位置 (mod 4)`：FatFS 会把用户指针推进到扇区边界。
+   按原计划只做“buf 非对齐才中转”会当场打断 WAV 播放（data 起始 78 字节 → 交出 `buf+434`）。
+
+另新增一项未决缺陷（不在原方案内）：指针合法的 raw 路径仍会间歇复现 36 字节岛，
+且连续单扇区写会确定性错 2 字节——已入 ARCHITECTURE 第 9 节独立待办。
 
 ---
 
@@ -83,13 +101,17 @@ blk7=0x7000、blk9=0x9000 均为 4KB 对齐地址,损坏 2/43 且稳定。按优
 
 ## 7. 验收清单
 
-- [ ] `fatfs_test crcmap flash/Tour_France.wav` 43/43 块与 PC 端 CRC32 一致,两趟复测一致
-- [ ] `fatfs_test crc 0:/tour.wav` 回归通过(SD 侧不受影响)
-- [ ] `ymodem_recv` 传输 tour.wav,板端 CRC32 与 PC 一致(迁移 L2 后回归)
-- [ ] `play_wav 0:/251213.wav` 播放回归正常
-- [ ] 音频互斥回归:`audio_bus_switch i2s` 后 flash 操作报错不卡死(hotfix/flash-bus-mutex 验收项)
-- [ ] 非对齐负向测试:构造非对齐指针调 bsp_file_write → L2 正常搬运;直接调 port DMA 路径 → EINVAL
-- [ ] 全程 Shell 交互正常
+- [x] 两后端整文件 CRC 与 PC 基准一致且可重复：`0:/tour.wav` = `flash/Tour_France.wav` = `7A6FD6F4`，`short=0`（连读两次一致）
+- [x] `crcmap 0:/tour.wav 43 块双遍：`read-unstable=0`、`pc-diverged=0`，内容与 PC 完全一致
+- [x] `ymodem_recv` 传输 tour.wav 板端 CRC 与 PC 一致（删除 app 层点状缓冲后改由 L2 接管，仍字节级正确）
+- [x] `play_wav` 播放回归：`Playing … → Playback finished`（980ms），且 `Current owner: NONE`（总线正常交还）；
+      该文件 data 起始 78 字节，是 L2 新不变式的直接受益者
+- [x] 音频互斥回归：`audio_bus_switch i2s` 后 `flash_id`/`lfs_boot_count`/`crc flash/…` 均快速失败
+      `ret=-5 (BSP_BUSY)` 不卡死；`audio_bus_switch spi` 后完全恢复
+- [x] 非对齐负向测试：`fatfs_test align` 双向矩阵 9 轮全 PASS——raw 非对齐被 L1 拒（`rejects=+2`），
+      经 VFS 的非对齐由 L2 中转后逐字节正确（`staged=+3`）
+- [ ] 待验：指针合法 raw 路径的 36 字节岛与单扇区错 2 字节（原计划未列，见第 0 节与 ARCHITECTURE 第 9 节）
+- [x] 全程 Shell 交互正常
 
 ## 8. 风险与对策
 
