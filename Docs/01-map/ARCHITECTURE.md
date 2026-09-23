@@ -121,6 +121,7 @@ Core (CubeMX 生成) + HAL
 | I2S2 接口层 + SPI2/I2S2 总线仲裁 | M30 | `port_i2s`、`bsp_bus`（新建）；`bsp_imu`、`Core/Src/stm32f4xx_it.c`（修改） | 上板验收通过，已合入 zcode_bsp |
 | ES8388 编解码驱动 + HT6872 功放使能 | M31 | `dev_es8388`、`dev_ht6872`（新建）；`dev_pca9555`、`port_i2c`（复用） | 上板验收通过，已合入 zcode_bsp |
 | WAV 音乐播放器 Demo | M32 | `bsp_audio`、`app_audio_demo`（新建/扩充）；`bsp_file` 补 read/size 接口 | 上板验收通过（读卡器导入 WAV 正常出声），待提交 |
+| DMA 对齐契约全局化 + W25Q 写损坏修复 | 收口批次 | `port_sdio`、`port_spi`、`bsp_file`、`dev_w25q`/`bsp_lfs`；方案见 `Docs/20-planning/DMA对齐契约与W25Q写损坏修复方案.md` | 方案已定，待 hotfix/flash-bus-mutex 合入后开工 |
 | SDIO 卡识别回归修复（M30 调试副产） | M32 | `port_sdio`（修复）；`app_fatfs_demo`、`bsp_audio`（诊断日志） | 上板验证通过，工作区未提交；诊断代码待收口 |
 
 待办：中止传输残留坏文件、LittleFS 无锁与小堆、IMU 读不出、FatFS LFN 开启、`dev_w25q` 接入总线仲裁、对齐契约由点状规避升格为统一保障，详见第 9 节。
@@ -131,7 +132,6 @@ Core (CubeMX 生成) + HAL
 - [ ] `bsp_uart.c` `uart_rx_data_cb` 为空：推送通知链路已建未用，上层为拉模式
 - [ ] `port_gpio.c` `HAL_GPIO_EXTI_Callback` 路由仅比对引脚号不比对端口（PE8 按键与 PB8 LED 同为 pin 8），现靠回调 NULL 检查兜底；根治方案是从 SYSCFG_EXTICR 反查端口归属
 
-- [ ] `dev_w25q.c` 全链路使用 `BSP_WAIT_FOREVER` 且忽略 `port_spi` 返回值（get_id/write_enable/wait_busy 等）：SPI2 总线被 I2S2 仲裁走后，HAL 标志轮询永不满足，`flash_id` 等 Shell 命令永久阻塞导致系统假死。修复方向：校验返回值 + 有限超时，或将 W25Q/LittleFS 路径接入 bsp_bus 仲裁器（M32 已落地，此项仍未收口，待单独批次处理）
 - [x] ~~Ymodem 写文件内容损坏~~ —— **已定案修复（2026-09-22）**：根因是 Ymodem 载荷指针 `&frame_buf[3]` 非 4 字节对齐，经 FatFS 直达路径交给 SDIO IDMA，而 IDMA 丢弃地址低 2 位 → 整块位移（含帧头 `02 01 FE`），且因 CRC 由外设对实际发出字节生成而全程无错。V3 的 ctx 布局使 `frame_buf` 偏移从 9（碰巧对齐）变为 16（必然非对齐），因而必现。修复：`app_ymodem_demo.c` 落盘前经对齐中转缓冲 + 偏移连续性守卫。验证：`tour.wav` 176478 字节板端 CRC32 与 PC 一致（7a6fd6f4），43 块双趟读全一致，可正常播放。详见 `Docs/40-records/串口框架与Ymodem移植记录-20260922.md`
 - [x] ~~LittleFS/W25Q 写路径存在块级内容损坏~~ —— **已推翻（2026-09-22）**：裸 `dev_w25q_read` 77 次重复读 0 差异（含跨 4KB 边界地址），LittleFS 单命令内 8 遍 hash 完全一致，干净重传后两后端连测 4 次全部 = PC 基准且 `short=0`。SPI2/W25Q/电气/驱动均无罪
 - [ ] Ymodem 接收失败/中止会留下**无从发现的坏文件**：文件仍在、`size` 也正确，但其数据块已被 LittleFS 释放并复用给其它文件，读它时“同一会话内一致、跨会话变化”，且在 256/4096 整数倍处提前返回。修法：接收写临时名 + 成功后 rename，失败路径上 `lfs_remove`/`f_unlink` 并上报（详见 `Docs/40-records/串口框架与Ymodem移植记录-20260922.md` 第 7 节）
