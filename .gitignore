@@ -57,7 +57,8 @@ output/
 # 3. 核心工程文件（千万不能忽略！用 ! 反向选择保留）
 # ================================
 # 工程核心文件（包含芯片型号、源文件列表、编译选项等）
-!*.uvprojx
+# 注：SkyStar_BSP_HAL.uvprojx 已于 2026-09-24 按用户决定改为忽略（见末尾第 7 节），
+#     其余 Keil 工程文件仍保持纳管
 !*.uvproj
 # 多项目工作区文件（如果你的项目是多工程联合的，建议保留）
 !*.uvmpw
@@ -93,4 +94,27 @@ desktop.ini
 # clangd 索引缓存
 .cache/
 MDK-ARM/SkyStar_BSP_HAL_build.log
+MDK-ARM/SkyStar_BSP_HAL_flash.log
 .trae
+
+# ==========================================
+# 6. 技能/脚本运行产物（每次编译都会重写，不入库）
+# ==========================================
+# Python 字节码缓存：keil_builder.py 每次跑都会重新生成
+__pycache__/
+*.pyc
+*.pyo
+
+# ==========================================
+# 7. Keil 工程文件（按 2026-09-24 决定忽略）
+# ==========================================
+# 原因：UV4 每打开/编译一次都会重写此文件并刷新 mtime，造成“每次编译后工作区变脏”；
+#       内容实为纯 stat 假差（已用 git update-index --refresh 验证）。
+# ❗ 代价（很重要）：这个文件里是“源文件清单 + include 路径 + 宏定义 + scatter 指向”。
+#    忽略后这些变更不再进版本库，别人（或另一个 worktree）拉到代码却拉不到工程变更，
+#    就会“多一个 .c 却编不过”。
+# ✅ 必须手工补交的四种改动（用了就要做，别记错）：
+#    新增/删除源文件、改 <Define> 宏、改 <IncludePath>、改 scatter 与输出路径：
+#        git add -f MDK-ARM/SkyStar_BSP_HAL.uvprojx
+#    详见 Docs/01-map/ARCHITECTURE.md 第 10 节“维护约定”。
+MDK-ARM/SkyStar_BSP_HAL.uvprojx
