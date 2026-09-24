@@ -52,6 +52,83 @@ static uint32_t s_fs_sector_size(const bsp_file_t *file)
 }
 
 /**
+ * @brief FatFS 错误码 → 统一状态码（保留“为什么失败”，供上层区分可重试与真失败）
+ * @param fr f_* 返回值
+ * @return bsp_status_t BSP_OK / BSP_EIO(介质或底层 IO 错) / BSP_ENODEV(文件或卡不在) /
+ *         BSP_EINVAL(存在只读等策略拒绝) / BSP_ENOMEM(空间或核心不够) / BSP_ETIMEOUT
+ * @note  以前一律压成 BSP_ERROR：卡满、卡被拔、名字非法、总线被占四种病因完全无法区分，
+ *       曾直接把排查带到错方向；卡未挂载与文件不存在均归 BSP_ENODEV
+ */
+static bsp_status_t s_ff_err_to_bsp(FRESULT fr)
+{
+    switch (fr)
+    {
+    case FR_OK:                return BSP_OK;
+    case FR_DISK_ERR:          return BSP_EIO;
+    case FR_INT_ERR:           return BSP_EIO;
+    case FR_NOT_READY:         return BSP_ENODEV;
+    case FR_NO_FILE:
+    case FR_NO_PATH:
+    case FR_INVALID_NAME:
+    case FR_INVALID_DRIVE:
+    case FR_NOT_ENABLED:
+    case FR_NO_FILESYSTEM:     return BSP_ENODEV;
+    case FR_DENIED:
+    case FR_EXIST:
+    case FR_WRITE_PROTECTED:
+    case FR_LOCKED:
+    case FR_INVALID_OBJECT:
+    case FR_INVALID_PARAMETER: return BSP_EINVAL;
+    case FR_NOT_ENOUGH_CORE:
+    case FR_TOO_MANY_OPEN_FILES: return BSP_ENOMEM;
+    case FR_TIMEOUT:           return BSP_ETIMEOUT;
+    default:                   return BSP_ERROR;
+    }
+}
+
+/**
+ * @brief LittleFS 错误码 → 统一状态码；本版本无“设备忙”错误码，故叠加总线门闩判断
+ * @param err lfs_* 返回值（>=0 视为成功）
+ * @return bsp_status_t 执行结果；总线被音频持有时返回 BSP_BUSY（可重试语义）
+ */
+static bsp_status_t s_lfs_err_to_bsp(int err)
+{
+    bsp_status_t st;
+
+    if (err >= 0)
+    {
+        return BSP_OK;
+    }
+
+    switch (err)
+    {
+    case LFS_ERR_IO:
+    case LFS_ERR_CORRUPT:      st = BSP_EIO; break;
+    case LFS_ERR_NOENT:        st = BSP_ENODEV; break;
+    case LFS_ERR_NOSPC:
+    case LFS_ERR_NOMEM:        st = BSP_ENOMEM; break;
+    case LFS_ERR_INVAL:
+    case LFS_ERR_EXIST:
+    case LFS_ERR_NOTDIR:
+    case LFS_ERR_ISDIR:
+    case LFS_ERR_NOTEMPTY:
+    case LFS_ERR_BADF:
+    case LFS_ERR_FBIG:
+    case LFS_ERR_NOATTR:
+    case LFS_ERR_NAMETOOLONG: st = BSP_EINVAL; break;
+    default:                   st = BSP_ERROR; break;
+    }
+
+    /* 块设备回调把“总线被 I2S2 占用”只能上报成 LFS_ERR_IO，这里用门闩把它还原成可重试语义 */
+    if ((st == BSP_EIO) && (bsp_lfs_get_last_error() == BSP_BUSY))
+    {
+        st = BSP_BUSY;
+    }
+
+    return st;
+}
+
+/**
  * @brief 判定本次请求是否必须经对齐中转
  * @note  条件不是“用户缓冲 4 字节对齐”，而是 buf 与当前文件位置同余 mod 4：
  *       FatFS 的 direct 路径会先把用户指针推进到扇区边界（推进量 = ssz - fptr%ssz，
@@ -80,6 +157,7 @@ static bsp_status_t s_fatfs_write_staged(bsp_file_t *file, const uint8_t *buf, u
     uint8_t *stage = (uint8_t *)s_align_stage;
     const uint32_t ssz = s_fs_sector_size(file);
     uint32_t done = 0U;
+    FRESULT fr = FR_OK;
     UINT bw = 0U;
 
     s_align_stage_count++;
@@ -110,13 +188,14 @@ static bsp_status_t s_fatfs_write_staged(bsp_file_t *file, const uint8_t *buf, u
             n = len - done;   /* 段尾：不足一扇区 */
         }
 
-        if (f_write(&file->handle.fat_file, (const BYTE *)src, n, &bw) != FR_OK)
+        fr = f_write(&file->handle.fat_file, (const BYTE *)src, n, &bw);
+        if (fr != FR_OK)
         {
             if (written != NULL)
             {
                 *written = done;
             }
-            return BSP_ERROR;
+            return s_ff_err_to_bsp(fr);
         }
 
         done += (uint32_t)bw;
@@ -142,6 +221,7 @@ static bsp_status_t s_fatfs_read_staged(bsp_file_t *file, uint8_t *buf, uint32_t
     uint8_t *stage = (uint8_t *)s_align_stage;
     const uint32_t ssz = s_fs_sector_size(file);
     uint32_t done = 0U;
+    FRESULT fr = FR_OK;
     UINT br = 0U;
 
     s_align_stage_count++;
@@ -174,13 +254,14 @@ static bsp_status_t s_fatfs_read_staged(bsp_file_t *file, uint8_t *buf, uint32_t
             dst = stage;
         }
 
-        if (f_read(&file->handle.fat_file, dst, n, &br) != FR_OK)
+        fr = f_read(&file->handle.fat_file, dst, n, &br);
+        if (fr != FR_OK)
         {
             if (readed != NULL)
             {
                 *readed = done;
             }
-            return BSP_ERROR;
+            return s_ff_err_to_bsp(fr);
         }
 
         if (dst == stage)
@@ -243,7 +324,7 @@ bsp_status_t bsp_file_open(bsp_file_t *file, const char *path, uint8_t flags)
         }
 
         FRESULT fr = f_open(&file->handle.fat_file, path, mode);
-        return (fr == FR_OK) ? BSP_OK : BSP_ERROR;
+        return s_ff_err_to_bsp(fr);
     }
     /* 2. 路径路由：以 "flash/" 开头则分发至 LittleFS (板载 Flash) */
     else if (strncmp(path, "flash/", 6) == 0)
@@ -278,7 +359,7 @@ bsp_status_t bsp_file_open(bsp_file_t *file, const char *path, uint8_t flags)
         const char *lfs_path = path + 6;
 
         int err = lfs_file_open(lfs, &file->handle.lfs_file, lfs_path, mode);
-        return (err >= 0) ? BSP_OK : BSP_ERROR;
+        return s_lfs_err_to_bsp(err);
     }
 
     file->type = BSP_FILE_TYPE_UNKNOWN;
@@ -308,7 +389,7 @@ bsp_status_t bsp_file_write(bsp_file_t *file, const void *buf, uint32_t len, uin
         {
             *written = (uint32_t)bw;
         }
-        return (fr == FR_OK) ? BSP_OK : BSP_ERROR;
+        return s_ff_err_to_bsp(fr);
     }
     else if (file->type == BSP_FILE_TYPE_LITTLEFS)
     {
@@ -356,7 +437,7 @@ bsp_status_t bsp_file_read(bsp_file_t *file, void *buf, uint32_t len, uint32_t *
         {
             *readed = (uint32_t)br;
         }
-        return (fr == FR_OK) ? BSP_OK : BSP_ERROR;
+        return s_ff_err_to_bsp(fr);
     }
     else if (file->type == BSP_FILE_TYPE_LITTLEFS)
     {
@@ -419,7 +500,7 @@ bsp_status_t bsp_file_close(bsp_file_t *file)
     {
         FRESULT fr = f_close(&file->handle.fat_file);
         file->type = BSP_FILE_TYPE_UNKNOWN;
-        return (fr == FR_OK) ? BSP_OK : BSP_ERROR;
+        return s_ff_err_to_bsp(fr);
     }
     else if (file->type == BSP_FILE_TYPE_LITTLEFS)
     {
@@ -431,7 +512,7 @@ bsp_status_t bsp_file_close(bsp_file_t *file)
 
         int err = lfs_file_close(lfs, &file->handle.lfs_file);
         file->type = BSP_FILE_TYPE_UNKNOWN;
-        return (err >= 0) ? BSP_OK : BSP_ERROR;
+        return s_lfs_err_to_bsp(err);
     }
 
     return BSP_EINVAL;
@@ -450,7 +531,7 @@ bsp_status_t bsp_file_sync(bsp_file_t *file)
     if (file->type == BSP_FILE_TYPE_FATFS)
     {
         FRESULT fr = f_sync(&file->handle.fat_file);
-        return (fr == FR_OK) ? BSP_OK : BSP_ERROR;
+        return s_ff_err_to_bsp(fr);
     }
     else if (file->type == BSP_FILE_TYPE_LITTLEFS)
     {
@@ -461,7 +542,7 @@ bsp_status_t bsp_file_sync(bsp_file_t *file)
         }
 
         int err = lfs_file_sync(lfs, &file->handle.lfs_file);
-        return (err >= 0) ? BSP_OK : BSP_ERROR;
+        return s_lfs_err_to_bsp(err);
     }
 
     return BSP_EINVAL;

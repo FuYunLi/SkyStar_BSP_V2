@@ -50,5 +50,15 @@ bsp_status_t icm42688_init(void);
  */
 bsp_status_t icm42688_read_data(icm42688_data_t *data);
 
+/**
+ * @brief 主动读取器件 ID（WHO_AM_I），不附带任何校验与配置改动
+ * @param id 存入读到的原始 ID 字节（ICM-42688-P 正常应为 0x47）
+ * @return bsp_status_t 执行结果
+ * @note  专给自检/定位用：init 失败时必须能分清“SPI 事务根本没成”与“读到了错的 ID”，
+ *        二者对应完全不同的排查方向（总线/供电/片选 vs 型号/寄存器 Bank/复位状态）。
+ *        本函数不会改变器件任何寄存器状态，可安全重复调用
+ */
+bsp_status_t icm42688_read_chip_id(uint8_t *id);
+
 #endif /* __DEV_ICM42688_H */
 

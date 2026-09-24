@@ -8,6 +8,7 @@
 #include "dev_w25q.h"
 #include "bsp_bus.h"
 #include "bsp_lfs.h"
+#include "bsp_lfs_pool.h"
 #include "bsp_file.h"
 #include "shell.h"
 #include <stdio.h>
@@ -579,3 +580,33 @@ static int shell_lfs_diag(int argc, char *argv[])
     return 0;
 }
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), lfs_diag, shell_lfs_diag, Localize LittleFS vs raw flash read failure);
+
+/**
+ * @brief lfs_pool 指令：查看 LittleFS 专用静态池水位
+ * @param argc 参数个数
+ * @param argv 参数列表（未使用）
+ * @return int 恒为 0
+ * @note peak>0 才能证明 LittleFS 真的用了池；fail>0 说明槽数不够，需调大 LFS_POOL_SLOTS；
+ *       与 lfs_probe 里的 C 堆水位对照，可看出 4KB 小堆已不再是文件系统的隐性上限
+ */
+static int shell_lfs_pool(int argc, char *argv[])
+{
+    uint32_t peak = 0U;
+    uint32_t fail = 0U;
+    uint32_t slots = 0U;
+    uint32_t slot_size = 0U;
+
+    (void)argc;
+    (void)argv;
+
+    bsp_lfs_pool_stat(&peak, &fail, &slots, &slot_size);
+    printf("lfs pool: %lu slots x %lu B, peak=%lu, alloc_fail=%lu\r\n",
+           (unsigned long)slots, (unsigned long)slot_size, (unsigned long)peak, (unsigned long)fail);
+
+    if (peak == 0U)
+    {
+        printf("  note: peak=0 means LittleFS never allocated (all buffers statically provided)\r\n");
+    }
+    return 0;
+}
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN), lfs_pool, shell_lfs_pool, Show LittleFS static pool watermark);

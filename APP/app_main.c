@@ -106,7 +106,13 @@ void app_main_init(void)
     (void)bsp_storage_init();
     (void)bsp_sensor_init();
     (void)bsp_power_init();
-    (void)bsp_imu_init();
+    /* IMU 失败不再静默：bsp_imu_update 已带 1s 退避的自动重试，
+     * 但此处必须留下一条明确记录，避免“永远读不出且没人知道” */
+    bsp_status_t imu_status = bsp_imu_init();
+    if (imu_status != BSP_OK)
+    {
+        log_w("IMU init deferred (status=%d), auto-retry every 1s", (int)imu_status);
+    }
     (void)bsp_ec11_init();
     (void)dev_potentiometer_init();
     log_i("Hello world");

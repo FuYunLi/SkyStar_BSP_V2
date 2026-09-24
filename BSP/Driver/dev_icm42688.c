@@ -200,4 +200,24 @@ bsp_status_t icm42688_read_data(icm42688_data_t *data)
     return BSP_OK;
 }
 
+/**
+ * @brief 主动读取器件 ID（WHO_AM_I），不附带校验也不改动任何寄存器
+ * @note  失败时把输出清成 0xFF（总线浮空读出的典型值），便于调用方区分“没响应”与“读到错值”
+ */
+bsp_status_t icm42688_read_chip_id(uint8_t *id)
+{
+    if (id == NULL)
+    {
+        return BSP_EINVAL;
+    }
+
+    bsp_status_t status = icm42688_read_regs(REG_WHO_AM_I, id, 1);
+    if (status != BSP_OK)
+    {
+        *id = 0xFFU;
+    }
+
+    return status;
+}
+
 

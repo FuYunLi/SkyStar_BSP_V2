@@ -17,6 +17,7 @@ LR_IROM1 0x08000000 0x00080000  {    ; 512KB 片内 Flash 加载域
   }
   RW_IRAM_CCM 0x10000000 0x00010000  { ; 64KB CCM RAM 独立运行域
    lv_mem_core_builtin.o (+RW +ZI)    ; 强制将 LVGL 静态堆移入 CCM RAM
+   bsp_lfs_pool.o (+RW +ZI)           ; LittleFS 专用池：flash 读写走轮询 SPI 不经 DMA，可安全占用 CCM
    *(.ccmram)                          ; 将代码中所有修饰为 .ccmram 属性的变量移入此区
   }
 }

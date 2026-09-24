@@ -625,9 +625,11 @@ static void app_fatfs_crc(const char *path)
     uint32_t shortread = 0;
     bool truncated = false;
 
-    if (bsp_file_open(&file, path, BSP_FILE_READ) != BSP_OK)
+    st = bsp_file_open(&file, path, BSP_FILE_READ);
+    if (st != BSP_OK)
     {
-        log_e("crc: open %s failed", path);
+        /* 带上状态码：才能区分 -5(BSP_BUSY，总线被音频持有，可重试) 与 -1/-6(真失败) */
+        log_e("crc: open %s failed (status=%d)", path, (int)st);
         return;
     }
     (void)bsp_file_size(&file, &size);
@@ -673,7 +675,8 @@ int shell_fatfs_test(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        log_w("Usage: fatfs_test [mount|unmount|info|run|align|crc <path>|crcmap <path> [blk]|dump <path> [offset] [len]]");
+        log_w("Usage: fatfs_test [mount|unmount|info|run|align|rm <path>]");
+        log_w("                  [crc <path>|crcmap <path> [blk]|dump <path> [offset] [len]]");
         return -1;
     }
     
@@ -808,9 +811,31 @@ int shell_fatfs_test(int argc, char *argv[])
         }
         app_fatfs_dump(argv[2], off, len);
     }
+    else if (strcmp(argv[1], "rm") == 0)
+    {
+        /* VFS 删除的验收入口：两后端通用，同时把映射后的状态码直接报出来，
+         * 以区分"不存在"(BSP_ENODEV) 与 "真失败"(BSP_ERROR/BSP_EIO 等) */
+        bsp_status_t st;
+
+        if (argc < 3)
+        {
+            log_w("Usage: fatfs_test rm <path>   (path prefix: 0:/ or flash/)");
+            return -1;
+        }
+        st = bsp_file_remove(argv[2]);
+        if (st == BSP_OK)
+        {
+            log_i("Removed %s", argv[2]);
+        }
+        else
+        {
+            log_e("rm %s failed (status=%d)", argv[2], (int)st);
+            return -1;
+        }
+    }
     else
     {
-        log_w("Unknown sub-command. Usage: fatfs_test [mount|unmount|info|run|align|crc|dump]");
+        log_w("Unknown sub-command. Usage: fatfs_test [mount|unmount|info|run|align|crc|crcmap|dump|rm]");
     }
     
     return 0;
