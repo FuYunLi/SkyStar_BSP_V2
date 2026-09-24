@@ -146,6 +146,7 @@ Core (CubeMX 生成) + HAL
 | W25Q/LittleFS 接入 SPI2 总线仲裁 | 收口批次 | `bsp_lfs`、`bsp_bus`、`app_flash_demo` | 已合入 zcode_bsp（47fcba8）；本轮实测：音频持总线时 flash 快速失败 `ret=-5 BSP_BUSY` 不卡死，切回后 CRC 复原 |
 | LittleFS 专用静态池（放 CCM）+ `LFS_THREADSAFE` 重入守卫 | 收口批次 | 新建 `BSP/Board/lfs_defines.h`、`bsp_lfs_pool.c/.h`；`bsp_lfs.c/.h`、`.sct`、`uvprojx`（新增 `LFS_DEFINES`/`LFS_THREADSAFE`）、`app_flash_demo.c`（`lfs_pool`） | 上板验收通过（peak=1/alloc_fail=0、连开 9 次无泄漏、BUSY 失败路径不卡锁、align 9/9 仍 PASS、Ymodem→flash CRC=PC、播放正常；池 1,556B 入 CCM、主 SRAM 零增长），待提交 |
 | 存储错误语义透传（FR_*/LFS_ERR_* → 可区分状态码，总线忙还原 BSP_BUSY）+ `fatfs_test rm` 验收入口 | 收口批次 | `bsp_file.c`、`bsp_lfs.c/.h`（新增 `bsp_lfs_get_last_error()`）、`app_fatfs_demo.c` | 上板验收通过（音频持总线时 `status=-5`、切回后 CRC=PC；`rm` 首次成功、二次 -7 ENODEV），待提交 |
+| IMU 自锁死链修复（挂起语义/事务级仲裁/退避重试/不吞返回值） | 收口批次 | `bsp_imu.c`、`bsp_bus.c`、`app_main.c`（探针 `imu_probe`/`icm42688_read_chip_id` 已在 23f8f59） | 上板验收通过（音频持总线时读数逐字节冻结、交还后恢复、播放正常且 owner=NONE），待提交 |
 | SDIO 传输边界缺陷：背靠背单扇区写错 2 字节 / 36 字节岛 | 待定 | `sd_diskio`/`bsp_driver_sd`/HAL SDIO 数据路径 | 未定位（指针合法的 raw 路径仍间歇复现），已入第 9 节 |
 | SDIO 卡识别回归修复（M30 调试副产） | M32 | `port_sdio`（修复）；`app_fatfs_demo`、`bsp_audio`（诊断日志） | 已合入 zcode_bsp（逻辑错误码已在接口层翻译） |
 
@@ -161,9 +162,14 @@ Core (CubeMX 生成) + HAL
 - [x] ~~LittleFS/W25Q 写路径存在块级内容损坏~~ —— **已推翻（2026-09-22）**：裸 `dev_w25q_read` 77 次重复读 0 差异（含跨 4KB 边界地址），LittleFS 单命令内 8 遍 hash 完全一致，干净重传后两后端连测 4 次全部 = PC 基准且 `short=0`。SPI2/W25Q/电气/驱动均无罪
 - [x] ~~Ymodem 接收失败/中止会留下**无从发现的坏文件**~~ —— **已修并上板验证（2026-09-23）**：接收统一写固定临时名 `__ymodem.tmp`（避开 FatFs 8.3 限制），提交条件比"协议报 OK"更严：实收字节数 == 声明大小 且 close 无错才 `bsp_file_rename`，否则 `bsp_file_remove` 丢弃；会话中断有兜底收尾，逐文件复位判定位。实测（刻意少发的 `ymodem_short_sender.py`）：声明 176478 实收 10240 → `FAILED bytes=10240/176478 commit=0 (incomplete file discarded)`，且已存在的同名好文件 CRC 不变、两后端无 `.tmp` 残留
 - [x] ~~LittleFS 实例被多使用者无锁共用，每开一个文件还要向 4 KB 小堆码 256 字节~~ —— **已修并上板验证（2026-09-23）**：先量准分配面——本仓 v2.11 全库只有一处调分配器（`lfs.c` 打开文件时的 `file->cache.buffer` = `cache_size` 256 B），挂载期三块缓冲已由 `bsp_lfs.c` 静态提供。因此**不能用 `LFS_NO_MALLOC`**（该宏下 `lfs_file_open()` 直接不参与编译，会迫使 `lv_port_fs.c` 等全改 `lfs_file_opencfg`），改用官方 `LFS_DEFINES` 注入点：`BSP/Board/lfs_defines.h` 将 `LFS_MALLOC/LFS_FREE` 指向 `bsp_lfs_pool.c`（6 槽 × 256 B 定长池，带 peak/alloc_fail 水位，`lfs_pool` 命令可查），并经 `.sct` 将池放入 CCM（flash 走轮询 SPI 不经 DMA，前提成立；`port_spi` 的 DMA 可达性校验是其护栏）——**1,556 B 全部由空闲 40 KB CCM 承担，主 SRAM 一分未涨**。重入保护用 `LFS_THREADSAFE` + 标志位锁（不关中断），嵌套时复用总线门闩上报为 `BSP_BUSY`。错误码透传已另列一项完成。残留：并发上限即槽数 6，真上 RTOS 时需重新评估锁语义（当前仅防重入，不等待）
-- [ ] **IMU（ICM-42688-P）读不出——软件侧已逐层排除，目前指向硬件**。新增分层探针 `imu_probe`（`app_imu_demo.c`，配套 `icm42688_read_chip_id()` 只读 ID 不动寄存器），实测：
-      `[1] bus acquire(SPI2): 0` → `[2] raw WHO_AM_I: status=0 id=0x00 (expect 0x47)` → `[3] driver init: status=-7`
-      即：**SPI 事务本身返回成功，但 MISO 恒为低电平**（`0x00`，而不是代表未选中、浮空上拉的 `0xFF`）。已排除：① 总线仲裁与模拟开关（acquire 成功、pin 已扳到 SPI 侧）；② SPI2 本体（同一总线同一时刻 W25Q 读 JEDEC `0xEF4018`、LittleFS 全部正常）；③ 片选映射（`PORT_GPIO_IMU_CS = PE7` 与图纸 `MCU_PE7 -> SPI_IMU_CS -> R47 10k 上拉 -> U32 Pin12` 一致，W25Q_CS=PE4 也对）；④ `suspend/resume 没重配` 与 `开关选通错` 两个旧候选假设均已被实测推翻。恒 0 而非浮空上拉值的典型解释是 **SDO 侧没有驱动——IMU 未上电（R48 0Ω 供电路径/器件本体/焊渣或 H8 排针外接短路）**。待做的两个判据：物理测量 ONBOARD_+3V3→R48→U32 Pin8 电压，并查 H8 有无外接短接；用历史提交单独 worktree 编译烧录做 A/B，确认非本批次回归
+- [x] ~~IMU（ICM-42688-P）读不出——曾判为“软件侧已排除、指向硬件”~~ —— **判读修正 + 已修并上板验证（2026-09-24）**：真因是一条**自锁死链**，四环，M30 就存在：
+      ① `bsp_imu_suspend()` 写成 `if (!s_is_init) return BSP_ERROR;`——挂起的语义是“别碰这根总线”，与器件是否初始化成功无关，于是“初始化失败”恰好是唯一不能挂起的状态；
+      ② `bus_do_switch()` 用 `(void)bsp_imu_suspend();` 丢弃返回值，切走 mux 时无从察觉挂起失败；
+      ③ `dev_icm42688` 的事务**完全不经过 `bsp_bus` 仲裁**（同批的 `bsp_lfs` 已逐次 acquire/release，二者不对称）⇒ mux 在 I2S 侧时 10ms 定时器仍拉 PE7、打时钟，芯片收到“CS 有效但时钟缺失”的半截事务 ⇒ 配置写不进、读回全 0（**这才是 `id=0x00` 而非 `0xFF` 的成因**，前一版条目把它误读成“SDO 没驱动→未上电”）；
+      ④ `s_is_init=false` 后无任何重试，且 `app_main.c` 以 `(void)bsp_imu_init()` 丢弃返回值 ⇒ 永久静默失效，只能断电恢复（同一二进制重启即好 ⇒ 既非代码回归也非器件损坏）。
+      修复：挂起**无条件置位**、挂起失败则**拒绝交棒**、IMU 事务纳入 acquire/release（拿不到占用权就返 `BSP_BUSY`、不碰 CS）、初始化在占用权保护内完成并以 1s 退避自动重试（日志每 30 次节流）、`app_main` 不再吞返回值。
+      实测判据：常态两次读数在变；`audio_bus_switch i2s` 后三次读数**逐字节冻结**且 `IMU sampling suspended` 先于 `Bus switched to I2S2 side`；切回后恢复；`play_wav` 正常结束、`Current owner: NONE`。
+      仍存疑：这一次 init 为何失败的**触发源未证明**（很可能是更早一次切换已把芯片打歪）；事务级 acquire 这层是纵深防御，本轮未被单独演练（正常路径先被挂起标志拦下）。探针 `imu_probe` / `icm42688_read_chip_id()` 保留在仓
 - [x] ~~DMA 缓冲 4 字节对齐契约仅在一处点状规避~~ —— **已升格为架构级保障（2026-09-23）**：不变式实为 `buf ≡ 文件位置 (mod 4)`（FatFS 会把用户指针推进到扇区边界），落地为 L1 `sd_diskio` 入口拒绝（非对齐/CCM 不可达 → `RES_PARERR`）+ L2 `bsp_file` 统一分段中转（段首尾走窗口、段体批量整扇区经 1KB 对齐暂存区）+ L3 写入第 4 节契约；两个计数器与 `fatfs_test align` 双向矩阵作为可复验凭据。附带修正：`port_spi` 按 `DataSize` 动态定对齐要求（8BIT 无约束，不行误伤）；`bsp_audio` 填充期吞错已改为上报+停播释放总线（旧行为下一次坏读永久占住 SPI2/I2S2）。详见 `Docs/40-records/DMA对齐契约全局化-20260923.md`
 - [ ] **SDIO 传输边界缺陷（新发现，未定位）**：在**指针完全合法**（已 4 字节对齐、文件位置扇区对齐）的 raw `f_write` 上，历史签名 `mismatches=36 bad@8..43` 仍间歇复现（本轮 3 跑中 2 次，后续 2 跑 0 次）；另有更严重的确定性形式：L2 暂存区取 512（拆成连续两笔单扇区写）时 Ymodem→SD **必现**自第二笔开头错开 2 字节（偏移 532 起整体位移），改回 1KB 批量整扇区下发后消失。即**传输形状/边界影响结果**，方向在 `WriteStatus` 完成语义（DMA/数据结束中断 vs 卡实际编程完成）与 SDIO FIFO 复位，而非信号质量（上拉、SW7、时钟已逐项排除；栈溢出假设也已用 `Stack_Size=0x2000` 实测否证）。取证入口：`fatfs_test align`（raw 轮为负向用例）、`crcmap`、`ymodem_short_sender.py`
 - [ ] FatFs 未开启长文件名：`ffconf.h` `_USE_LFN = 0`，文件名超 8.3 格式时 `f_open` 直接失败（Ymodem 接收报 Code 5）。修复方向：`_USE_LFN = 1` + 静态工作缓冲，需评估 RAM 开销
@@ -180,3 +186,7 @@ Core (CubeMX 生成) + HAL
 2. 修复已知问题后，勾掉第 9 节对应项
 3. 移植批次状态变化时更新第 8 节
 4. 契约（第 4 节）变更属于架构决策，须在 commit 正文说明原因
+5. **`MDK-ARM/SkyStar_BSP_HAL.uvprojx` 已不纳管**（2026-09-24 决定，见 .gitignore 第 7 节：UV4 会反复重写它，内容其实没变只刷 mtime，造成“每次编译都脏”）。
+   但它仍是工程唯一定义处：**新增/删除源文件、改 `<Define>` 宏、改 `<IncludePath>`、改 scatter 或输出路径这四类变更必须手工补交**，
+   否则别人拉到代码却拉不到工程变更，“多一个 .c 就编不过”：`git add -f MDK-ARM/SkyStar_BSP_HAL.uvprojx`。
+   例外只这一个文件；`*.uvproj`/`*.sct`/`.ioc` 仍正常纳管。历史上一个可用版本永久留在 `ad5c702` 中，可随时取回
