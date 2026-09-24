@@ -93,7 +93,15 @@ static bsp_status_t bus_do_switch(bsp_bus_owner_t target)
     if (target == BSP_BUS_OWNER_I2S2)
     {
         /* SPI2 → I2S2：挂起 IMU 采样 → 反初始化 SPI2 → 切开关 → 初始化 I2S2 */
-        (void)bsp_imu_suspend();
+        status = bsp_imu_suspend();
+        if (status != BSP_OK)
+        {
+            /* 挂不起来就拒绝交棒：宁可音频起不来，也不能让 IMU 在 mux 切走后继续
+             * 拉 CS 打时钟，那会给它送半截事务且全程不报错 */
+            log_e("IMU suspend failed (%d), refuse to hand bus to I2S2", (int)status);
+            return status;
+        }
+
         status = port_spi_deinit(PORT_SPI_2);
         if (status != BSP_OK)
         {
