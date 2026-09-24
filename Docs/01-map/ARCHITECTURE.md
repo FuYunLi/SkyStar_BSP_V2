@@ -150,7 +150,7 @@ Core (CubeMX 生成) + HAL
 | SDIO 传输边界缺陷：背靠背单扇区写错 2 字节 / 36 字节岛 | 待定 | `sd_diskio`/`bsp_driver_sd`/HAL SDIO 数据路径 | 未定位（指针合法的 raw 路径仍间歇复现），已入第 9 节 |
 | SDIO 卡识别回归修复（M30 调试副产） | M32 | `port_sdio`（修复）；`app_fatfs_demo`、`bsp_audio`（诊断日志） | 已合入 zcode_bsp（逻辑错误码已在接口层翻译） |
 
-待办：LittleFS 池槽数与真 RTOS 下的锁语义、IMU 读不出（`imu_read` ret=-1）、FatFS LFN 开启、SDIO 传输边界缺陷、`.ANY` 主 SRAM 仅余 112 B 的水位常态化，详见第 9 节。
+待办：LittleFS 池槽数与真 RTOS 下的锁语义、IMU 读不出（`imu_read` ret=-1）、FatFS LFN 开启、SDIO 传输边界缺陷、接口层审计待办 A1-A5、`.ANY` 主 SRAM 仅余 112 B 的水位常态化，详见第 9 节。
 
 ## 9. 已知问题清单（在 develop 基点代码中核实过，修一个删一行）
 
@@ -172,6 +172,8 @@ Core (CubeMX 生成) + HAL
       仍存疑：这一次 init 为何失败的**触发源未证明**（很可能是更早一次切换已把芯片打歪）；事务级 acquire 这层是纵深防御，本轮未被单独演练（正常路径先被挂起标志拦下）。探针 `imu_probe` / `icm42688_read_chip_id()` 保留在仓
 - [x] ~~DMA 缓冲 4 字节对齐契约仅在一处点状规避~~ —— **已升格为架构级保障（2026-09-23）**：不变式实为 `buf ≡ 文件位置 (mod 4)`（FatFS 会把用户指针推进到扇区边界），落地为 L1 `sd_diskio` 入口拒绝（非对齐/CCM 不可达 → `RES_PARERR`）+ L2 `bsp_file` 统一分段中转（段首尾走窗口、段体批量整扇区经 1KB 对齐暂存区）+ L3 写入第 4 节契约；两个计数器与 `fatfs_test align` 双向矩阵作为可复验凭据。附带修正：`port_spi` 按 `DataSize` 动态定对齐要求（8BIT 无约束，不行误伤）；`bsp_audio` 填充期吞错已改为上报+停播释放总线（旧行为下一次坏读永久占住 SPI2/I2S2）。详见 `Docs/40-records/DMA对齐契约全局化-20260923.md`
 - [ ] **SDIO 传输边界缺陷（新发现，未定位）**：在**指针完全合法**（已 4 字节对齐、文件位置扇区对齐）的 raw `f_write` 上，历史签名 `mismatches=36 bad@8..43` 仍间歇复现（本轮 3 跑中 2 次，后续 2 跑 0 次）；另有更严重的确定性形式：L2 暂存区取 512（拆成连续两笔单扇区写）时 Ymodem→SD **必现**自第二笔开头错开 2 字节（偏移 532 起整体位移），改回 1KB 批量整扇区下发后消失。即**传输形状/边界影响结果**，方向在 `WriteStatus` 完成语义（DMA/数据结束中断 vs 卡实际编程完成）与 SDIO FIFO 复位，而非信号质量（上拉、SW7、时钟已逐项排除；栈溢出假设也已用 `Stack_Size=0x2000` 实测否证）。取证入口：`fatfs_test align`（raw 轮为负向用例）、`crcmap`、`ymodem_short_sender.py`。**完整移交报告（复现配方、已排除项、误判史、判决实验设计、涉及文件）见 `Docs/30-porting/SDIO写入接缝缺陷-排查移交报告-20260924.md`**
+- [ ] **接口层审计待办（2026-09-24 审计完成，改造挂起）**：A1 Interface/Board 反向依赖 CubeMX 生成函数三处（`bsp_bus.c:137 MX_SPI2_Init()`、`port_i2c.c:160 MX_I2C1_Init()`、`port_sdio.c:82 MX_SDIO_SD_Init()`，重生成会静默改行为）；A2 `port_gpio.c:47-52` 时钟硬编码且 `GPIOH` 为死项（表里无 H 口引脚），应改为从映射表推导；A3 输出脚无安全默认电平预置（`W25Q_CS/IMU_CS/LCD_CS` 靠运气，低电平有选中的器件上电窗口风险）；A5 `port_i2s_deinit()` 不还原 I2S 专用脚（PB9/PC6 停在 AF5）。**审计全文、目标架构、任务书与判据见 `Docs/20-planning/接口层审计与I2S规范化任务书-20260924.md`**
+- [ ] **I2S 接口不具备格式/采样率参数（A4）**：`DataFormat=16B`、`AudioFreq=44K`、`MCLKOutput=ENABLE` 与 `PLLI2SN=271/_R=6` 分散写死且互相独立假设，`start_dma()` 签名把 16 位样本钉进接口 ⇒ 48 kHz 家族、24/32-bit、录音方向均接不进来。根因是两条硬件事实：PLLI2S 是全芯片单一音频时钟域（不得归入每通道表项）、SPI2/I2S2 同实例人格互斥（已由 `bsp_bus` 治理，处理正确）。改法见上述任务书
 - [ ] FatFs 未开启长文件名：`ffconf.h` `_USE_LFN = 0`，文件名超 8.3 格式时 `f_open` 直接失败（Ymodem 接收报 Code 5）。修复方向：`_USE_LFN = 1` + 静态工作缓冲，需评估 RAM 开销
 - [ ] `port_pwm.c` `port_pwm_set_freq()` 定时器时钟域写死 APB1（`HAL_RCC_GetPCLK1Freq()` + `PPRE1` 判 ×2，恒得 84MHz），而 `pwm_mapping` 混挂了 APB2 的 `htim10`（LCD 背光，实际 168MHz）：ARR 算少一半，输出频率为目标的 2 倍。当前潜伏——全工程仅 `dev_buzzer`(TIM13/APB1) 与 `dev_ws2812`(TIM5/APB1) 调该函数，背光只走 `set_duty`（CCR/ARR 比值，与时钟无关）。修复方向：`port_pwm_map_t` 增加总线归属字段，`set_freq` 查表取时钟，禁止运行时猜 `RCC->CFGR`（换板只改表）
 - [ ] `bsp_backlight.c` 亮度语义与板级极性相反：`LCD_BLK_PWM` 网络硬件为低电平点亮（依据 `Docs/00-board_info/EC11_LCD_KEY描述.md`），而 TIM10 CH1 配为 PWM1 + `OCPOLARITY_HIGH`、上层按高电平占比等于亮度写 CCR，导致 `backlight 0` 最亮、`backlight 100` 熄灭。修复方向：`port_pwm_map_t` 增加有效电平标记，由 `set_duty` 统一反相，使 Board 层对上维持 0=灭、100=最亮的直觉语义。连带隐患：`bsp_backlight_init()` 是先 `port_pwm_start()` 再 `bsp_backlight_set()`，而 CubeMX 初始 `Pulse=0` 在低有效硬件上等于全亮，定时器启动到设亮度之间可能短暂闪一下最亮（未实测，修反相时应改成先写 CCR 再 start）
