@@ -1,0 +1,214 @@
+﻿{
+    "map":  "D:\\Keil5\\STM32Projects\\SkyStar\\BSP\\V2\\SkyStar_BSP_zcode_bsp\\MDK-ARM\\SkyStar_BSP_HAL\\SkyStar_BSP_HAL.map",
+    "generated":  "2026-09-24 22:08:02",
+    "regions":  {
+                    "ER_IROM1":  {
+                                     "base":  "0x08000000",
+                                     "used":  364584,
+                                     "max":  524288,
+                                     "free":  159704,
+                                     "top":  [
+                                                 {
+                                                     "bytes":  23003,
+                                                     "object":  "lfs.o"
+                                                 },
+                                                 {
+                                                     "bytes":  13644,
+                                                     "object":  "lv_font_montserrat_14.o"
+                                                 },
+                                                 {
+                                                     "bytes":  8296,
+                                                     "object":  "app_fatfs_demo.o"
+                                                 },
+                                                 {
+                                                     "bytes":  7464,
+                                                     "object":  "lv_obj_pos.o"
+                                                 },
+                                                 {
+                                                     "bytes":  7222,
+                                                     "object":  "ff.o"
+                                                 },
+                                                 {
+                                                     "bytes":  6536,
+                                                     "object":  "lv_indev.o"
+                                                 },
+                                                 {
+                                                     "bytes":  6272,
+                                                     "object":  "shell.o"
+                                                 },
+                                                 {
+                                                     "bytes":  6159,
+                                                     "object":  "app_shell_demo.o"
+                                                 },
+                                                 {
+                                                     "bytes":  5648,
+                                                     "object":  "lv_refr.o"
+                                                 },
+                                                 {
+                                                     "bytes":  5614,
+                                                     "object":  "lv_draw_sw_mask.o"
+                                                 },
+                                                 {
+                                                     "bytes":  5434,
+                                                     "object":  "lv_obj_scroll.o"
+                                                 },
+                                                 {
+                                                     "bytes":  5421,
+                                                     "object":  "lv_label.o"
+                                                 },
+                                                 {
+                                                     "bytes":  5388,
+                                                     "object":  "lv_obj_style.o"
+                                                 },
+                                                 {
+                                                     "bytes":  5038,
+                                                     "object":  "app_flash_demo.o"
+                                                 }
+                                             ]
+                                 },
+                    "RW_IRAM1":  {
+                                     "base":  "0x20000000",
+                                     "used":  114592,
+                                     "max":  114688,
+                                     "free":  96,
+                                     "top":  [
+                                                 {
+                                                     "bytes":  38401,
+                                                     "object":  "lv_port_disp.o"
+                                                 },
+                                                 {
+                                                     "bytes":  28800,
+                                                     "object":  "app_lcd_demo.o"
+                                                 },
+                                                 {
+                                                     "bytes":  10997,
+                                                     "object":  "app_fatfs_demo.o"
+                                                 },
+                                                 {
+                                                     "bytes":  8784,
+                                                     "object":  "bsp_audio.o"
+                                                 },
+                                                 {
+                                                     "bytes":  8240,
+                                                     "object":  "bsp_uart.o"
+                                                 },
+                                                 {
+                                                     "bytes":  8192,
+                                                     "object":  "startup_stm32f407xx.o"
+                                                 },
+                                                 {
+                                                     "bytes":  4740,
+                                                     "object":  "app_lvgl_images_demo.o"
+                                                 },
+                                                 {
+                                                     "bytes":  1768,
+                                                     "object":  "app_ymodem_demo.o"
+                                                 },
+                                                 {
+                                                     "bytes":  1152,
+                                                     "object":  "bsp_lfs.o"
+                                                 },
+                                                 {
+                                                     "bytes":  1125,
+                                                     "object":  "fatfs.o"
+                                                 },
+                                                 {
+                                                     "bytes":  620,
+                                                     "object":  "bsp_shell.o"
+                                                 },
+                                                 {
+                                                     "bytes":  500,
+                                                     "object":  "lv_init.o"
+                                                 },
+                                                 {
+                                                     "bytes":  272,
+                                                     "object":  "spi.o"
+                                                 },
+                                                 {
+                                                     "bytes":  260,
+                                                     "object":  "usart.o"
+                                                 }
+                                             ]
+                                 },
+                    "RW_IRAM2":  {
+                                     "base":  "0x2001c000",
+                                     "used":  16280,
+                                     "max":  16384,
+                                     "free":  104,
+                                     "top":  [
+                                                 {
+                                                     "bytes":  5132,
+                                                     "object":  "app_lcd_touch_demo.o"
+                                                 },
+                                                 {
+                                                     "bytes":  4096,
+                                                     "object":  "startup_stm32f407xx.o"
+                                                 },
+                                                 {
+                                                     "bytes":  2288,
+                                                     "object":  "dev_ws2812.o"
+                                                 },
+                                                 {
+                                                     "bytes":  1272,
+                                                     "object":  "elog.o"
+                                                 },
+                                                 {
+                                                     "bytes":  1024,
+                                                     "object":  "bsp_file.o"
+                                                 },
+                                                 {
+                                                     "bytes":  768,
+                                                     "object":  "app_flash_demo.o"
+                                                 },
+                                                 {
+                                                     "bytes":  384,
+                                                     "object":  "tim.o"
+                                                 },
+                                                 {
+                                                     "bytes":  324,
+                                                     "object":  "sdio.o"
+                                                 },
+                                                 {
+                                                     "bytes":  184,
+                                                     "object":  "port_i2s.o"
+                                                 },
+                                                 {
+                                                     "bytes":  132,
+                                                     "object":  "dev_key.o"
+                                                 },
+                                                 {
+                                                     "bytes":  84,
+                                                     "object":  "i2c.o"
+                                                 },
+                                                 {
+                                                     "bytes":  64,
+                                                     "object":  "app_spi_demo.o"
+                                                 },
+                                                 {
+                                                     "bytes":  64,
+                                                     "object":  "port_gpio.o"
+                                                 },
+                                                 {
+                                                     "bytes":  48,
+                                                     "object":  "app_multibutton_demo.o"
+                                                 }
+                                             ]
+                                 },
+                    "RW_IRAM_CCM":  {
+                                        "base":  "0x10000000",
+                                        "used":  26132,
+                                        "max":  65536,
+                                        "free":  39404,
+                                        "top":  [
+                                                    {
+                                                        "bytes":  24576,
+                                                        "object":  "lv_mem_core_builtin.o"
+                                                    },
+                                                    {
+                                                        "bytes":  1556,
+                                                        "object":  "bsp_lfs_pool.o"
+                                                    }
+                                                ]
+                                    }
+                }
+}

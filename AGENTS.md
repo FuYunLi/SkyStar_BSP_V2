@@ -31,7 +31,8 @@
 | 写/改代码 | `Docs/10-standards/工程规范.md` 对应章节 + 目标模块头文件 | 命名/注释/头文件规范;只读要改的模块,不通读实现 |
 | 提交代码 | `Docs/10-standards/Git规范.md` | Conventional Commits(中文)+ 分支策略 |
 | 新一轮开发规划 | `Docs/20-planning/开发规划.md` 第 0 节"当前状态" + `Docs/01-map/ARCHITECTURE.md` 第 8 节进度表 | 规划正文是历史存档,进度冲突以 ARCHITECTURE.md 为准 |
-| 编译/烧录/调试/内存分析/串口 | 直接用 `.agents/skills/` 对应技能 | 技能自带流程,无需读文档 |
+| 编译/烧录/调试/内存分析/串口 | 直接用 `.agents/skills/` 对应技能 | 技能自带流程,无需读文档；**但 ARMCC V5 的 .map 需用 `Other/tools/MemoryMap/parse_map.ps1`（memory-analysis 技能自带解析器对 AC5 失效）** |
+| 新增静态缓冲 / 评估容量水位 | `Docs/01-map/CAPACITY-BASELINE.md` | 主 SRAM1/SRAM2 已红水位（各余不足 200 B）、CCM 余 38.5 KB；问“这块缓冲进 DMA 吗？”——不进就放 CCM |
 | 新增外设驱动 | `Docs/10-standards/LibDriver引入与适配规范.md`、`Docs/10-standards/Keil虚拟文件夹规范.md` | |
 | 移植对照上游/查参考仓库 | `Docs/01-map/参考仓库索引.md` | 上游地址速查,不必联网搜索 |
 | 排查历史问题 | `Docs/30-porting/`、`Docs/40-records/` 按文件名匹配 | 按需读,不预读 |
