@@ -58,7 +58,7 @@ static uint8_t s_w25q_spi_byte(uint8_t tx)
  */
 static void s_w25q_cs_select(void)
 {
-    s_w25q_cs_select();
+    W25Q_CS_LOW();
     for (volatile uint32_t i = 0U; i < W25Q_CS_SETUP_LOOP; i++)
     {
     }
