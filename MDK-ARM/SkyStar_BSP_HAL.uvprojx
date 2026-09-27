@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,LWRB_DISABLE_ATOMIC,LV_CONF_INCLUDE_SIMPLE,LV_LVGL_H_INCLUDE_SIMPLE,LFS_DEFINES=lfs_defines.h,LFS_THREADSAFE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc;../BSP/Driver;../APP/demos;../Middleware/MultiButton;../APP/tasks;../BSP/Driver/LibDriver/AT24Cxx/src;../BSP/Driver/LibDriver/AT24Cxx/interface;../BSP/Driver/LibDriver/AT24Cxx/example;../Middleware/LittleFS;../Middleware/lvgl;../Middleware/lvgl/src;../Middleware/lvgl/examples/porting;../BSP/Driver/LibDriver/AHT20/src;../BSP/Driver/LibDriver/AHT20/interface;../BSP/Driver/LibDriver/AHT20/example;../BSP/Driver/LibDriver/INA226/src;../BSP/Driver/LibDriver/INA226/interface;../BSP/Driver/LibDriver/INA226/example;../FATFS/Target;../FATFS/App;../Middlewares/Third_Party/FatFs/src;../Middleware/Ymodem</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP/Board;../BSP/Interface;../App;../Middleware/MultiTimer;../Middleware/LwRB/include;../Middleware/letter-shell-shell3.1/src;../Middleware/Easylogger/inc;../BSP/Driver;../APP/demos;../Middleware/MultiButton;../APP/tasks;../BSP/Driver/LibDriver/AT24Cxx/src;../BSP/Driver/LibDriver/AT24Cxx/interface;../BSP/Driver/LibDriver/AT24Cxx/example;../Middleware/LittleFS;../Middleware/lvgl;../Middleware/lvgl/src;../Middleware/lvgl/examples/porting;../BSP/Driver/LibDriver/AHT20/src;../BSP/Driver/LibDriver/AHT20/interface;../BSP/Driver/LibDriver/AHT20/example;../BSP/Driver/LibDriver/INA226/src;../BSP/Driver/LibDriver/INA226/interface;../BSP/Driver/LibDriver/INA226/example;../FATFS/Target;../FATFS/App;../Middlewares/Third_Party/FatFs/src;../Middleware/Ymodem;../Boot/SkyStar_Boot</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -4806,6 +4806,26 @@
               <FileType>5</FileType>
               <FilePath>../BSP/Board/bsp_audio.h</FilePath>
             </File>
+            <File>
+
+              <FileName>bsp_ota.c</FileName>
+
+              <FileType>1</FileType>
+
+              <FilePath>../BSP/Board/bsp_ota.c</FilePath>
+
+            </File>
+
+            <File>
+
+              <FileName>bsp_ota.h</FileName>
+
+              <FileType>5</FileType>
+
+              <FilePath>../BSP/Board/bsp_ota.h</FilePath>
+
+            </File>
+
           </Files>
         </Group>
         <Group>
@@ -5436,6 +5456,26 @@
               <FileType>5</FileType>
               <FilePath>..\APP\demos\app_ymodem_demo.h</FilePath>
             </File>
+            <File>
+
+              <FileName>app_ota_demo.c</FileName>
+
+              <FileType>1</FileType>
+
+              <FilePath>../APP/demos/app_ota_demo.c</FilePath>
+
+            </File>
+
+            <File>
+
+              <FileName>app_ota_demo.h</FileName>
+
+              <FileType>5</FileType>
+
+              <FilePath>../APP/demos/app_ota_demo.h</FilePath>
+
+            </File>
+
             <File>
               <FileName>app_lvgl_images_demo.c</FileName>
               <FileType>1</FileType>
