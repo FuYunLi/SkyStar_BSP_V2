@@ -189,6 +189,12 @@ static void s_ota_jump_to_app(void)
     __DSB();
     __ISB();
 
+    /* 清除全部挂起中断并重开全局中断：App 复位假定 PRIMASK 为
+     * 复位默认值，bootloader 关中断后不补开会导致 App 中断全瘫 */
+    NVIC->ICPR[0] = 0xFFFFFFFFUL;
+    NVIC->ICPR[1] = 0xFFFFFFFFUL;
+    __enable_irq();
+
     __set_MSP(app_sp);
     ((void (*)(void))app_pc)();
 }

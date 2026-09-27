@@ -20,10 +20,13 @@
 #define W25Q_CMD_READ_SR1  (0x05U)
 #define W25Q_CMD_SEC_ERASE (0x20U)
 #define W25Q_CMD_PAGE_PROG (0x02U)
+#define W25Q_CMD_RESET_EN  (0x66U)
+#define W25Q_CMD_RESET     (0x99U)
 #define W25Q_JEDEC_W25Q    (0xEFU) /* 华邦厂商 ID */
 #define W25Q_CS_MASK       (1UL << 4U)  /* PE4 */
 #define W25Q_CS_HIGH()     (GPIOE->BSRR = W25Q_CS_MASK)
 #define W25Q_CS_LOW()      (GPIOE->BSRR = W25Q_CS_MASK << 16U)
+#define W25Q_CS_SETUP_LOOP (60U)   /* 片选建立短延时（约 1µs @168MHz） */
 #define W25Q_BUSY_TIMEOUT  (100U)   /* ms，扇区擦最长约 400ms，按批次等待 */
 
 /* ================================================================
@@ -45,6 +48,20 @@ static uint8_t s_w25q_spi_byte(uint8_t tx)
     }
 
     return (uint8_t)SPI2->DR;
+}
+
+/**
+ * @brief 片选拉低并插入建立时间延时
+ * @note 烧录复位仅重启 MCU，W25Q 易失状态（连续读模式等）会跨
+ *       会话残留，且首比特采样对建立时间敏感——软复位 + 建立延时
+ *       双保险
+ */
+static void s_w25q_cs_select(void)
+{
+    s_w25q_cs_select();
+    for (volatile uint32_t i = 0U; i < W25Q_CS_SETUP_LOOP; i++)
+    {
+    }
 }
 
 /* ================================================================
@@ -75,11 +92,25 @@ bool boot_w25q_init(void)
     W25Q_CS_HIGH();
 
     /* 主机模式、模式 0、8 位、软件 NSS、fPCLK/2 = 21MHz */
-    SPI2->CR1 = SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_MSTR | SPI_CR1_SPE;
+    /* BR=001 → fPCLK/4 = 10.5MHz：初测 21MHz 首字节采样不稳，降速保险 */
+    SPI2->CR1 = SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_MSTR | SPI_CR1_BR_0 | SPI_CR1_SPE;
+
+    /* 软复位序列（0x66 + 0x99）：清除上电会话遗留的连续读模式等
+     * 易失状态——烧录复位只重启 MCU，Flash 芯片不断电不自动还原 */
+    s_w25q_cs_select();
+    (void)s_w25q_spi_byte(W25Q_CMD_RESET_EN);
+    W25Q_CS_HIGH();
+    s_w25q_cs_select();
+    (void)s_w25q_spi_byte(W25Q_CMD_RESET);
+    W25Q_CS_HIGH();
+    for (volatile uint32_t i = 0U; i < 30000U; i++)
+    {
+    } /* t_RST1 ≈ 30µs */
+    boot_w25q_wait_busy();
 
     /* JEDEC ID 验活：首字节应为华邦 0xEF */
     uint8_t id0, id1, id2;
-    W25Q_CS_LOW();
+    s_w25q_cs_select();
     (void)s_w25q_spi_byte(W25Q_CMD_JEDEC_ID);
     id0 = s_w25q_spi_byte(0xFFU);
     id1 = s_w25q_spi_byte(0xFFU);
@@ -104,7 +135,7 @@ void boot_w25q_wait_busy(void)
     {
         uint8_t sr;
 
-        W25Q_CS_LOW();
+        s_w25q_cs_select();
         (void)s_w25q_spi_byte(W25Q_CMD_READ_SR1);
         sr = s_w25q_spi_byte(0xFFU);
         W25Q_CS_HIGH();
@@ -129,7 +160,7 @@ void boot_w25q_read(uint32_t addr, uint8_t *buf, uint32_t len)
 {
     boot_w25q_wait_busy();
 
-    W25Q_CS_LOW();
+    s_w25q_cs_select();
     (void)s_w25q_spi_byte(W25Q_CMD_READ);
     (void)s_w25q_spi_byte((uint8_t)(addr >> 16));
     (void)s_w25q_spi_byte((uint8_t)(addr >> 8));
@@ -159,11 +190,11 @@ void boot_w25q_write(uint32_t addr, const uint8_t *buf, uint32_t len)
 
         boot_w25q_wait_busy();
 
-        W25Q_CS_LOW();
+        s_w25q_cs_select();
         (void)s_w25q_spi_byte(W25Q_CMD_WRITE_EN);
         W25Q_CS_HIGH();
 
-        W25Q_CS_LOW();
+        s_w25q_cs_select();
         (void)s_w25q_spi_byte(W25Q_CMD_PAGE_PROG);
         (void)s_w25q_spi_byte((uint8_t)(addr >> 16));
         (void)s_w25q_spi_byte((uint8_t)(addr >> 8));
@@ -188,14 +219,14 @@ void boot_w25q_erase_sector(uint32_t addr)
 {
     boot_w25q_wait_busy();
 
-    W25Q_CS_LOW();
+    s_w25q_cs_select();
     (void)s_w25q_spi_byte(W25Q_CMD_WRITE_EN);
     W25Q_CS_HIGH();
 
     /* 24 位地址以 4KB 对齐 */
     addr &= ~(W25Q_SECTOR_SZ - 1U);
 
-    W25Q_CS_LOW();
+    s_w25q_cs_select();
     (void)s_w25q_spi_byte(W25Q_CMD_SEC_ERASE);
     (void)s_w25q_spi_byte((uint8_t)(addr >> 16));
     (void)s_w25q_spi_byte((uint8_t)(addr >> 8));
