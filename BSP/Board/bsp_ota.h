@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 /* App 自报版本号（`ver` 指令显示；升级闭环以此判断新旧） */
-#define OTA_APP_VERSION (0x00010001UL) /* v1.0.1 */
+#define OTA_APP_VERSION (0x00010002UL) /* v1.0.2 —— OTA 闭环测试包 */
 
 /**
  * @brief 开始一次固件更新会话
