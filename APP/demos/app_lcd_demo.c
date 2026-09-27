@@ -13,9 +13,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* 定义 DMA 测试缓冲区大小 (120x120 像素) */
-#define TEST_FB_WIDTH  120
-#define TEST_FB_HEIGHT 120
+/* 定义 DMA 测试缓冲区大小 (64x64 像素)
+ * SRAM 红水位回收第一刀：120x120(28.8KB) 缩至 64x64(8KB)，
+ * DMA 吞吐/撕裂测试意图不变，整帧缓冲让出 20.8KB（OTA-IAP 前置） */
+#define TEST_FB_WIDTH  64
+#define TEST_FB_HEIGHT 64
 
 /* 静态测试帧缓冲区，存放在 BSS 段中 */
 static uint16_t s_test_fb[TEST_FB_WIDTH * TEST_FB_HEIGHT];
