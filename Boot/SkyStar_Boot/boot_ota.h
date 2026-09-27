@@ -6,6 +6,8 @@
 #ifndef __BOOT_OTA_H
 #define __BOOT_OTA_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

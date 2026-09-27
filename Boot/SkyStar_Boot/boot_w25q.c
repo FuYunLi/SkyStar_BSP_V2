@@ -21,8 +21,9 @@
 #define W25Q_CMD_SEC_ERASE (0x20U)
 #define W25Q_CMD_PAGE_PROG (0x02U)
 #define W25Q_JEDEC_W25Q    (0xEFU) /* 华邦厂商 ID */
-#define W25Q_CS_HIGH()     (GPIOE->BSRR = GPIO_PIN_4)
-#define W25Q_CS_LOW()      (GPIOE->BSRR = (uint32_t)GPIO_PIN_4 << 16U)
+#define W25Q_CS_MASK       (1UL << 4U)  /* PE4 */
+#define W25Q_CS_HIGH()     (GPIOE->BSRR = W25Q_CS_MASK)
+#define W25Q_CS_LOW()      (GPIOE->BSRR = W25Q_CS_MASK << 16U)
 #define W25Q_BUSY_TIMEOUT  (100U)   /* ms，扇区擦最长约 400ms，按批次等待 */
 
 /* ================================================================

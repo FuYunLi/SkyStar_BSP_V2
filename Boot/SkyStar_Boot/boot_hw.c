@@ -41,9 +41,9 @@ void boot_hw_clock_init(void)
     {
     }
 
-    /* 2. 电压调节器 Scale1（168MHz 前置条件） */
+    /* 2. 电压调节器 Scale1（168MHz 前置条件，VOS[15:14] = 11） */
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-    PWR->CR |= PWR_CR_VOS_0 | PWR_CR_VOS_1;
+    PWR->CR |= (3UL << 14);
 
     /* 3. Flash 等待周期 5WS + 预取 + 指令/数据缓存 */
     FLASH->ACR = FLASH_ACR_LATENCY_5WS | FLASH_ACR_PRFTEN |
